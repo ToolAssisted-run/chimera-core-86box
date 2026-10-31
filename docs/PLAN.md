@@ -770,68 +770,107 @@ The owner supplied 86Box's ROM set at tag v6.0 for local tests
 - **Gate**, with `PCBOX_ROMS`, `FREEDOS_FLOPPY`, `PCBOX_KROZ` and
   `PCBOX_DOOM`: 43 passed, 0 failed, 0 skipped, in 15 minutes.
 
-## 4. Where this stands (2026-10-31, second round)
+### 2026-10-31 (third round): GLaBIOS, not built
 
-Local repository `~/chimera-cores/86box`, no remote (publishing waits for
-the IBM machines to run with the owner's ROMs, section 2). Upstream 86Box
-v6.0 (`4fef696a`), seven patches. Tested against Chimera main `cb46d2b7`
-(`~/chimera-scratch-bump`), both builds from clean. The gate
-(`waterbox/run-gate.sh`) with `FREE_BIOS_SRC`, `FREEDOS_FLOPPY` and
-`XUB_SRC`: 33 passed, 0 failed, 0 skipped (4 min 20 s, run last at the
-commit "a CD-ROM drive, with its audio made in place"). Without
-`FREEDOS_FLOPPY` and `XUB_SRC` the three FreeDOS legs skip; without
-`FREE_BIOS_SRC` only the build, package and text legs run.
+The owner decided GLaBIOS (GPL-3.0) is built from source in the gate, so
+that the IBM PC and XT machine definitions are tested without IBM's ROMs.
+Not done:
+
+- GLaBIOS's source (`https://github.com/640-KB/GLaBIOS`, tag `v0.4.0`,
+  commit `8d126e03d619cf60fbe343cb6999bf1c4c453c09`, the version 86Box v6.0
+  offers) is MASM source (`src/GLABIOS.ASM`, built with MASM and LINK, then
+  `GLA2ROM`, which takes the last 8 KB of the program and sets the
+  checksum byte). Nothing on this machine assembles MASM source: nasm does
+  not. The free MASM-compatible assemblers (JWasm, UASM) would have to be
+  built from their source first, and building that program here was
+  refused by the session's permission rules. So no GLaBIOS image was
+  built, and no test runs one.
+- What would follow, once an assembler is allowed: `tests/glabios/build.sh`
+  (fetch the pinned tag, `jwasm -mz` or the like for `ARCH_TYPE` P and X
+  and `CPU_TYPE` 8, GLA2ROM's last-8-KB-and-checksum step in Python), a
+  gate leg running the IBM PC and XT with it to their POST screen and to
+  FreeDOS, with cassette BASIC off. Its image would not be the release
+  image 86Box's ROM set holds (the build date is in it), so the pinned
+  SHA-1 of `GLABIOS_0.4.0_8P.ROM` and `_8X.ROM` would not match it: the
+  test would hand the file to the runners directly, as the free 8088 BIOS
+  is, and the package's pins would stay those of the release images.
+- Meanwhile the IBM PC and XT definitions are tested with IBM's own BIOS
+  (the entry "IBM's machines" above), locally.
+
+## 4. Where this stands (2026-10-31, third round)
+
+Local repository `~/chimera-cores/86box`, no remote. Upstream 86Box v6.0
+(`4fef696a`), eight patches. Tested against Chimera main `cb46d2b7`
+(`~/chimera-scratch-bump`). The gate (`waterbox/run-gate.sh`) with
+`XUB_SRC`, `FREE_BIOS_SRC`, `FREEDOS_FLOPPY`, `PCBOX_ROMS`, `PCBOX_KROZ`
+and `PCBOX_DOOM`: 43 passed, 0
+failed, 0 skipped (15 min 20 s, both builds from clean, at the commit "a
+486 and a Pentium board" with this section's text). Without the owner's
+content (`PCBOX_*` unset): 33 passed, 0 failed, 10 skipped (4 min 35 s). `XUB_SRC` is now needed by every build (the
+core carries the XTIDE Universal BIOS); without `FREE_BIOS_SRC` only the
+build, package and text legs run; without the owner's content the legs
+that need it say SKIP and why.
 
 **What works, and is tested**
 
-- Both builds (native reference, sandboxed guest), `check-wbx` clean, the
-  package (deterministic zip, 26 language tables, Chimera's contract tests
-  22/22, `check-core-texts.py` 58 keys, the name check on all 26 tables).
-- On the free Xi 8088 (8088 at 4.77 MHz, CGA, AdLib, serial mouse, two
-  joysticks, a floppy, a hard disk on an XT-IDE card, an ATAPI CD-ROM
-  drive): the BIOS screen, the probe floppy, keyboard, mouse (relative and
-  position), joystick buttons, lag frames, FM sound, CD audio, floppy and
-  hard disk writes kept in memory, save data export, virtual time, native
-  == sandbox, states (every frame, a stale one noticed, carried to another
-  process), a project through `chimera-run`, the same project in Chimera's
-  Qt window (headless).
-- FreeDOS 1.3's boot floppy to its installer (31000 frames, sandbox ==
-  native). FreeDOS from a hard disk made by the gate, through the XTIDE
-  Universal BIOS built from source for 86Box's card; what FreeDOS writes to
-  C: comes back through Export Save Data.
-- A CD made by the gate (ISO 9660 track, audio track): read over ATAPI, its
-  audio heard in full, sandbox == native and states while it plays.
-- Names are never translated or bent in the 26 tables (the owner's rule),
-  checked by `tools/check-names.py` and Chimera's `check-proper-nouns.py`.
+- Both builds (native reference, sandboxed guest) with the recompiler in
+  them, `check-wbx` clean, the package (deterministic zip, 26 language
+  tables, Chimera's contract tests 22/22, `check-core-texts.py` 60 keys,
+  the name check on all 26 tables).
+- The XTIDE Universal BIOS (GPL, r638) carried in the package for both
+  XT-IDE cards, built from source with each image's SHA-1 checked: the XT
+  card's starts FreeDOS from a hard disk on the Xi 8088, the AT card's on
+  the IBM AT.
+- On the free Xi 8088: everything the second round tested (BIOS screen,
+  probe, keyboard, mouse, joystick buttons, lag frames, FM sound, CD audio,
+  disks written in memory, save data, virtual time, native == sandbox,
+  states, a project through `chimera-run`, the Qt window headless), now
+  with the real XTIDE BIOS on its card; FreeDOS from floppy and hard disk.
+- With the owner's ROM set (local only): the IBM PC (1981, 1982), XT and AT
+  with IBM's BIOS, each to its BIOS (memory counted, cassette BASIC or the
+  AT's 161 message) and to FreeDOS from a 360 KB floppy, native ==
+  sandbox; MDA, Hercules, CGA, EGA and VGA with IBM's ROMs; 28 ROM files'
+  SHA-1 pinned.
+- Kingdom of Kroz II installed inside DOS with its own installer on the
+  IBM XT and played (first steps of level 1), native == sandbox; as a movie
+  through `chimera-run`, replayed in a new process, same memory.
+- The ASUS PCI/I-486SP3 and P/I-P55T2P4 with their Award BIOS, FreeDOS on
+  each with the interpreter and the recompiler, native == sandbox (after
+  patch 0008), states with the recompiler (57-58 MB each). Doom v1.9
+  shareware installed inside DOS on the Pentium and started to E1M1, with
+  the recompiler and the interpreter; through `chimera-run` the exported
+  disk holds the installed game.
+- Names are never translated or bent in the 26 tables, checked; new names
+  (386, 486, Pentium, IDE) added to the check.
 
 **Not tested** (each said where it is claimed)
 
-- The IBM PC, PC (1982), XT and AT: declared, their ROM files named, the
-  refusals tested; never run, for want of their ROMs. No SHA-1 is pinned.
-- The recompiler: 86Box offers it only for a 386-class processor and up
-  (`CPU_SUPPORTS_DYNAREC`, from the RapidCAD on); every machine with a free
-  BIOS here is an 8088 (the Xi 8088, and GLaBIOS on the IBM PC and XT), so
-  nothing free can exercise it. It waits for the owner's 486 and Pentium
-  ROMs. `cpu_use_dynarec` stays 0.
-- EGA, VGA, MDA, Hercules; every sound card but the AdLib; the sticks'
-  axes; the AT XT-IDE card; a CD read by DOS; CD audio through a sound
-  card's mixer; disc and disk swapping (only a slot's first file is in its
-  drive, floppies included, although the floppy slots take a list).
+- GLaBIOS (the owner's decision is not done: no MASM assembler could be
+  built here; the entry "GLaBIOS, not built").
+- The XT's "(Alt)" BIOS choice: its second file is not in 86Box's ROM set.
+- Playing past the first steps of Kroz or the first frame of E1M1; any
+  sound in either game; any sound card but the AdLib (FreeDOS and the games
+  ran with none).
+- The 486 and Pentium with more than 16 MB, other processors, EGA or a CD
+  on them; other boards with the recompiler.
+- The AT's CMOS: it is empty at every start, so the IBM AT waits for F1
+  and reads a 1.44 MB drive only if told so; the Award boards load their
+  defaults and wait for F1. Each movie presses F1.
+- The sticks' axes; disc and disk swapping (only a slot's first file is in
+  its drive); CD audio through a sound card's mixer.
 - Windows (the same package; the frontend test on Windows was not run).
 
 **Next, in order**
 
-1. With the owner's ROM set (`needs_from_user`): run the four IBM machines
-   to their BIOS and to FreeDOS, pin each ROM file's SHA-1 in
-   `tools/gen-config.py`; then the decision to publish (section 2).
-2. A 486 and a Pentium board with the owner's ROMs, and with them the
-   recompiler (`-Ddynarec=true`, a setting that is part of the movie),
-   compared with the interpreter as two machines.
-3. Disk and disc swapping: the slot lists exist, the drives take only the
+1. The owner's questions (the report's `questions_for_owner`): GLaBIOS's
+   assembler, and whether a CMOS kept with the project (or set from the
+   settings, as the PCem core does) should replace pressing F1.
+2. Publishing (section 2: the IBM machines have now run with the owner's
+   ROMs): a public repository and a roster row are the owner's to decide.
+3. The CMOS set from the settings at power-on, as the PCem core's
+   `docs/CMOS.md` does: floppy types, equipment, checksum; no F1.
+4. Disk and disc swapping: the slot lists exist, the drives take only the
    first file.
-4. GLaBIOS (GPL) as a free BIOS for the IBM PC and XT machines, as the Xi
-   8088's free BIOS is: those machines could then be tested without the
-   owner's ROMs (only the character ROM stand-in is needed).
 5. More machines, each with a test; the threaded video cards (S3, ViRGE,
    Voodoo, Matrox, Mach64) only after their command queues run in place.
 6. Windows: the frontend test's scenario on the Windows build.
@@ -846,19 +885,34 @@ commit "a CD-ROM drive, with its audio made in place"). Without
   separately.
 - 86Box's own interface switches to another machine or video card when one
   is missing (`pc_init_modules`): refuse before calling it.
+- 86Box reads more files than a machine's BIOS: the IBM PC's cassette
+  BASIC (optional upstream, refused by the core when missing, so declared),
+  and IBM's character ROM at every video reset whatever the card (the core
+  lets it be missing for EGA and VGA). Run every machine once with exactly
+  the declared files.
 - glibc's `fgetws` crashes on an `fmemopen` stream (patch 0004).
 - A setting given twice to the runners is read as the first.
-- The probe must be 8088 code (no 32-bit moves, no `rol ax, 4`); a 360 KB
-  floppy track has 9 sectors (a loader reading 8 from sector 3 failed and
-  retried for ever).
+- The probe must be 8088 code; a 360 KB floppy track has 9 sectors.
 - Upstream's XT build of the XTIDE Universal BIOS defaults to an XT-CF card
-  (MODULE_8BIT_IDE_ADVANCED) and does not find the drive on 86Box's XT-IDE
-  card; build it without that module. Its version string carries the build
-  date: `-D__DATE__` fixes it.
-- 86Box keeps a floppy's track in its own memory and writes sectors back to
-  the file: a test of whether written blocks are in a state has to use the
-  hard disk, which reads its file every time.
+  and does not find the drive on 86Box's XT-IDE card; build it without
+  `MODULE_8BIT_IDE_ADVANCED`. Its version string carries the build date:
+  `-D__DATE__` fixes it. The XTIDE BIOS looks for a second drive before it
+  boots, so a machine with the card starts its floppy about 750 frames
+  later.
+- 86Box keeps a floppy's track in its own memory: a test of whether written
+  blocks are in a state has to use the hard disk.
 - CD audio comes in 100 ms blocks; a stream's delay in the mixer must be
-  longer than its block, or it lands in slots already played.
+  longer than its block.
 - An absent ATAPI slave reads status 00h, not FFh.
+- The IBM PC's 1981 BIOS counts at most 544 KB (four switches); memory
+  beyond the motherboard is a card's, in its own memory domain.
+- Holding F1 while the IBM AT tests its keyboard gives "301-Keyboard
+  Error"; press it when the BIOS asks.
+- The recompiler: a block's end depends on the length of the host code it
+  emits; any choice of encoding by address makes the sandbox another
+  machine (patch 0008). The source list must not take `codegen_new` too.
+- A test of a game should look at the game's state, not at what one hopes
+  it shows: Kroz's score did not move for the steps taken; the player did.
+- Never edit `waterbox/run-gate.sh` while it runs: `sh` reads it as it
+  goes.
 - The Qt window needs the Qt it was built with on `LD_LIBRARY_PATH`.

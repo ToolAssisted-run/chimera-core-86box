@@ -782,6 +782,7 @@ dm="${PCBOX_DOOM:-}"
 dm_sha1=8d0fbbbeba5ecb692a99f97e55dfb5365cfe5b77
 if [ -z "$dm" ] || [ -z "$pr" ] || [ -z "$fd" ] || [ ! -d "${ir:-/nonexistent}" ] || [ ! -f "$work/mbr.bin" ]; then
 	report SKIP "Doom: installed in DOS, to E1M1" "needs PCBOX_DOOM (doom19s.zip), PCBOX_ROMS and FREEDOS_FLOPPY"
+	report SKIP "Doom: the movie through chimera-run" "needs PCBOX_DOOM, PCBOX_ROMS and FREEDOS_FLOPPY"
 elif [ "$(sha1sum "$dm" | cut -c1-40)" != "$dm_sha1" ]; then
 	report FAIL "Doom: installed in DOS, to E1M1" "PCBOX_DOOM is not doom19s.zip (sha1 $dm_sha1)"
 else
