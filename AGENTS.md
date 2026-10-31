@@ -60,7 +60,8 @@ The gate must end with `0 failed`. Read the skipped count: without
 (from its floppy, and from a hard disk through the carried XTIDE Universal
 BIOS); `PCBOX_ROMS` (the ROM set of 86Box, v6.0) adds IBM's machines with
 IBM's ROMs and the 486 and Pentium boards, and `PCBOX_KROZ` and
-`PCBOX_DOOM` two real games (docs/BUILDING.md); the window leg
+`PCBOX_DOOM`, `PCBOX_ALLEYCAT` and `PCBOX_POP` four real games
+(docs/BUILDING.md); the window leg
 needs the window's Qt on `LD_LIBRARY_PATH`.
 
 ## Rules of this repository

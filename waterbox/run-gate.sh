@@ -18,6 +18,8 @@
 #                    tests only: never on a public runner)
 #   PCBOX_KROZ       Kingdom of Kroz II's archive, 1kroz.zip
 #   PCBOX_DOOM       Doom v1.9 shareware's archive, doom19s.zip
+#   PCBOX_ALLEYCAT   the owner's Alley Cat disk (180 KB, starts by itself)
+#   PCBOX_POP        the owner's Prince of Persia disk (720 KB)
 #
 # Without FREE_BIOS_SRC (and nasm and cmake) no machine runs: the legs that
 # need one say SKIP, with that reason. A gate that skipped everything is not
@@ -892,6 +894,90 @@ PY
 		else
 			report FAIL "Doom: the movie through chimera-run" "wad $wad cfg $cfgd; see build/gate/doom/project ($(tail -1 "$dp/run.log" | cut -c1-100))"
 		fi
+	fi
+fi
+
+# ------------------------------------------- 12. the owner's game disks
+# Two of the owner's own disks, for local tests only, never in the
+# repository or on a public runner:
+#   PCBOX_ALLEYCAT   Alley Cat (IBM, 1984), a 180 KB disk that starts itself
+#   PCBOX_POP        Prince of Persia (Broderbund, 1990), its 720 KB disk
+# Each from switching on to playing, with the input in tests/games: the
+# picture is the game's, the first moves move the player against a run that
+# stood still, and the sandbox gives the native run's stream and memory.
+ac="${PCBOX_ALLEYCAT:-}"
+ac_sha1=c4e1b163b14fbffe3bef97816d5b7db142c593f1
+if [ -z "$ac" ] || [ ! -d "${ir:-/nonexistent}" ]; then
+	report SKIP "Alley Cat: started and played" "needs PCBOX_ALLEYCAT (its 180 KB disk) and PCBOX_ROMS"
+elif [ "$(sha1sum "$ac" | cut -c1-40)" != "$ac_sha1" ]; then
+	report FAIL "Alley Cat: started and played" "PCBOX_ALLEYCAT is not the disk the test was made with (sha1 $ac_sha1)"
+else
+	# The IBM PC (1982) with IBM's BIOS, CGA, the disk in a 5.25" drive A.
+	# The cat is black; the bins' outlines are black too, so the cat is where
+	# the two runs' pictures differ in the strip along the alley's floor.
+	ad="$work/alleycat"; mkdir -p "$ad"; cp "$ac" "$ad/disk.img"
+	setup=$(python3 "$root/tests/keys.py" "$here/chimera-input.c" "$root/tests/games/alleycat.keys")
+	play=$(python3 "$root/tests/keys.py" "$here/chimera-input.c" "$root/tests/games/alleycat-play.keys")
+	arun="--roms $ir --set machine=ibmpc82 --set video=cga --set memoryKB=256 --set floppyA=525_2dd --file floppy_a=$ad/disk.img --frames 7600"
+	native_run $arun $setup --ppm "$ad/still.ppm" > /dev/null
+	native_run $arun $setup $play --ppm "$ad/played.ppm" --digests "$ad/native.dig" --dump-ram "$ad/native.ram" > /dev/null
+	"$rw" "$wbx" "$cfg" $arun $setup $play --digests "$ad/wbx.dig" --dump-ram "$ad/wbx.ram" > /dev/null 2> "$ad/wbx.err"
+	set -- $(python3 - "$ad/still.ppm" "$ad/played.ppm" <<'PY'
+import sys
+def load(p):
+    d = open(p, 'rb').read().split(b'\n', 3)
+    return int(d[1].split()[0]), d[3]
+w, a = load(sys.argv[1])
+_, b = load(sys.argv[2])
+def black(buf, x, y):
+    return buf[(y * w + x) * 3:(y * w + x) * 3 + 3] == b'\0\0\0'
+def where(p, q):
+    pts = [x for y in range(176, 200) for x in range(w) if black(p, x, y) and not black(q, x, y)]
+    return sum(pts) // len(pts) if pts else -1
+lit = sum(1 for i in range(0, len(b), 3) if b[i:i + 3] != b'\0\0\0')
+print(where(a, b), where(b, a), lit)
+PY
+)
+	if [ $# -eq 3 ] && [ "$1" -ge 0 ] && [ "$2" -ge $(($1 + 100)) ] && [ "$3" -gt 50000 ] \
+	   && [ -s "$ad/wbx.dig" ] && cmp -s "$ad/native.dig" "$ad/wbx.dig" && cmp -s "$ad/native.ram" "$ad/wbx.ram"; then
+		report PASS "Alley Cat: started and played" "the alley at frame 7600 ($3 lit pixels); the right arrow takes the cat from x=$1 to x=$2; 7600 frames, sandbox == native"
+	else
+		report FAIL "Alley Cat: started and played" "cat [$*]; see build/gate/alleycat"
+	fi
+fi
+pp="${PCBOX_POP:-}"
+pp_sha1=d45c2299a2d48de0897e9e5a7a366090192eb5f7
+if [ -z "$pp" ] || [ ! -d "${ir:-/nonexistent}" ] || [ -z "$fd" ]; then
+	report SKIP "Prince of Persia: started and played" "needs PCBOX_POP (its 720 KB disk), PCBOX_ROMS and FREEDOS_FLOPPY"
+elif [ "$(sha1sum "$pp" | cut -c1-40)" != "$pp_sha1" ]; then
+	report FAIL "Prince of Persia: started and played" "PCBOX_POP is not the disk the test was made with (sha1 $pp_sha1)"
+else
+	# The ASUS PCI/I-486SP3 (no F1: its recorded CMOS), 4 MB, VGA; FreeDOS
+	# from a floppy made here in A, the game's disk in a 3.5" 720 KB drive B.
+	# The prince is the white of his clothes.
+	ppd="$work/pop"; mkdir -p "$ppd"; cp "$pp" "$ppd/disk.img"
+	python3 "$root/tests/dos-disk/make-dos-disk.py" --freedos "$fd" --out "$ppd/dos.img" --floppy 1440 --autoexec '@echo off\n' > "$ppd/dos.log" 2>&1
+	setup=$(python3 "$root/tests/keys.py" "$here/chimera-input.c" "$root/tests/games/pop.keys")
+	play=$(python3 "$root/tests/keys.py" "$here/chimera-input.c" "$root/tests/games/pop-play.keys")
+	prun="--roms $ir --set machine=486sp3 --set cpu=i486dx2/66666666 --set video=vga --set memoryKB=4096 --set floppyA=35_2hd"
+	prun="$prun --set floppyB=35_2dd --file floppy_a=$ppd/dos.img --file floppy_b=$ppd/disk.img --frames 9060"
+	native_run $prun $setup --ppm "$ppd/still.ppm" > /dev/null
+	native_run $prun $setup $play --ppm "$ppd/played.ppm" --digests "$ppd/native.dig" --dump-ram "$ppd/native.ram" > /dev/null
+	"$rw" "$wbx" "$cfg" $prun $setup $play --digests "$ppd/wbx.dig" --dump-ram "$ppd/wbx.ram" > /dev/null 2> "$ppd/wbx.err"
+	prince() { python3 - "$1" <<'PY'
+import sys
+d = open(sys.argv[1], 'rb').read().split(b'\n', 3)
+w = int(d[1].split()[0]); b = d[3]
+pts = [x for y in range(0, 380) for x in range(w) if min(b[(y * w + x) * 3:(y * w + x) * 3 + 3]) > 200]
+print(len(pts), sum(pts) // len(pts) if pts else -1)
+PY
+}
+	set -- $(prince "$ppd/still.ppm" 2>/dev/null) $(prince "$ppd/played.ppm" 2>/dev/null)
+	if [ $# -eq 4 ] && [ "$1" -gt 200 ] && [ "$3" -gt 200 ] && [ "$4" -ge $(($2 + 20)) ] \
+	   && [ -s "$ppd/wbx.dig" ] && cmp -s "$ppd/native.dig" "$ppd/wbx.dig" && cmp -s "$ppd/native.ram" "$ppd/wbx.ram"; then
+		report PASS "Prince of Persia: started and played" "from drive B under FreeDOS, no key for the BIOS; level 1; the right arrow runs the prince from x=$2 to x=$4; 9060 frames, sandbox == native"
+	else
+		report FAIL "Prince of Persia: started and played" "prince [$*]; see build/gate/pop"
 	fi
 fi
 

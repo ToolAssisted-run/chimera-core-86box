@@ -97,6 +97,12 @@ repository, never named beyond what the legs need:
   `PCBOX_ROMS` and `FREEDOS_FLOPPY`, the gate installs it inside DOS on the
   Pentium board and starts its first level, with the recompiler and with
   the interpreter.
+- `PCBOX_ALLEYCAT` and `PCBOX_POP`: the owner's Alley Cat disk (180 KB, it
+  starts by itself) and Prince of Persia disk (720 KB). With `PCBOX_ROMS`
+  (and `FREEDOS_FLOPPY` for Prince of Persia, whose disk does not start by
+  itself), the gate starts each and plays its first moves: Alley Cat on
+  the IBM PC (1982), Prince of Persia from drive B under FreeDOS on the
+  486 board. Each leg knows its disk by SHA-1.
 
 With `PCBOX_ROMS` the gate also runs the 486 and Pentium boards, both
 ways (interpreter and recompiler), natively and in the sandbox, and their

@@ -1,0 +1,11 @@
+# Prince of Persia (Jordan Mechner, Broderbund, 1990), from its 720 KB disk,
+# which does not start by itself: DOS comes from a FreeDOS floppy in drive A,
+# the game's disk is in drive B. tests/keys.py turns this into the runners'
+# --key options. The machine: the ASUS PCI/I-486SP3 (a 486DX2 at 66 MHz)
+# with its Award BIOS, which starts without F1 (the core writes its default
+# CMOS), 4 MB, IBM VGA, no sound card. FreeDOS's prompt by 2500.
+2500 type b:\n
+2600 type prince\n
+# The title by 5500; a key starts the game: the first level, with "60
+# MINUTES LEFT", by 7500.
+6000 key Enter 5

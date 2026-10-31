@@ -1,0 +1,10 @@
+# Alley Cat (Bill Williams, IBM, 1984): a disk that starts itself, no DOS.
+# tests/keys.py turns this into the runners' --key options. The machine: the
+# IBM PC (1982) with IBM's BIOS, 256 KB, CGA, a 5.25" 360 KB drive A with
+# the game's 180 KB disk. "Loading Alley Cat..." by 2500, the title by 4000.
+# A key at the title; no joystick (N); the skill level Kitten (K); a key to
+# start: the alley by 7400.
+4200 key Space 5
+5600 type n
+6100 type k
+7100 key Space 5

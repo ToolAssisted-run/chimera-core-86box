@@ -972,17 +972,55 @@ Not done:
   settings as their BIOS writes them, not BIOS code; the owner decided the
   core carries it.
 
-## 4. Where this stands (2026-10-31, fourth round)
+### 2026-10-31 (fifth round): Alley Cat and Prince of Persia, from the owner's disks
+
+The owner supplied two game disks for local tests (`PCBOX_ALLEYCAT`,
+`PCBOX_POP`; never in the repository, known to the gate by SHA-1).
+
+- **Alley Cat** (Bill Williams, IBM, 1984): a 180 KB single-sided disk that
+  starts by itself, with no DOS. An IBM PC game for CGA: run on the IBM PC
+  (1982) with IBM's BIOS, 256 KB, CGA, a 5.25" 360 KB drive A. "Loading
+  Alley Cat..." by frame 2500, the title by 4000; the movie
+  (`tests/games/alleycat.keys`) presses a key at the title, answers the
+  joystick question N, picks the skill level Kitten and starts: the alley by
+  7400. Held right for 60 frames from 7500 (`alleycat-play.keys`), the cat
+  runs from the left edge (x=16) to x=215, past the third bin; standing
+  still it stays there. 7600 frames, sandbox == native, stream and memory.
+  The cat is black like the bins' outlines, so the leg finds it where the two
+  runs' pictures differ along the alley's floor.
+- **Prince of Persia** (Jordan Mechner, Broderbund, 1990): the disk is a
+  DOS 3.3 data disk with the game's files and no system files (its boot
+  sector says "Non-System disk"), so DOS comes from a FreeDOS floppy the
+  gate makes, in drive A, and the game's disk is in a 3.5" 720 KB drive B.
+  On the ASUS PCI/I-486SP3 (486DX2 66, 4 MB, IBM VGA, no sound card), which
+  starts without F1 since the entry above. The movie (`pop.keys`) types
+  `b:` and `prince` at FreeDOS's prompt (2500); the VGA title by 5500;
+  Enter at 6000; the first level with "60 MINUTES LEFT" by 7500. Held right
+  for 40 frames from 9000 (`pop-play.keys`), the prince gets up and runs
+  along the first ledge: the middle of his white clothes from x=54 to
+  x=93. (Held for 100 frames he runs off the ledge into the room below.)
+  9060 frames, sandbox == native, stream and memory; 20 s natively, 23 s in
+  the sandbox.
+- **Broken on purpose:** with the moves taken out of both play files, both
+  legs fail (the cat is found nowhere, the prince stays at x=54). Without
+  the disks, both say SKIP and why.
+- **Gate** with all the owner's content: 47 passed, 0 failed, 0 skipped.
+- **Not tested**: either game past its first moves; their sound (none was
+  looked at; Prince of Persia ran with no sound card); a movie of either
+  through `chimera-run` or the window; Prince of Persia on an older
+  machine (the IBM AT) or with EGA or CGA.
+
+## 4. Where this stands (2026-10-31, fifth round)
 
 Local repository `~/chimera-cores/86box`, no remote, not published (the
 owner reviews first). Upstream 86Box v6.0 (`4fef696a`), nine patches.
 Tested against Chimera main `cb46d2b7` (`~/chimera-scratch-bump`). The gate
 (`waterbox/run-gate.sh`) with `XUB_SRC`, `FREE_BIOS_SRC`, `FREEDOS_FLOPPY`,
-`PCBOX_ROMS`, `PCBOX_KROZ` and `PCBOX_DOOM`: 44 passed, 0 failed, 0 skipped
-(about 17 minutes), on the fourth round's code. It was not run this round
-without the owner's content; the legs that need it say SKIP and why. `XUB_SRC`
-is needed by every build; without `FREE_BIOS_SRC` only the build, package
-and text legs run.
+`PCBOX_ROMS`, `PCBOX_KROZ`, `PCBOX_DOOM`, `PCBOX_ALLEYCAT` and `PCBOX_POP`:
+47 passed, 0 failed, 0 skipped (about 20 minutes), on the fifth round's code. It was not run this round without
+the owner's content; the legs that need it say SKIP and why (the two new
+game legs were seen to). `XUB_SRC` is needed by every build; without
+`FREE_BIOS_SRC` only the build, package and text legs run.
 
 **What works, and is tested**
 
@@ -999,58 +1037,59 @@ and text legs run.
   data, virtual time, native == sandbox, states, a project through
   `chimera-run`, the Qt window headless; FreeDOS from floppy and hard disk.
 - With the owner's ROM set (local only): the IBM PC (1981, 1982), XT and AT
-  with IBM's BIOS, each to its BIOS (memory counted, cassette BASIC) and to
-  FreeDOS from a 360 KB floppy, native == sandbox, with no key pressed on
-  any; MDA, Hercules, CGA, EGA and VGA with IBM's ROMs; all 28 declared ROM
-  files' SHA-1 pinned (the XT's "(Alt)" BIOS, whose file is not in the set,
-  is no longer offered and is refused by name).
-- The IBM AT's CMOS written from the settings at power-on (patch 0009): no
-  "161" stop, FreeDOS from a 1.44 MB floppy when the settings give it a
-  1.44 MB drive; the leg's control (the CMOS left empty) stops at 161.
-- Kingdom of Kroz II installed inside DOS with its own installer on the
-  IBM XT and played (first steps of level 1), native == sandbox; as a movie
-  through `chimera-run`, replayed in a new process, same memory.
-- The ASUS PCI/I-486SP3 and P/I-P55T2P4 with their Award BIOS, FreeDOS on
+  with IBM's BIOS, each to its BIOS and to FreeDOS from a 360 KB floppy,
+  native == sandbox, with no key pressed; MDA, Hercules, CGA, EGA and VGA
+  with IBM's ROMs; all 28 declared ROM files' SHA-1 pinned.
+- The CMOS written at power-on (patch 0009): the IBM AT's from the settings;
+  the two Award boards' from what their own BIOS writes when it loads its
+  defaults (`waterbox/award-cmos.h`, recorded by
+  `tools/record-award-cmos.py`, which the gate runs again and compares),
+  then the settings' bytes. No machine needs F1 any more; each control
+  (the CMOS left empty, the Award block left out) stops for it.
+- The ASUS PCI/I-486SP3 and P/I-P55T2P4 with their Award BIOS: FreeDOS on
   each with the interpreter and the recompiler, native == sandbox (patch
-  0008), states with the recompiler (57-58 MB each). Doom v1.9 shareware
-  installed inside DOS on the Pentium and started to E1M1, with the
-  recompiler and the interpreter; through `chimera-run` the exported disk
-  holds the installed game.
+  0008), states with the recompiler (57-58 MB each).
+- Four games, each native == sandbox: Kingdom of Kroz II installed inside
+  DOS on the IBM XT and played (and as a movie through `chimera-run`,
+  replayed in a new process); Doom v1.9 shareware installed on the Pentium
+  board and started to E1M1 with both CPU modes (and through
+  `chimera-run`); Alley Cat from its own disk on the IBM PC (1982), to the
+  alley and the cat's first run; Prince of Persia from its disk under
+  FreeDOS on the 486 board, to level 1 and the prince's first run.
 
 **Not tested, or not done** (each said where it is claimed)
 
-- GLaBIOS: the owner allowed building JWasm, but the build was refused by
-  this session's permission system ("GLaBIOS, still not built"). No GLaBIOS
-  leg exists.
-- The Award boards still wait for F1 once: their BIOS keeps its own settings
-  block with its own checksums, which the standard bytes do not cover ("the
-  CMOS, written from the settings"). Their legs and Doom's movie press F1.
-- The CMOS on an IBM AT with an MFM disk type (0x12 is always "none"), with
-  two floppy drives, with MDA or EGA, or with more than 640 KB: only one
-  drive, CGA and 512 KB were run, and the 360 KB and 1.44 MB drives.
-- Playing past the first steps of Kroz or the first frame of E1M1; any
-  sound in either game; any sound card but the AdLib.
-- The 486 and Pentium with more than 16 MB, other processors, EGA or a CD
-  on them; other boards with the recompiler.
+- GLaBIOS: still no JWasm. `build/tools/jwasm` did not exist this round,
+  and building it is refused by the permission system, so no GLaBIOS image
+  and no IBM PC or XT GLaBIOS leg.
+- On the 486 board a hard disk on its own IDE port is not found: its
+  BIOS's defaults say "Hard Disk Drive C: None" and it does not detect a
+  drive at start (it did not after F1 either). The Pentium board finds one.
+- The CMOS on an IBM AT with an MFM disk type, two floppy drives, MDA or
+  EGA, or more than 640 KB; the Award boards' other BIOS settings than
+  their defaults.
+- Playing any of the four games past its first moves; any game's sound;
+  any sound card but the AdLib; Alley Cat and Prince of Persia through
+  `chimera-run` or the window.
+- The 486 and Pentium with more than 16 MB, EGA or a CD; other boards with
+  the recompiler.
 - The sticks' axes; disc and disk swapping (only a slot's first file is in
   its drive); CD audio through a sound card's mixer.
 - Windows (the same package; the frontend test on Windows was not run).
 
 **Next, in order**
 
-1. The owner's questions: the Award boards' settings block (may the core
-   carry, per board, the bytes the BIOS writes when it loads its defaults,
-   as PCem ships its default CMOS files?), and a way to build JWasm that the
-   permission system allows (for example the owner running the one build
-   command, or a permission rule for it).
-2. GLaBIOS on the IBM PC and XT once JWasm is built (the steps are in "GLaBIOS,
-   not built").
-3. Publishing, when the owner has reviewed the core.
-4. Disk and disc swapping: the slot lists exist, the drives take only the
+1. GLaBIOS on the IBM PC and XT, once a built JWasm is in
+   `build/tools/jwasm` (the owner running the one build command, or a
+   permission rule for it; steps in "GLaBIOS, not built").
+2. Publishing, when the owner has reviewed the core.
+3. Disk and disc swapping: the slot lists exist, the drives take only the
    first file.
-5. More machines, each with a test; the threaded video cards (S3, ViRGE,
-   Voodoo, Matrox, Mach64) only after their command queues run in place.
-6. Windows: the frontend test's scenario on the Windows build.
+4. More machines, each with a test (an Award board is one row in the
+   recording tool's `BOARDS` and a recording); the threaded video cards
+   (S3, ViRGE, Voodoo, Matrox, Mach64) only after their command queues run
+   in place.
+5. Windows: the frontend test's scenario on the Windows build.
 
 **Traps hit** (so the next person does not)
 
@@ -1087,7 +1126,11 @@ and text legs run.
   Error"; press it when the BIOS asks. (The AT no longer needs F1: its CMOS
   is written at power-on.)
 - An Award BIOS checks more than the standard CMOS checksum: right bytes at
-  0x10-0x2D are not enough to stop "CMOS checksum error".
+  0x10-0x2D are not enough to stop "CMOS checksum error". And it keeps its
+  own defaults in standard bytes too: "no fixed disk" at 0x19-0x1A hid the
+  Pentium board's hard disk, whose BIOS default there is "detect".
+- A game disk that looks like a boot disk may not be one: Prince of
+  Persia's has a DOS boot sector and no system files.
 - The recompiler: a block's end depends on the length of the host code it
   emits; any choice of encoding by address makes the sandbox another
   machine (patch 0008). The source list must not take `codegen_new` too.
