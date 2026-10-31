@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "Den här maskinen har inget BIOS som heter %1. Den har: %2",
 		"error.cpu_not_taken": "Den här maskinen tar inte processorn %1. Den tar: %2",
 		"error.device_needs_thread": "En del av maskinen (%1) behöver en egen tråd, och den här kärnan har inte den delen ännu.",
+		"error.hdc_not_taken": "Den här maskinen tar inte hårddiskstyrenheten %1. Den tar: %2",
+		"error.hdd_needs_controller": "Projektet har en hårddisk (%1), men maskinen har ingen hårddiskstyrenhet: välj en i inställningarna.",
 		"error.mouse_not_taken": "Den här maskinen tar inte musen %1. Den tar: %2",
 		"error.no_frame_buffer": "Det finns inget utrymme för bilden.",
 		"error.no_such_machine": "Den här kärnan har ingen maskin som heter %1.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "IBM:s tecken-ROM: %1",
 		"firmware.font_rom.about": "Formerna som CGA-, MDA- och Hercules-kort ritar text med. Det är filen %1 i 86Box ROM-samling, som du själv tillhandahåller. Utan den förblir skärmen tom.",
+		"firmware.hdc_rom": "%1 ROM: %2",
+		"firmware.hdc_rom.about": "ROM:en till hårddiskstyrenheten %1. Det är filen %2 i 86Box ROM-samling, som du själv tillhandahåller.",
 		"firmware.machine_rom": "%1 ROM: %2",
 		"firmware.machine_rom.about": "En ROM till %1. Det är filen %2 i 86Box ROM-samling, som du själv tillhandahåller.",
 		"firmware.video_rom": "%1 ROM: %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "En matematisk samprocessor (FPU) bredvid processorn: en 8087 till en 8088, en 287 till en 286. 'none' är en maskin som såldes utan. Den är en del av maskinen, så en film behöver samma värde.",
 		"setting.framespersecond": "Bilder per sekund",
 		"setting.framespersecond.about": "Hur mycket av maskinens tid en bild är: 100 gör en bild 10 ms lång, som i PCem-filmer. Det är en del av filmen: samma indata i en annan takt ger en annan körning.",
+		"setting.harddiskcontroller": "Hårddiskstyrenhet",
+		"setting.harddiskcontroller.about": "Kortet som hårddisken sitter på. XTIDE-korten bär XTIDE Universal BIOS, som tar en disk av vilken storlek som helst: 'PC/XT XTIDE' för en 8-bitarsmaskin som en XT, 'PC/AT XTIDE' för en AT. Varje kort behöver sin ROM-fil. Ett projekt med en hårddisk behöver en. Den är en del av maskinen, så en film behöver samma värde.",
 		"setting.joystick": "Styrspak",
 		"setting.joystick.about": "Det som är anslutet till spelporten. Den är en del av maskinen, så en film behöver samma värde.",
 		"setting.machine": "Maskin",
@@ -44,8 +50,10 @@
 		"setting.video": "Grafikkort",
 		"setting.video.about": "Grafikkortet. CGA, MDA och Hercules ritar text med IBM:s tecken-ROM; EGA och VGA har ett eget BIOS. Varje kort behöver sin ROM-fil. Den är en del av maskinen, så en film behöver samma värde.",
 		"slot.floppy_a": "Disketter (enhet A:)",
-		"slot.floppy_a.help": "Diskettavbilder för enhet A:. Den första sitter i enheten när maskinen startar. Disketterna är skrivskyddade: ett program kan inte skriva till dem ännu.",
+		"slot.floppy_a.help": "Diskettavbilder för enhet A:. Den första sitter i enheten när maskinen startar. Dina filer ändras aldrig: det maskinen skriver stannar i dess minne och i dess tillstånd.",
 		"slot.floppy_b": "Disketter (enhet B:)",
-		"slot.floppy_b.help": "Diskettavbilder för enhet B:. Den fungerar som enhet A:. Inställningen Diskettenhet B: får inte vara 'none'."
+		"slot.floppy_b.help": "Diskettavbilder för enhet B:. Den fungerar som enhet A:. Inställningen Diskettenhet B: får inte vara 'none'.",
+		"slot.hdd": "Hårddisk",
+		"slot.hdd.help": "En hårddiskavbild (en rå avbild), på styrenheten som valts i inställningen Hårddiskstyrenhet. Din fil ändras aldrig: det maskinen skriver stannar i dess minne och i dess tillstånd. Diskens cylindrar, huvuden och sektorer räknas ut från filens storlek."
 	}
 }

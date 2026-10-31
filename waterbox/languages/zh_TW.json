@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "這台機器沒有名為 %1 的 BIOS。它有：%2",
 		"error.cpu_not_taken": "這台機器不能裝處理器 %1。它能裝：%2",
 		"error.device_needs_thread": "這台機器的一個部件（%1）需要自己的執行緒，而此核心還沒有這個部件。",
+		"error.hdc_not_taken": "這台機器不能裝硬碟控制器 %1。它能裝：%2",
+		"error.hdd_needs_controller": "專案裡有硬碟（%1），但機器沒有硬碟控制器：請在設定中選一個。",
 		"error.mouse_not_taken": "這台機器不能接滑鼠 %1。它能接：%2",
 		"error.no_frame_buffer": "沒有空間存放畫面。",
 		"error.no_such_machine": "此核心中沒有名為 %1 的機器。",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "IBM 字元 ROM：%1",
 		"firmware.font_rom.about": "CGA、MDA 和 Hercules 卡用來繪製文字的字形。它是由你提供的 86Box ROM 集中的檔案 %1。沒有它螢幕會保持空白。",
+		"firmware.hdc_rom": "%1 ROM：%2",
+		"firmware.hdc_rom.about": "硬碟控制器 %1 的 ROM。它是由你提供的 86Box ROM 集中的檔案 %2。",
 		"firmware.machine_rom": "%1 ROM：%2",
 		"firmware.machine_rom.about": "%1 的一個 ROM。它是由你提供的 86Box ROM 集中的檔案 %2。",
 		"firmware.video_rom": "%1 ROM：%2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "處理器旁邊的數學輔助處理器（FPU）：8088 配 8087，286 配 287。'none' 表示出售時不帶它的機器。它是機器的一部分，所以錄像需要相同的值。",
 		"setting.framespersecond": "每秒影格數",
 		"setting.framespersecond.about": "一個影格是機器的多少時間：100 表示一個影格為 10 毫秒，與 PCem 錄像相同。它是錄像的一部分：同樣的輸入換一個速率會得到不同的過程。",
+		"setting.harddiskcontroller": "硬碟控制器",
+		"setting.harddiskcontroller.about": "硬碟所接的卡。XTIDE 卡帶有能接受任意大小磁碟的 XTIDE Universal BIOS：XT 這類 8 位元機器用 'PC/XT XTIDE'，AT 用 'PC/AT XTIDE'。每種都需要它的 ROM 檔案。帶硬碟的專案需要一個。它是機器的一部分，所以錄像需要相同的值。",
 		"setting.joystick": "搖桿",
 		"setting.joystick.about": "接在遊戲連接埠上的裝置。它是機器的一部分，所以錄像需要相同的值。",
 		"setting.machine": "機器",
@@ -44,8 +50,10 @@
 		"setting.video": "顯示卡",
 		"setting.video.about": "圖形卡。CGA、MDA 和 Hercules 用 IBM 字元 ROM 繪製文字；EGA 和 VGA 有自己的 BIOS。每種都需要它的 ROM 檔案。它是機器的一部分，所以錄像需要相同的值。",
 		"slot.floppy_a": "軟碟（磁碟機 A:）",
-		"slot.floppy_a.help": "用於磁碟機 A: 的磁碟映像。機器啟動時第一個在磁碟機中。磁碟是唯讀的：程式暫時還不能寫入。",
+		"slot.floppy_a.help": "用於磁碟機 A: 的磁碟映像。機器啟動時第一個在磁碟機中。你的檔案永遠不會被更動：機器寫入的內容留在它的記憶體和它的狀態中。",
 		"slot.floppy_b": "軟碟（磁碟機 B:）",
-		"slot.floppy_b.help": "用於磁碟機 B: 的磁碟映像。它與磁碟機 A: 的運作方式相同。設定「軟碟機 B:」不能為 'none'。"
+		"slot.floppy_b.help": "用於磁碟機 B: 的磁碟映像。它與磁碟機 A: 的運作方式相同。設定「軟碟機 B:」不能為 'none'。",
+		"slot.hdd": "硬碟",
+		"slot.hdd.help": "接在「硬碟控制器」設定所選控制器上的硬碟映像（原始映像）。你的檔案永遠不會被更動：機器寫入的內容留在它的記憶體和它的狀態中。磁碟的磁柱、磁頭和磁區由檔案大小推算。"
 	}
 }

@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "Deze machine heeft geen BIOS dat %1 heet. Ze heeft: %2",
 		"error.cpu_not_taken": "Deze machine neemt de processor %1 niet. Ze neemt: %2",
 		"error.device_needs_thread": "Een deel van deze machine (%1) heeft een eigen thread nodig, en deze core heeft dat deel nog niet.",
+		"error.hdc_not_taken": "Deze machine neemt de harde-schijfcontroller %1 niet. Ze neemt: %2",
+		"error.hdd_needs_controller": "Het project heeft een harde schijf (%1), maar de machine heeft geen harde-schijfcontroller: kies er een in de instellingen.",
 		"error.mouse_not_taken": "Deze machine neemt de muis %1 niet. Ze neemt: %2",
 		"error.no_frame_buffer": "Er is geen ruimte voor het beeld.",
 		"error.no_such_machine": "Deze core heeft geen machine die %1 heet.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "IBM-tekenset-ROM: %1",
 		"firmware.font_rom.about": "De vormen waarmee CGA-, MDA- en Hercules-kaarten tekst tekenen. Het is het bestand %1 uit de ROM-set van 86Box, die u zelf levert. Zonder dit blijft het scherm leeg.",
+		"firmware.hdc_rom": "%1 ROM: %2",
+		"firmware.hdc_rom.about": "De ROM van de harde-schijfcontroller %1. Het is het bestand %2 uit de ROM-set van 86Box, die u zelf levert.",
 		"firmware.machine_rom": "%1 ROM: %2",
 		"firmware.machine_rom.about": "Een ROM van de %1. Het is het bestand %2 uit de ROM-set van 86Box, die u zelf levert.",
 		"firmware.video_rom": "%1 ROM: %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "Een wiskundige coprocessor (FPU) naast de processor: een 8087 bij een 8088, een 287 bij een 286. 'none' is een machine die zonder werd verkocht. Het hoort bij de machine, dus een film heeft dezelfde waarde nodig.",
 		"setting.framespersecond": "Beelden per seconde",
 		"setting.framespersecond.about": "Hoeveel tijd van de machine één beeld is: 100 maakt een beeld 10 ms lang, zoals in PCem-films. Het hoort bij de film: dezelfde invoer met een ander tempo geeft een andere run.",
+		"setting.harddiskcontroller": "Harde-schijfcontroller",
+		"setting.harddiskcontroller.about": "De kaart waar de harde schijf op zit. De XTIDE-kaarten hebben de XTIDE Universal BIOS, die een schijf van elke grootte neemt: 'PC/XT XTIDE' voor een 8-bitsmachine zoals een XT, 'PC/AT XTIDE' voor een AT. Elke kaart heeft haar ROM-bestand nodig. Een project met een harde schijf heeft er een nodig. Het hoort bij de machine, dus een film heeft dezelfde waarde nodig.",
 		"setting.joystick": "Joystick",
 		"setting.joystick.about": "Wat op de gamepoort is aangesloten. Het hoort bij de machine, dus een film heeft dezelfde waarde nodig.",
 		"setting.machine": "Machine",
@@ -44,8 +50,10 @@
 		"setting.video": "Videokaart",
 		"setting.video.about": "De grafische kaart. CGA, MDA en Hercules tekenen tekst met de tekenset-ROM van IBM; EGA en VGA hebben een eigen BIOS. Elke kaart heeft haar ROM-bestand nodig. Het hoort bij de machine, dus een film heeft dezelfde waarde nodig.",
 		"slot.floppy_a": "Diskettes (station A:)",
-		"slot.floppy_a.help": "Schijfkopieën voor station A:. De eerste zit in het station wanneer de machine start. De schijven zijn alleen-lezen: een programma kan er nog niet op schrijven.",
+		"slot.floppy_a.help": "Schijfkopieën voor station A:. De eerste zit in het station wanneer de machine start. Uw bestanden worden nooit veranderd: wat de machine schrijft, blijft in haar geheugen en in haar standen.",
 		"slot.floppy_b": "Diskettes (station B:)",
-		"slot.floppy_b.help": "Schijfkopieën voor station B:. Het werkt net als station A:. De instelling Diskettestation B: mag niet 'none' zijn."
+		"slot.floppy_b.help": "Schijfkopieën voor station B:. Het werkt net als station A:. De instelling Diskettestation B: mag niet 'none' zijn.",
+		"slot.hdd": "Harde schijf",
+		"slot.hdd.help": "Een kopie van een harde schijf (een ruwe kopie), op de controller die in de instelling Harde-schijfcontroller is gekozen. Uw bestand wordt nooit veranderd: wat de machine schrijft, blijft in haar geheugen en in haar standen. De cilinders, koppen en sectoren van de schijf worden uit de grootte van het bestand bepaald."
 	}
 }

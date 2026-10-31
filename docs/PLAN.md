@@ -328,3 +328,47 @@ rather than all 500.
   pixels).
 - The window needs the Qt it was built with on `LD_LIBRARY_PATH` here
   (`~/qt/6.12.0/gcc_64/lib`); the gate passes the environment through.
+
+### 2026-10-31: disks the machine writes, and a hard disk
+
+- **Writable disks over read-only files** (`waterbox/chimera-overlay.c`). A
+  disk image 86Box opens for update gets a stdio stream (fopencookie, which
+  glibc and musl both have) whose writes are kept in the machine's memory,
+  4 KiB blocks copied from the file on first write; everything else reads
+  from the file. The user's file is never changed, a state carries what was
+  written, and a large image costs nothing until written. An overlay
+  belongs to its file's name for the session, so 86Box closing and
+  reopening an image (a hard reset, a disk swapped back) finds the writes.
+  Floppies are no longer write-protected.
+- **A hard disk**: a slot (`hdd`, raw images), and a setting for its
+  controller, the XT-IDE cards with the XTIDE Universal BIOS (`xtide` for an
+  8-bit machine, `xtide_at_1ch` for an AT), which take any geometry and need
+  nothing from the machine's BIOS. The geometry is worked out from the
+  image's size (the first usual shape that divides it). A hard disk with no
+  controller is refused by name.
+- **Tested on the free PC without the card's BIOS.** The XTIDE Universal
+  BIOS in the free 8088 BIOS's repository (r625) loads ("Found BIOS
+  extension ROM at D0000") but reports "Master at 300h: not found" with
+  86Box's XT-IDE card: its default build is not configured for the card's
+  register layout, and the configured builds there are for other cards. So
+  the probe drives the card's registers itself (an 8-bit XT-IDE rev 1: data
+  high byte at +8), the gate gives the card 8 KB of zeros as its ROM, and the
+  probe writes "HD" to sector 2 and reads it back. The probe became a loader
+  in the boot sector and a program in sectors 3 to 9; it no longer fit in
+  one sector.
+- **Floppies keep their writes in 86Box's own buffers too**: 86Box reads a
+  track into memory and writes sectors back to the file, so for a floppy
+  the overlay matters when the image is opened again, not between a write
+  and a read. The hard disk reads its file every time, so it shows the
+  overlay: with the written blocks put on purpose in memory no state
+  carries, the state of frame 1150 loaded in another process read sector 2
+  of the hard disk back as 0000 instead of "HD" (the session leg failed);
+  as built it reads "HD".
+- **Measured.** Gate, 26 passed, 0 failed, 1 skipped (FreeDOS, no floppy
+  given this run): the floppy write and read succeed and read "WR"; the hard
+  disk reads "HD" with status 50h; both files are unchanged afterwards; the
+  sandbox, state and engine legs now run with the hard disk (the engine leg
+  through a project's `hdd` slot). Texts: 55 keys, 26 languages.
+- **Not tested**: a hard disk through the XTIDE Universal BIOS (needs a
+  build configured for 86Box's card: 86Box's ROM set has one), any
+  operating system installed on or booted from a hard disk, the AT card.

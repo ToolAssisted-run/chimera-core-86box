@@ -21,11 +21,20 @@ const char *chimera_flat_name_ex(const char *path, char *out, size_t outsz, int 
 extern char chimera_thread_refused[128];
 extern char chimera_first_message[512];
 
+/* writable disks over read-only files (chimera-overlay.c) */
+FILE *chimera_overlay_open(const char *name);
+int chimera_overlay_count(void);
+const char *chimera_overlay_name(int i);
+int64_t chimera_overlay_size(int i);
+int64_t chimera_overlay_blocks(int i);
+int64_t chimera_overlay_read(int i, int64_t offset, uint8_t *out, int64_t len);
+
 /* the guest interface */
 extern uint64_t chimera_ms;           /* milliseconds of machine time run */
 extern int chimera_powered_off;
 FILE *chimera_cfg_open(void);
 void chimera_file_opened(const char *name, int rom, int found);
+void chimera_file_asked(const char *name, int rom, int found);
 void chimera_drive_activity(int tag, int active);
 
 /* the controller (chimera-input.c); the axes in the declaration's order */

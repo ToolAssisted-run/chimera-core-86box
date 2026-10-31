@@ -68,11 +68,11 @@ plat_joystick_state_t plat_joystick_state[MAX_PLAT_JOYSTICKS];
  *    files called bios.bin, so the folders have to stay in the name);
  *  - anything else is its last path element: a disk image a slot named.
  *
- * Nothing is ever opened for writing: the frontend mounts every file
+ * Nothing is ever written to a file: the frontend mounts every file
  * read-only, and the native reference must answer as the sandbox does. A
- * file 86Box would write (its CMOS file, its configuration) is simply not
- * written; what the machine changes stays in its memory, which is what a
- * state carries. */
+ * disk image opened for update ("rb+") gets a stream whose writes stay in
+ * the machine's memory (chimera-overlay.c); a file 86Box would create or
+ * replace (its CMOS file, its configuration) is simply not written. */
 
 const char *chimera_flat_name(const char *path, char *out, size_t outsz)
 {
@@ -116,6 +116,15 @@ FILE *plat_fopen(const char *path, const char *mode)
 	if (!strcmp(name, CHIMERA_CFG_NAME))
 		return writes(mode) ? NULL : chimera_cfg_open();
 	if (writes(mode)) {
+		/* a disk image the machine may write: its writes are kept in
+		 * memory over the file (chimera-overlay.c); anything else 86Box
+		 * would write (its configuration, the CMOS file) is not written */
+		if (!rom && !strchr(mode, 'w') && !strchr(mode, 'a')) {
+			FILE *f = chimera_overlay_open(name);
+			chimera_file_opened(name, rom, f != NULL);
+			if (f)
+				return f;
+		}
 		errno = EACCES;
 		return NULL;
 	}
@@ -144,9 +153,17 @@ int plat_chdir(char *path) { (void)path; return 0; }
  * else is a file. */
 int plat_dir_check(char *path) { return path && path[0] && path[strlen(path) - 1] == '/'; }
 
+/* "is it there?" - a question, not a read: a machine asks it of every ROM
+ * file of every BIOS it could have (rom_present) */
 int plat_file_check(const char *path)
 {
-	FILE *f = plat_fopen(path, "rb");
+	char name[1024];
+	int rom = 0;
+	chimera_flat_name_ex(path, name, sizeof name, &rom);
+	if (!strcmp(name, CHIMERA_CFG_NAME))
+		return 1;
+	FILE *f = name[0] ? fopen(name, "rb") : NULL;
+	chimera_file_asked(name, rom, f != NULL);
 	if (!f)
 		return 0;
 	fclose(f);

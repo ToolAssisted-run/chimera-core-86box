@@ -110,12 +110,18 @@ if ! sh "$root/tests/boot-probe/build.sh" "$work/probe" > "$work/probe.log" 2>&1
 	finish
 fi
 report PASS "free PC: the BIOS and the probe floppy build" "$(tail -1 "$work/free-bios.log" | cut -d, -f1-2)"
+# A hard disk for the probe: 10 MB of zeros (306 cylinders, 4 heads, 17
+# sectors), on an XT-IDE card. The probe drives the card's registers itself,
+# so the card's own BIOS is not needed: the gate gives it 8 KB of zeros,
+# which the machine's BIOS passes over (no 55AA). Both are the gate's own.
+python3 -c "import sys; open(sys.argv[1], 'wb').write(bytes(306 * 4 * 17 * 512))" "$work/hdd10.img"
+head -c 8192 /dev/zero > "$roms/hdd_xtide_ide_xt.bin"
 
 # (a setting given twice is read as the first: a leg that needs another value
 # starts from $xi_base)
-xi_base="--roms $roms --set machine=xi8088 --set video=cga --set memoryKB=640 --set floppyA=525_2dd --set mouse=msserial --set joystick=2axis_2button"
+xi_base="--roms $roms --set machine=xi8088 --set video=cga --set memoryKB=640 --set floppyA=525_2dd --set mouse=msserial --set joystick=2axis_2button --set hardDiskController=xtide"
 xi="$xi_base --set sound=adlib"
-probe="--file floppy_a=$work/probe/probe.img"
+probe="--file floppy_a=$work/probe/probe.img --file hdd=$work/hdd10.img"
 # the probe's run: the key A (button 29) held at frame 1200, the mouse moved
 # 30 to the right at 1300 and its position moved at 1350 - so every leg that
 # compares the probe's run compares a machine that was given input
@@ -164,6 +170,7 @@ fi
 # The probe: it booted, it found the BIOS timer running, and its block is
 # in the machine's memory where the gate reads it.
 native_run $xi $probe $input --frames 1500 --dump-ram "$work/probe-native.ram" --digests "$work/probe-native.dig" > "$work/probe-native.txt"
+probe_dir="$work/n$n"
 ticks=$(word_at "$work/probe-native.ram" 7e00 2>/dev/null || echo 0)
 if [ "$(dd if="$work/probe-native.ram" bs=1 skip=$((0x7e06)) count=4 2>/dev/null)" = "PRB1" ] && [ "${ticks:-0}" -gt 50 ]; then
 	report PASS "native: the probe floppy boots and runs" "$ticks timer ticks counted by frame 1500"
@@ -216,10 +223,35 @@ else
 	report FAIL "input: joystick buttons reach the game port" "port 0x201: idle $j_idle, held $j (wanted 240 and 96)"
 fi
 lag_idle=$(sed -n 's/.*inputFrames=\([0-9]*\).*/\1/p' "$work/idle.txt"); lag=$(sed -n 's/.*inputFrames=\([0-9]*\).*/\1/p' "$work/probe-native.txt")
-if [ -n "$lag_idle" ] && [ "$lag_idle" -lt "$lag" ] && [ "$lag" -lt 200 ]; then
+# The probe reads the game port once a timer tick (and wakes for each key),
+# so most of its 1500 frames read no control: those are lag frames. (A key
+# wakes the probe, which reads the game port in that same frame, so the run
+# with input need not have more frames read than the idle one.)
+if [ -n "$lag_idle" ] && [ "$lag_idle" -gt 0 ] && [ "$lag_idle" -lt 300 ] && [ "$lag" -ge "$lag_idle" ] && [ "$lag" -lt 300 ]; then
 	report PASS "input: frames nobody read are lag frames" "frames that read a control: idle $lag_idle, with input $lag, of 1500"
 else
 	report FAIL "input: frames nobody read are lag frames" "idle ${lag_idle:-?}, with input ${lag:-?}"
+fi
+
+# ------------------------------------------------------------ 3a. disks
+# The probe writes "WR" and the timer to sector 2 of its floppy at start,
+# and "HD" to sector 2 of the hard disk, and reads both back (again after
+# every key). The frontend mounts files read-only; the core keeps what the
+# machine writes in the machine's memory (waterbox/chimera-overlay.c), so
+# the writes succeed, read back, and the files are the same files
+# afterwards. That the written blocks are in a state is the session leg's to
+# show: the state of frame 1150, after the writes, is loaded in another
+# process, and the key at 1200 reads the hard disk's sector again.
+before=$(sha1sum < "$work/probe/probe.img"); hd_before=$(sha1sum < "$work/hdd10.img")
+hd_status=$(od -An -tu1 -j $((0x7e16)) -N1 "$work/probe-native.ram" | tr -d ' '); hd_word=$(word_at "$work/probe-native.ram" 7e18)
+w_status=$(word_at "$work/probe-native.ram" 7e14); w_word=$(word_at "$work/probe-native.ram" 7e10); r_status=$(word_at "$work/probe-native.ram" 7e12)
+if [ "$w_status" = 1 ] && [ "$r_status" = 1 ] && [ "$w_word" = $((0x5257)) ] && [ "$(sha1sum < "$work/probe/probe.img")" = "$before" ] \
+   && [ "$(sha1sum < "$probe_dir/probe.img")" = "$before" ] \
+   && [ "$hd_status" = $((0x50)) ] && [ "$hd_word" = $((0x4448)) ] && [ "$(sha1sum < "$work/hdd10.img")" = "$hd_before" ] \
+   && [ "$(sha1sum < "$probe_dir/hdd10.img")" = "$hd_before" ]; then
+	report PASS "disks: sectors written read back" "floppy: BIOS write and read, 'WR'; hard disk: written and read on the card, 'HD', status 50h; both files unchanged"
+else
+	report FAIL "disks: sectors written read back" "floppy write AX=$w_status, read AX=$r_status, word=$w_word; hard disk status=$hd_status word=$hd_word"
 fi
 
 # ------------------------------------------------------------ 3b. sound
@@ -284,10 +316,10 @@ if grep -q '^end ' "$work/stale.txt" && [ "$(tail -1 "$work/stale.txt")" != "$(t
 else
 	report FAIL "states: a stale state is noticed" "it was not: the leg above is blind"
 fi
-"$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --save-state "$work/s900.state" --at 900 > "$work/session1.txt" 2>&1
-"$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --state "$work/s900.state" > "$work/session2.txt" 2> "$work/session2.err"
+"$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --save-state "$work/s1150.state" --at 1150 > "$work/session1.txt" 2>&1
+"$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --state "$work/s1150.state" > "$work/session2.txt" 2> "$work/session2.err"
 if [ "$(tail -1 "$work/session2.txt")" = "$(tail -1 "$work/probe-wbx.txt")" ]; then
-	report PASS "states: another process carries on from a state" "saved at frame 900, ends as the straight run at 1500"
+	report PASS "states: another process carries on from a state" "saved at frame 1150, ends as the straight run at 1500"
 else
 	report FAIL "states: another process carries on from a state" "see build/gate/session*"
 fi
@@ -329,18 +361,21 @@ crun="$chimera_root/build/dll/chimera-run"
 if [ ! -x "$crun" ]; then
 	report SKIP "a project runs through the engine" "no chimera-run at $crun"
 else
-	pj="$work/project"; mkdir -p "$pj"; cp "$work/probe/probe.img" "$pj/"
+	pj="$work/project"; mkdir -p "$pj"; cp "$work/probe/probe.img" "$work/hdd10.img" "$pj/"
 	python3 "$here/tests/make-movie.py" "$pkg" 1500 --key 1200:5:29 > "$pj/movie.txt"
-	fwb=machines_xi8088_bios-xi8088-128k.bin; fwf=video_mda_mda.rom
-	if "$crun" --new-project "$pj/p.chimeraProject" "$pkg" --file "floppy_a=$pj/probe.img" --movie "$pj/movie.txt" \
-		--settings '{"machine": "xi8088 - [8088] Xi8088", "video": "cga - IBM CGA", "memoryKB": 640, "sound": "adlib - AdLib"}' \
-		--firmware "$fwb=$roms/$fwb" --firmware "$fwf=$roms/$fwf" > "$pj/make.log" 2>&1 \
+	fwb=machines_xi8088_bios-xi8088-128k.bin; fwf=video_mda_mda.rom; fwh=hdd_xtide_ide_xt.bin
+	if "$crun" --new-project "$pj/p.chimeraProject" "$pkg" --file "floppy_a=$pj/probe.img" --file "hdd=$pj/hdd10.img" \
+		--movie "$pj/movie.txt" \
+		--settings '{"machine": "xi8088 - [8088] Xi8088", "video": "cga - IBM CGA", "memoryKB": 640, "sound": "adlib - AdLib", "hardDiskController": "xtide - PC/XT XTIDE"}' \
+		--firmware "$fwb=$roms/$fwb" --firmware "$fwf=$roms/$fwf" --firmware "$fwh=$roms/$fwh" > "$pj/make.log" 2>&1 \
 	   && "$crun" --project "$pj/p.chimeraProject" "$pkg" --firmware "$fwb=$roms/$fwb" --firmware "$fwf=$roms/$fwf" \
-		--frames 1500 --dump "System RAM=$pj/engine.ram" > "$pj/run.log" 2>&1; then
+		--firmware "$fwh=$roms/$fwh" --frames 1500 --dump "System RAM=$pj/engine.ram" > "$pj/run.log" 2>&1; then
 		"$rw" "$wbx" "$cfg" --roms "$roms" --set machine=xi8088 --set video=cga --set memoryKB=640 --set sound=adlib \
-			--file "floppy_a=$pj/probe.img" --frames 1500 --key 1200:5:29 --dump-ram "$pj/wbx.ram" > /dev/null 2>&1
-		if cmp -s "$pj/engine.ram" "$pj/wbx.ram" && [ "$(word_at "$pj/engine.ram" 7e02)" = 1 ]; then
-			report PASS "a project runs through the engine" "chimera-run --project: 1500 frames, the memory is the sandbox runner's, A read"
+			--set hardDiskController=xtide --file "floppy_a=$pj/probe.img" --file "hdd=$pj/hdd10.img" \
+			--frames 1500 --key 1200:5:29 --dump-ram "$pj/wbx.ram" > /dev/null 2>&1
+		if cmp -s "$pj/engine.ram" "$pj/wbx.ram" && [ "$(word_at "$pj/engine.ram" 7e02)" = 1 ] \
+		   && [ "$(word_at "$pj/engine.ram" 7e18)" = $((0x4448)) ]; then
+			report PASS "a project runs through the engine" "chimera-run --project: floppy and hard disk slots, 1500 frames, the memory is the sandbox runner's, A read, 'HD' read back"
 		else
 			report FAIL "a project runs through the engine" "the memory differs from the sandbox runner's (see build/gate/project)"
 		fi

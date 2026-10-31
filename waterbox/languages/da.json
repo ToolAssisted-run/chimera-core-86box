@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "Denne maskine har intet BIOS, der hedder %1. Den har: %2",
 		"error.cpu_not_taken": "Denne maskine tager ikke processoren %1. Den tager: %2",
 		"error.device_needs_thread": "En del af denne maskine (%1) skal have sin egen tråd, og denne kerne har ikke den del endnu.",
+		"error.hdc_not_taken": "Denne maskine tager ikke harddiskcontrolleren %1. Den tager: %2",
+		"error.hdd_needs_controller": "Projektet har en harddisk (%1), men maskinen har ingen harddiskcontroller: vælg en i indstillingerne.",
 		"error.mouse_not_taken": "Denne maskine tager ikke musen %1. Den tager: %2",
 		"error.no_frame_buffer": "Der er ikke plads til billedet.",
 		"error.no_such_machine": "Denne kerne har ingen maskine, der hedder %1.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "IBMs tegn-ROM: %1",
 		"firmware.font_rom.about": "De former, som CGA-, MDA- og Hercules-kort tegner tekst med. Det er filen %1 fra 86Box ROM-samlingen, som du selv leverer. Uden den forbliver skærmen tom.",
+		"firmware.hdc_rom": "%1 ROM: %2",
+		"firmware.hdc_rom.about": "ROM til harddiskcontrolleren %1. Det er filen %2 fra 86Box ROM-samlingen, som du selv leverer.",
 		"firmware.machine_rom": "%1 ROM: %2",
 		"firmware.machine_rom.about": "En ROM til %1. Det er filen %2 fra 86Box ROM-samlingen, som du selv leverer.",
 		"firmware.video_rom": "%1 ROM: %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "En matematisk coprocessor (FPU) ved siden af processoren: en 8087 til en 8088, en 287 til en 286. 'none' er en maskine, der blev solgt uden. Den er en del af maskinen, så en film skal have den samme værdi.",
 		"setting.framespersecond": "Billeder pr. sekund",
 		"setting.framespersecond.about": "Hvor meget af maskinens tid ét billede er: 100 gør et billede 10 ms langt, som i PCem-film. Det er en del af filmen: de samme input i et andet tempo giver et andet forløb.",
+		"setting.harddiskcontroller": "Harddiskcontroller",
+		"setting.harddiskcontroller.about": "Det kort, harddisken sidder på. XTIDE-kortene har XTIDE Universal BIOS, som tager en disk af enhver størrelse: 'PC/XT XTIDE' til en 8-bit-maskine som en XT, 'PC/AT XTIDE' til en AT. Hvert kort skal have sin ROM-fil. Et projekt med en harddisk skal have en. Den er en del af maskinen, så en film skal have den samme værdi.",
 		"setting.joystick": "Joystick",
 		"setting.joystick.about": "Det, der er sluttet til spilporten. Den er en del af maskinen, så en film skal have den samme værdi.",
 		"setting.machine": "Maskine",
@@ -44,8 +50,10 @@
 		"setting.video": "Grafikkort",
 		"setting.video.about": "Grafikkortet. CGA, MDA og Hercules tegner tekst med IBMs tegn-ROM; EGA og VGA har deres eget BIOS. Hvert kort skal have sin ROM-fil. Den er en del af maskinen, så en film skal have den samme værdi.",
 		"slot.floppy_a": "Disketter (drev A:)",
-		"slot.floppy_a.help": "Disketteaftryk til drev A:. Det første sidder i drevet, når maskinen starter. Disketterne er skrivebeskyttede: et program kan endnu ikke skrive på dem.",
+		"slot.floppy_a.help": "Disketteaftryk til drev A:. Det første sidder i drevet, når maskinen starter. Dine filer ændres aldrig: det, maskinen skriver, bliver i dens hukommelse og i dens tilstande.",
 		"slot.floppy_b": "Disketter (drev B:)",
-		"slot.floppy_b.help": "Disketteaftryk til drev B:. Det virker som drev A:. Indstillingen Diskettedrev B: må ikke være 'none'."
+		"slot.floppy_b.help": "Disketteaftryk til drev B:. Det virker som drev A:. Indstillingen Diskettedrev B: må ikke være 'none'.",
+		"slot.hdd": "Harddisk",
+		"slot.hdd.help": "Et harddiskaftryk (et råt aftryk) på den controller, der er valgt i indstillingen Harddiskcontroller. Din fil ændres aldrig: det, maskinen skriver, bliver i dens hukommelse og i dens tilstande. Diskens cylindre, hoveder og sektorer udregnes ud fra filens størrelse."
 	}
 }

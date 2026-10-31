@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "这台机器没有名为 %1 的 BIOS。它有：%2",
 		"error.cpu_not_taken": "这台机器不能装处理器 %1。它能装：%2",
 		"error.device_needs_thread": "这台机器的一个部件（%1）需要自己的线程，而此核心还没有这个部件。",
+		"error.hdc_not_taken": "这台机器不能装硬盘控制器 %1。它能装：%2",
+		"error.hdd_needs_controller": "项目里有硬盘（%1），但机器没有硬盘控制器：请在设置中选一个。",
 		"error.mouse_not_taken": "这台机器不能接鼠标 %1。它能接：%2",
 		"error.no_frame_buffer": "没有空间存放画面。",
 		"error.no_such_machine": "此核心中没有名为 %1 的机器。",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "IBM 字符 ROM：%1",
 		"firmware.font_rom.about": "CGA、MDA 和 Hercules 卡用来绘制文字的字形。它是由你提供的 86Box ROM 集中的文件 %1。没有它屏幕会保持空白。",
+		"firmware.hdc_rom": "%1 ROM：%2",
+		"firmware.hdc_rom.about": "硬盘控制器 %1 的 ROM。它是由你提供的 86Box ROM 集中的文件 %2。",
 		"firmware.machine_rom": "%1 ROM：%2",
 		"firmware.machine_rom.about": "%1 的一个 ROM。它是由你提供的 86Box ROM 集中的文件 %2。",
 		"firmware.video_rom": "%1 ROM：%2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "处理器旁边的数学协处理器（FPU）：8088 配 8087，286 配 287。'none' 表示出售时不带它的机器。它是机器的一部分，所以录像需要相同的值。",
 		"setting.framespersecond": "每秒帧数",
 		"setting.framespersecond.about": "一帧是机器的多少时间：100 表示一帧为 10 毫秒，与 PCem 录像相同。它是录像的一部分：同样的输入换一个帧率会得到不同的过程。",
+		"setting.harddiskcontroller": "硬盘控制器",
+		"setting.harddiskcontroller.about": "硬盘所接的卡。XTIDE 卡带有能接受任意大小磁盘的 XTIDE Universal BIOS：XT 这类 8 位机器用 'PC/XT XTIDE'，AT 用 'PC/AT XTIDE'。每种都需要它的 ROM 文件。带硬盘的项目需要一个。它是机器的一部分，所以录像需要相同的值。",
 		"setting.joystick": "游戏杆",
 		"setting.joystick.about": "接在游戏端口上的设备。它是机器的一部分，所以录像需要相同的值。",
 		"setting.machine": "机器",
@@ -44,8 +50,10 @@
 		"setting.video": "显卡",
 		"setting.video.about": "图形卡。CGA、MDA 和 Hercules 用 IBM 字符 ROM 绘制文字；EGA 和 VGA 有自己的 BIOS。每种都需要它的 ROM 文件。它是机器的一部分，所以录像需要相同的值。",
 		"slot.floppy_a": "软盘（驱动器 A:）",
-		"slot.floppy_a.help": "用于驱动器 A: 的磁盘映像。机器启动时第一个在驱动器中。磁盘是只读的：程序暂时还不能向其写入。",
+		"slot.floppy_a.help": "用于驱动器 A: 的磁盘映像。机器启动时第一个在驱动器中。你的文件永远不会被改动：机器写入的内容留在它的内存和它的状态中。",
 		"slot.floppy_b": "软盘（驱动器 B:）",
-		"slot.floppy_b.help": "用于驱动器 B: 的磁盘映像。它与驱动器 A: 的工作方式相同。设置“软驱 B:”不能为 'none'。"
+		"slot.floppy_b.help": "用于驱动器 B: 的磁盘映像。它与驱动器 A: 的工作方式相同。设置“软驱 B:”不能为 'none'。",
+		"slot.hdd": "硬盘",
+		"slot.hdd.help": "接在“硬盘控制器”设置所选控制器上的硬盘映像（原始映像）。你的文件永远不会被改动：机器写入的内容留在它的内存和它的状态中。磁盘的柱面、磁头和扇区由文件大小推算。"
 	}
 }

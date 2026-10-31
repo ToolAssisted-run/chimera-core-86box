@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "Bu makinede %1 adlı bir BIOS yok. Şunlar var: %2",
 		"error.cpu_not_taken": "Bu makine %1 işlemcisini almıyor. Şunları alıyor: %2",
 		"error.device_needs_thread": "Bu makinenin bir parçası (%1) kendine ait bir iş parçacığı istiyor ve bu çekirdekte o parça henüz yok.",
+		"error.hdc_not_taken": "Bu makine %1 sabit disk denetleyicisini almıyor. Şunları alıyor: %2",
+		"error.hdd_needs_controller": "Projede bir sabit disk (%1) var, ama makinenin sabit disk denetleyicisi yok: ayarlardan birini seçin.",
 		"error.mouse_not_taken": "Bu makine %1 faresini almıyor. Şunları alıyor: %2",
 		"error.no_frame_buffer": "Görüntü için yer yok.",
 		"error.no_such_machine": "Bu çekirdekte %1 adlı bir makine yok.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "IBM karakter ROM'u: %1",
 		"firmware.font_rom.about": "CGA, MDA ve Hercules kartlarının metni çizdiği şekiller. Sizin sağladığınız 86Box ROM setindeki %1 dosyasıdır. Onsuz ekran boş kalır.",
+		"firmware.hdc_rom": "%1 ROM: %2",
+		"firmware.hdc_rom.about": "%1 sabit disk denetleyicisinin ROM'u. Sizin sağladığınız 86Box ROM setindeki %2 dosyasıdır.",
 		"firmware.machine_rom": "%1 ROM: %2",
 		"firmware.machine_rom.about": "%1 için bir ROM. Sizin sağladığınız 86Box ROM setindeki %2 dosyasıdır.",
 		"firmware.video_rom": "%1 ROM: %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "İşlemcinin yanında bir matematik yardımcı işlemcisi (FPU): 8088 için 8087, 286 için 287. 'none' onsuz satılmış bir makinedir. Makinenin bir parçasıdır, bu yüzden bir film aynı değere ihtiyaç duyar.",
 		"setting.framespersecond": "Saniyedeki kare",
 		"setting.framespersecond.about": "Bir karenin makinenin zamanından ne kadar olduğu: 100 bir kareyi PCem filmlerinde olduğu gibi 10 ms yapar. Filmin bir parçasıdır: aynı girdiler başka bir hızla başka bir oynanış verir.",
+		"setting.harddiskcontroller": "Sabit disk denetleyicisi",
+		"setting.harddiskcontroller.about": "Sabit diskin bağlı olduğu kart. XTIDE kartlarında her boyutta disk alan XTIDE Universal BIOS bulunur: XT gibi 8 bitlik bir makine için 'PC/XT XTIDE', bir AT için 'PC/AT XTIDE'. Her biri kendi ROM dosyasına ihtiyaç duyar. Sabit diskli bir proje bir tane gerektirir. Makinenin bir parçasıdır, bu yüzden bir film aynı değere ihtiyaç duyar.",
 		"setting.joystick": "Oyun çubuğu",
 		"setting.joystick.about": "Oyun bağlantı noktasına takılı olan. Makinenin bir parçasıdır, bu yüzden bir film aynı değere ihtiyaç duyar.",
 		"setting.machine": "Makine",
@@ -44,8 +50,10 @@
 		"setting.video": "Ekran kartı",
 		"setting.video.about": "Grafik kartı. CGA, MDA ve Hercules metni IBM karakter ROM'u ile çizer; EGA ve VGA'nın kendi BIOS'u vardır. Her biri kendi ROM dosyasına ihtiyaç duyar. Makinenin bir parçasıdır, bu yüzden bir film aynı değere ihtiyaç duyar.",
 		"slot.floppy_a": "Disketler (A: sürücüsü)",
-		"slot.floppy_a.help": "A: sürücüsü için disket görüntüleri. Makine başladığında ilki sürücüdedir. Disketler salt okunurdur: bir program henüz onlara yazamaz.",
+		"slot.floppy_a.help": "A: sürücüsü için disket görüntüleri. Makine başladığında ilki sürücüdedir. Dosyalarınız asla değiştirilmez: makinenin yazdıkları onun belleğinde ve durumlarında kalır.",
 		"slot.floppy_b": "Disketler (B: sürücüsü)",
-		"slot.floppy_b.help": "B: sürücüsü için disket görüntüleri. A: sürücüsü gibi çalışır. Disket sürücüsü B: ayarı 'none' olmamalıdır."
+		"slot.floppy_b.help": "B: sürücüsü için disket görüntüleri. A: sürücüsü gibi çalışır. Disket sürücüsü B: ayarı 'none' olmamalıdır.",
+		"slot.hdd": "Sabit disk",
+		"slot.hdd.help": "Sabit disk denetleyicisi ayarında seçilen denetleyicideki bir sabit disk görüntüsü (ham görüntü). Dosyanız asla değiştirilmez: makinenin yazdıkları onun belleğinde ve durumlarında kalır. Diskin silindirleri, kafaları ve sektörleri dosyanın boyutundan hesaplanır."
 	}
 }

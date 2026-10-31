@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "Mesin ini tidak punya BIOS bernama %1. Mesin ini punya: %2",
 		"error.cpu_not_taken": "Mesin ini tidak menerima prosesor %1. Mesin ini menerima: %2",
 		"error.device_needs_thread": "Sebagian dari mesin ini (%1) memerlukan thread sendiri, dan inti ini belum punya bagian itu.",
+		"error.hdc_not_taken": "Mesin ini tidak menerima pengendali cakram keras %1. Mesin ini menerima: %2",
+		"error.hdd_needs_controller": "Proyek ini punya cakram keras (%1), tetapi mesin tidak punya pengendali cakram keras: pilih satu di pengaturan.",
 		"error.mouse_not_taken": "Mesin ini tidak menerima tetikus %1. Mesin ini menerima: %2",
 		"error.no_frame_buffer": "Tidak ada ruang untuk gambar.",
 		"error.no_such_machine": "Inti ini tidak punya mesin bernama %1.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "ROM karakter IBM: %1",
 		"firmware.font_rom.about": "Bentuk yang dipakai kartu CGA, MDA, dan Hercules untuk menggambar teks. Ini adalah berkas %1 dari set ROM 86Box, yang Anda sediakan. Tanpanya layar tetap kosong.",
+		"firmware.hdc_rom": "ROM %1: %2",
+		"firmware.hdc_rom.about": "ROM dari pengendali cakram keras %1. Ini adalah berkas %2 dari set ROM 86Box, yang Anda sediakan.",
 		"firmware.machine_rom": "ROM %1: %2",
 		"firmware.machine_rom.about": "Sebuah ROM dari %1. Ini adalah berkas %2 dari set ROM 86Box, yang Anda sediakan.",
 		"firmware.video_rom": "ROM %1: %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "Koprosesor matematika (FPU) di samping prosesor: 8087 untuk 8088, 287 untuk 286. 'none' adalah mesin yang dijual tanpanya. Ini bagian dari mesin, jadi sebuah film memerlukan nilai yang sama.",
 		"setting.framespersecond": "Bingkai per detik",
 		"setting.framespersecond.about": "Berapa banyak waktu mesin dalam satu bingkai: 100 membuat satu bingkai 10 ms, seperti di film PCem. Ini bagian dari film: masukan yang sama dengan laju lain menghasilkan jalannya yang lain.",
+		"setting.harddiskcontroller": "Pengendali cakram keras",
+		"setting.harddiskcontroller.about": "Kartu tempat cakram keras terpasang. Kartu XTIDE membawa XTIDE Universal BIOS, yang menerima cakram berukuran berapa pun: 'PC/XT XTIDE' untuk mesin 8-bit seperti XT, 'PC/AT XTIDE' untuk AT. Masing-masing memerlukan berkas ROM-nya. Proyek dengan cakram keras memerlukan satu. Ini bagian dari mesin, jadi sebuah film memerlukan nilai yang sama.",
 		"setting.joystick": "Joystick",
 		"setting.joystick.about": "Apa yang tersambung ke port permainan. Ini bagian dari mesin, jadi sebuah film memerlukan nilai yang sama.",
 		"setting.machine": "Mesin",
@@ -44,8 +50,10 @@
 		"setting.video": "Kartu video",
 		"setting.video.about": "Kartu grafis. CGA, MDA, dan Hercules menggambar teks dengan ROM karakter IBM; EGA dan VGA punya BIOS sendiri. Masing-masing memerlukan berkas ROM-nya. Ini bagian dari mesin, jadi sebuah film memerlukan nilai yang sama.",
 		"slot.floppy_a": "Disket (penggerak A:)",
-		"slot.floppy_a.help": "Image disket untuk penggerak A:. Yang pertama ada di penggerak saat mesin mulai. Disket hanya bisa dibaca: program belum bisa menulis ke sana.",
+		"slot.floppy_a.help": "Image disket untuk penggerak A:. Yang pertama ada di penggerak saat mesin mulai. Berkas Anda tidak pernah diubah: apa yang ditulis mesin tetap di memorinya dan di state-nya.",
 		"slot.floppy_b": "Disket (penggerak B:)",
-		"slot.floppy_b.help": "Image disket untuk penggerak B:. Cara kerjanya sama seperti penggerak A:. Pengaturan Penggerak disket B: tidak boleh 'none'."
+		"slot.floppy_b.help": "Image disket untuk penggerak B:. Cara kerjanya sama seperti penggerak A:. Pengaturan Penggerak disket B: tidak boleh 'none'.",
+		"slot.hdd": "Cakram keras",
+		"slot.hdd.help": "Image cakram keras (image mentah) pada pengendali yang dipilih di pengaturan Pengendali cakram keras. Berkas Anda tidak pernah diubah: apa yang ditulis mesin tetap di memorinya dan di state-nya. Silinder, kepala, dan sektor cakram dihitung dari ukuran berkas."
 	}
 }

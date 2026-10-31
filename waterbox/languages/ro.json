@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "Această mașină nu are niciun BIOS numit %1. Are: %2",
 		"error.cpu_not_taken": "Această mașină nu acceptă procesorul %1. Acceptă: %2",
 		"error.device_needs_thread": "O parte a acestei mașini (%1) are nevoie de un fir de execuție propriu, iar acest nucleu nu are încă acea parte.",
+		"error.hdc_not_taken": "Această mașină nu acceptă controlerul de hard disk %1. Acceptă: %2",
+		"error.hdd_needs_controller": "Proiectul are un hard disk (%1), dar mașina nu are controler de hard disk: alegeți unul în setări.",
 		"error.mouse_not_taken": "Această mașină nu acceptă mouse-ul %1. Acceptă: %2",
 		"error.no_frame_buffer": "Nu este loc pentru imagine.",
 		"error.no_such_machine": "Acest nucleu nu are nicio mașină numită %1.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "ROM de caractere IBM: %1",
 		"firmware.font_rom.about": "Formele cu care plăcile CGA, MDA și Hercules desenează textul. Este fișierul %1 din setul de ROM-uri 86Box, pe care îl furnizați. Fără el ecranul rămâne gol.",
+		"firmware.hdc_rom": "ROM %1: %2",
+		"firmware.hdc_rom.about": "ROM-ul controlerului de hard disk %1. Este fișierul %2 din setul de ROM-uri 86Box, pe care îl furnizați.",
 		"firmware.machine_rom": "ROM %1: %2",
 		"firmware.machine_rom.about": "Un ROM al mașinii %1. Este fișierul %2 din setul de ROM-uri 86Box, pe care îl furnizați.",
 		"firmware.video_rom": "ROM %1: %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "Un coprocesor matematic (FPU) lângă procesor: un 8087 pentru un 8088, un 287 pentru un 286. 'none' este o mașină vândută fără. Face parte din mașină, deci un film are nevoie de aceeași valoare.",
 		"setting.framespersecond": "Cadre pe secundă",
 		"setting.framespersecond.about": "Cât din timpul mașinii este un cadru: 100 face un cadru lung de 10 ms, ca în filmele PCem. Face parte din film: aceleași intrări într-un alt ritm dau o altă rulare.",
+		"setting.harddiskcontroller": "Controler de hard disk",
+		"setting.harddiskcontroller.about": "Placa la care este legat hard diskul. Plăcile XTIDE au XTIDE Universal BIOS, care acceptă un disc de orice mărime: 'PC/XT XTIDE' pentru o mașină pe 8 biți, ca un XT, 'PC/AT XTIDE' pentru un AT. Fiecare are nevoie de fișierul ei ROM. Un proiect cu hard disk are nevoie de unul. Face parte din mașină, deci un film are nevoie de aceeași valoare.",
 		"setting.joystick": "Joystick",
 		"setting.joystick.about": "Ce este conectat la portul de jocuri. Face parte din mașină, deci un film are nevoie de aceeași valoare.",
 		"setting.machine": "Mașină",
@@ -44,8 +50,10 @@
 		"setting.video": "Placă video",
 		"setting.video.about": "Placa grafică. CGA, MDA și Hercules desenează textul cu ROM-ul de caractere IBM; EGA și VGA au propriul BIOS. Fiecare are nevoie de fișierul ei ROM. Face parte din mașină, deci un film are nevoie de aceeași valoare.",
 		"slot.floppy_a": "Dischete (unitatea A:)",
-		"slot.floppy_a.help": "Imagini de dischete pentru unitatea A:. Prima este în unitate când pornește mașina. Dischetele sunt doar pentru citire: un program nu poate încă scrie pe ele.",
+		"slot.floppy_a.help": "Imagini de dischete pentru unitatea A:. Prima este în unitate când pornește mașina. Fișierele dvs. nu sunt schimbate niciodată: ce scrie mașina rămâne în memoria ei și în stările ei.",
 		"slot.floppy_b": "Dischete (unitatea B:)",
-		"slot.floppy_b.help": "Imagini de dischete pentru unitatea B:. Funcționează la fel ca unitatea A:. Setarea Unitatea de dischete B: nu trebuie să fie 'none'."
+		"slot.floppy_b.help": "Imagini de dischete pentru unitatea B:. Funcționează la fel ca unitatea A:. Setarea Unitatea de dischete B: nu trebuie să fie 'none'.",
+		"slot.hdd": "Hard disk",
+		"slot.hdd.help": "O imagine de hard disk (o imagine brută), pe controlerul ales în setarea Controler de hard disk. Fișierul dvs. nu este schimbat niciodată: ce scrie mașina rămâne în memoria ei și în stările ei. Cilindrii, capetele și sectoarele discului se deduc din mărimea fișierului."
 	}
 }

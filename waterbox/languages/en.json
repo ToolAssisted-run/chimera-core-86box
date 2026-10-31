@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "This machine has no BIOS called %1. It has: %2",
 		"error.cpu_not_taken": "This machine does not take the processor %1. It takes: %2",
 		"error.device_needs_thread": "A part of this machine (%1) needs a thread of its own, and this core does not have that part yet.",
+		"error.hdc_not_taken": "This machine does not take the hard disk controller %1. It takes: %2",
+		"error.hdd_needs_controller": "The project has a hard disk (%1), but the machine has no hard disk controller: choose one in the settings.",
 		"error.mouse_not_taken": "This machine does not take the mouse %1. It takes: %2",
 		"error.no_frame_buffer": "There is no room for the picture.",
 		"error.no_such_machine": "There is no machine called %1 in this core.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "IBM character ROM: %1",
 		"firmware.font_rom.about": "The shapes CGA, MDA and Hercules cards draw text with. It is the file %1 of 86Box's ROM set, which you supply. Without it the screen stays blank.",
+		"firmware.hdc_rom": "%1 ROM: %2",
+		"firmware.hdc_rom.about": "The ROM of the %1 hard disk controller. It is the file %2 of 86Box's ROM set, which you supply.",
 		"firmware.machine_rom": "%1 ROM: %2",
 		"firmware.machine_rom.about": "A ROM of the %1. It is the file %2 of 86Box's ROM set, which you supply.",
 		"firmware.video_rom": "%1 ROM: %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "A maths coprocessor (FPU) beside the processor: an 8087 for an 8088, a 287 for a 286. 'none' is a machine sold without one. It is part of the machine, so a movie needs the same value.",
 		"setting.framespersecond": "Frames per second",
 		"setting.framespersecond.about": "How much of the machine's time one frame is: 100 makes a frame 10 ms, as in PCem movies. It is part of the movie: the same inputs at another rate make another run.",
+		"setting.harddiskcontroller": "Hard disk controller",
+		"setting.harddiskcontroller.about": "The card the hard disk is on. The XTIDE cards carry the XTIDE Universal BIOS, which takes a disk of any size: 'PC/XT XTIDE' for an 8-bit machine such as an XT, 'PC/AT XTIDE' for an AT. Each needs its ROM file. A project with a hard disk needs one. It is part of the machine, so a movie needs the same value.",
 		"setting.joystick": "Joystick",
 		"setting.joystick.about": "What is plugged into the game port. It is part of the machine, so a movie needs the same value.",
 		"setting.machine": "Machine",
@@ -44,8 +50,10 @@
 		"setting.video": "Video card",
 		"setting.video.about": "The graphics card. CGA, MDA and Hercules draw text with the IBM character ROM; EGA and VGA have a BIOS of their own. Each needs its ROM file. It is part of the machine, so a movie needs the same value.",
 		"slot.floppy_a": "Floppy disks (drive A:)",
-		"slot.floppy_a.help": "Disk images for drive A:. The first is in the drive when the machine starts. The disks are read only: a program cannot write to them yet.",
+		"slot.floppy_a.help": "Disk images for drive A:. The first is in the drive when the machine starts. Your files are never changed: what the machine writes stays in its memory and in its states.",
 		"slot.floppy_b": "Floppy disks (drive B:)",
-		"slot.floppy_b.help": "Disk images for drive B:. It works the same way as drive A:. The Floppy drive B: setting must not be none."
+		"slot.floppy_b.help": "Disk images for drive B:. It works the same way as drive A:. The Floppy drive B: setting must not be none.",
+		"slot.hdd": "Hard disk",
+		"slot.hdd.help": "A hard disk image (a raw image), on the controller chosen in the Hard disk controller setting. Your file is never changed: what the machine writes stays in its memory and in its states. The disk's cylinders, heads and sectors are worked out from the file's size."
 	}
 }

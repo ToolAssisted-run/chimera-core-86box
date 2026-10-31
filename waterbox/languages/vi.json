@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "Máy này không có BIOS nào tên %1. Máy có: %2",
 		"error.cpu_not_taken": "Máy này không nhận bộ xử lý %1. Máy nhận: %2",
 		"error.device_needs_thread": "Một phần của máy này (%1) cần một luồng riêng, và lõi này chưa có phần đó.",
+		"error.hdc_not_taken": "Máy này không nhận bộ điều khiển đĩa cứng %1. Máy nhận: %2",
+		"error.hdd_needs_controller": "Dự án có một đĩa cứng (%1), nhưng máy không có bộ điều khiển đĩa cứng: hãy chọn một trong thiết lập.",
 		"error.mouse_not_taken": "Máy này không nhận chuột %1. Máy nhận: %2",
 		"error.no_frame_buffer": "Không có chỗ cho hình ảnh.",
 		"error.no_such_machine": "Lõi này không có máy nào tên %1.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "ROM ký tự IBM: %1",
 		"firmware.font_rom.about": "Các hình dạng mà card CGA, MDA và Hercules dùng để vẽ chữ. Đó là tệp %1 trong bộ ROM của 86Box, do bạn cung cấp. Thiếu nó màn hình vẫn trống.",
+		"firmware.hdc_rom": "ROM %1: %2",
+		"firmware.hdc_rom.about": "ROM của bộ điều khiển đĩa cứng %1. Đó là tệp %2 trong bộ ROM của 86Box, do bạn cung cấp.",
 		"firmware.machine_rom": "ROM %1: %2",
 		"firmware.machine_rom.about": "Một ROM của %1. Đó là tệp %2 trong bộ ROM của 86Box, do bạn cung cấp.",
 		"firmware.video_rom": "ROM %1: %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "Một bộ đồng xử lý toán học (FPU) bên cạnh bộ xử lý: 8087 cho 8088, 287 cho 286. 'none' là máy bán ra không có nó. Đây là một phần của máy, vì vậy một phim cần cùng giá trị.",
 		"setting.framespersecond": "Khung hình mỗi giây",
 		"setting.framespersecond.about": "Một khung hình là bao nhiêu thời gian của máy: 100 làm một khung hình dài 10 ms, như trong phim PCem. Đây là một phần của phim: cùng đầu vào với tốc độ khác cho một lượt chạy khác.",
+		"setting.harddiskcontroller": "Bộ điều khiển đĩa cứng",
+		"setting.harddiskcontroller.about": "Card mà đĩa cứng được gắn vào. Các card XTIDE có XTIDE Universal BIOS, nhận đĩa ở mọi kích thước: 'PC/XT XTIDE' cho máy 8 bit như XT, 'PC/AT XTIDE' cho AT. Mỗi card cần tệp ROM của nó. Dự án có đĩa cứng cần một bộ. Đây là một phần của máy, vì vậy một phim cần cùng giá trị.",
 		"setting.joystick": "Cần điều khiển",
 		"setting.joystick.about": "Thứ được cắm vào cổng trò chơi. Đây là một phần của máy, vì vậy một phim cần cùng giá trị.",
 		"setting.machine": "Máy",
@@ -44,8 +50,10 @@
 		"setting.video": "Card màn hình",
 		"setting.video.about": "Card đồ họa. CGA, MDA và Hercules vẽ chữ bằng ROM ký tự của IBM; EGA và VGA có BIOS riêng. Mỗi card cần tệp ROM của nó. Đây là một phần của máy, vì vậy một phim cần cùng giá trị.",
 		"slot.floppy_a": "Đĩa mềm (ổ A:)",
-		"slot.floppy_a.help": "Ảnh đĩa cho ổ A:. Ảnh đầu tiên nằm trong ổ khi máy khởi động. Các đĩa chỉ đọc: chương trình chưa thể ghi lên chúng.",
+		"slot.floppy_a.help": "Ảnh đĩa cho ổ A:. Ảnh đầu tiên nằm trong ổ khi máy khởi động. Tệp của bạn không bao giờ bị thay đổi: những gì máy ghi nằm lại trong bộ nhớ của nó và trong các trạng thái của nó.",
 		"slot.floppy_b": "Đĩa mềm (ổ B:)",
-		"slot.floppy_b.help": "Ảnh đĩa cho ổ B:. Nó hoạt động giống ổ A:. Thiết lập Ổ đĩa mềm B: không được là 'none'."
+		"slot.floppy_b.help": "Ảnh đĩa cho ổ B:. Nó hoạt động giống ổ A:. Thiết lập Ổ đĩa mềm B: không được là 'none'.",
+		"slot.hdd": "Đĩa cứng",
+		"slot.hdd.help": "Một ảnh đĩa cứng (ảnh thô), trên bộ điều khiển chọn trong thiết lập Bộ điều khiển đĩa cứng. Tệp của bạn không bao giờ bị thay đổi: những gì máy ghi nằm lại trong bộ nhớ của nó và trong các trạng thái của nó. Số trụ, đầu và cung của đĩa được tính từ kích thước tệp."
 	}
 }

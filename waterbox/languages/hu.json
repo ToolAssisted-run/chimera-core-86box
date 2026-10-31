@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "Ennek a gépnek nincs %1 nevű BIOS-a. Ezek vannak: %2",
 		"error.cpu_not_taken": "Ez a gép nem fogadja a(z) %1 processzort. Ezeket fogadja: %2",
 		"error.device_needs_thread": "A gép egyik részének (%1) saját szál kell, és ebben a magban ez a rész még nincs meg.",
+		"error.hdc_not_taken": "Ez a gép nem fogadja a(z) %1 merevlemez-vezérlőt. Ezeket fogadja: %2",
+		"error.hdd_needs_controller": "A projektben van merevlemez (%1), de a gépnek nincs merevlemez-vezérlője: válassz egyet a beállításokban.",
 		"error.mouse_not_taken": "Ez a gép nem fogadja a(z) %1 egeret. Ezeket fogadja: %2",
 		"error.no_frame_buffer": "Nincs hely a képnek.",
 		"error.no_such_machine": "Ebben a magban nincs %1 nevű gép.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "IBM karakter-ROM: %1",
 		"firmware.font_rom.about": "Az alakok, amelyekkel a CGA, MDA és Hercules kártyák szöveget rajzolnak. A 86Box ROM-készletének %1 fájlja, amelyet te adsz. Nélküle a képernyő üres marad.",
+		"firmware.hdc_rom": "%1 ROM: %2",
+		"firmware.hdc_rom.about": "A(z) %1 merevlemez-vezérlő ROM-ja. A 86Box ROM-készletének %2 fájlja, amelyet te adsz.",
 		"firmware.machine_rom": "%1 ROM: %2",
 		"firmware.machine_rom.about": "A(z) %1 egyik ROM-ja. A 86Box ROM-készletének %2 fájlja, amelyet te adsz.",
 		"firmware.video_rom": "%1 ROM: %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "Matematikai társprocesszor (FPU) a processzor mellett: 8087 a 8088-hoz, 287 a 286-hoz. A 'none' egy nélküle eladott gép. A gép része, ezért egy filmnek ugyanez az érték kell.",
 		"setting.framespersecond": "Képkocka másodpercenként",
 		"setting.framespersecond.about": "Mennyi a gép idejéből egy képkocka: 100 esetén egy képkocka 10 ms, mint a PCem-filmekben. A film része: ugyanazok a bemenetek más ütemben más futást adnak.",
+		"setting.harddiskcontroller": "Merevlemez-vezérlő",
+		"setting.harddiskcontroller.about": "A kártya, amelyen a merevlemez van. Az XTIDE kártyákon az XTIDE Universal BIOS van, amely bármekkora lemezt fogad: 'PC/XT XTIDE' egy 8 bites géphez, például egy XT-hez, 'PC/AT XTIDE' egy AT-hez. Mindegyiknek kell a ROM-fájlja. Egy merevlemezes projektnek kell egy. A gép része, ezért egy filmnek ugyanez az érték kell.",
 		"setting.joystick": "Botkormány",
 		"setting.joystick.about": "Ami a játékporthoz csatlakozik. A gép része, ezért egy filmnek ugyanez az érték kell.",
 		"setting.machine": "Gép",
@@ -44,8 +50,10 @@
 		"setting.video": "Videokártya",
 		"setting.video.about": "A grafikus kártya. A CGA, az MDA és a Hercules az IBM karakter-ROM-jával rajzolja a szöveget; az EGA-nak és a VGA-nak saját BIOS-a van. Mindegyiknek kell a ROM-fájlja. A gép része, ezért egy filmnek ugyanez az érték kell.",
 		"slot.floppy_a": "Hajlékonylemezek (A: meghajtó)",
-		"slot.floppy_a.help": "Lemezképek az A: meghajtóhoz. Az első van a meghajtóban, amikor a gép elindul. A lemezek csak olvashatók: egy program még nem tud rájuk írni.",
+		"slot.floppy_a.help": "Lemezképek az A: meghajtóhoz. Az első van a meghajtóban, amikor a gép elindul. A fájljaid sosem változnak: amit a gép ír, a memóriájában és az állapotaiban marad.",
 		"slot.floppy_b": "Hajlékonylemezek (B: meghajtó)",
-		"slot.floppy_b.help": "Lemezképek a B: meghajtóhoz. Ugyanúgy működik, mint az A: meghajtó. A B: hajlékonylemez-meghajtó beállítás nem lehet 'none'."
+		"slot.floppy_b.help": "Lemezképek a B: meghajtóhoz. Ugyanúgy működik, mint az A: meghajtó. A B: hajlékonylemez-meghajtó beállítás nem lehet 'none'.",
+		"slot.hdd": "Merevlemez",
+		"slot.hdd.help": "Merevlemez-kép (nyers kép) a Merevlemez-vezérlő beállításban választott vezérlőn. A fájlod sosem változik: amit a gép ír, a memóriájában és az állapotaiban marad. A lemez hengereit, fejeit és szektorait a fájl méretéből számolja ki."
 	}
 }

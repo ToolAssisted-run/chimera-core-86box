@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "Cette machine n'a aucun BIOS appelé %1. Elle a : %2",
 		"error.cpu_not_taken": "Cette machine n'accepte pas le processeur %1. Elle accepte : %2",
 		"error.device_needs_thread": "Une partie de cette machine (%1) a besoin d'un fil d'exécution à elle, et ce cœur n'a pas encore cette partie.",
+		"error.hdc_not_taken": "Cette machine n'accepte pas le contrôleur de disque dur %1. Elle accepte : %2",
+		"error.hdd_needs_controller": "Le projet a un disque dur (%1), mais la machine n'a pas de contrôleur de disque dur : choisissez-en un dans les réglages.",
 		"error.mouse_not_taken": "Cette machine n'accepte pas la souris %1. Elle accepte : %2",
 		"error.no_frame_buffer": "Il n'y a pas de place pour l'image.",
 		"error.no_such_machine": "Ce cœur n'a aucune machine appelée %1.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "ROM de caractères IBM : %1",
 		"firmware.font_rom.about": "Les formes avec lesquelles les cartes CGA, MDA et Hercules dessinent le texte. C'est le fichier %1 du jeu de ROM de 86Box, que vous fournissez. Sans lui, l'écran reste vide.",
+		"firmware.hdc_rom": "ROM de %1 : %2",
+		"firmware.hdc_rom.about": "La ROM du contrôleur de disque dur %1. C'est le fichier %2 du jeu de ROM de 86Box, que vous fournissez.",
 		"firmware.machine_rom": "ROM de %1 : %2",
 		"firmware.machine_rom.about": "Une ROM du %1. C'est le fichier %2 du jeu de ROM de 86Box, que vous fournissez.",
 		"firmware.video_rom": "ROM de %1 : %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "Un coprocesseur mathématique (FPU) à côté du processeur : un 8087 pour un 8088, un 287 pour un 286. 'none' est une machine vendue sans. Cela fait partie de la machine : un film a donc besoin de la même valeur.",
 		"setting.framespersecond": "Images par seconde",
 		"setting.framespersecond.about": "La part du temps de la machine que dure une image : 100 fait durer une image 10 ms, comme dans les films PCem. Cela fait partie du film : les mêmes entrées à une autre cadence donnent une autre partie.",
+		"setting.harddiskcontroller": "Contrôleur de disque dur",
+		"setting.harddiskcontroller.about": "La carte sur laquelle est le disque dur. Les cartes XTIDE portent le XTIDE Universal BIOS, qui accepte un disque de toute taille : 'PC/XT XTIDE' pour une machine 8 bits comme un XT, 'PC/AT XTIDE' pour un AT. Chacune a besoin de son fichier ROM. Un projet avec un disque dur en a besoin d'un. Cela fait partie de la machine : un film a donc besoin de la même valeur.",
 		"setting.joystick": "Manette",
 		"setting.joystick.about": "Ce qui est branché sur le port de jeu. Cela fait partie de la machine : un film a donc besoin de la même valeur.",
 		"setting.machine": "Machine",
@@ -44,8 +50,10 @@
 		"setting.video": "Carte vidéo",
 		"setting.video.about": "La carte graphique. CGA, MDA et Hercules dessinent le texte avec la ROM de caractères d'IBM ; EGA et VGA ont leur propre BIOS. Chacune a besoin de son fichier ROM. Cela fait partie de la machine : un film a donc besoin de la même valeur.",
 		"slot.floppy_a": "Disquettes (lecteur A:)",
-		"slot.floppy_a.help": "Images de disquettes pour le lecteur A:. La première est dans le lecteur au démarrage de la machine. Les disques sont en lecture seule : un programme ne peut pas encore y écrire.",
+		"slot.floppy_a.help": "Images de disquettes pour le lecteur A:. La première est dans le lecteur au démarrage de la machine. Vos fichiers ne sont jamais modifiés : ce que la machine écrit reste dans sa mémoire et dans ses états.",
 		"slot.floppy_b": "Disquettes (lecteur B:)",
-		"slot.floppy_b.help": "Images de disquettes pour le lecteur B:. Il fonctionne comme le lecteur A:. Le réglage Lecteur de disquettes B: ne doit pas être 'none'."
+		"slot.floppy_b.help": "Images de disquettes pour le lecteur B:. Il fonctionne comme le lecteur A:. Le réglage Lecteur de disquettes B: ne doit pas être 'none'.",
+		"slot.hdd": "Disque dur",
+		"slot.hdd.help": "Une image de disque dur (une image brute), sur le contrôleur choisi dans le réglage Contrôleur de disque dur. Votre fichier n'est jamais modifié : ce que la machine écrit reste dans sa mémoire et dans ses états. Les cylindres, têtes et secteurs du disque sont déduits de la taille du fichier."
 	}
 }

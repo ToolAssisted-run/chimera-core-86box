@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "Esta máquina no tiene ninguna BIOS llamada %1. Tiene: %2",
 		"error.cpu_not_taken": "Esta máquina no admite el procesador %1. Admite: %2",
 		"error.device_needs_thread": "Una parte de esta máquina (%1) necesita un hilo propio, y este núcleo aún no tiene esa parte.",
+		"error.hdc_not_taken": "Esta máquina no admite el controlador de disco duro %1. Admite: %2",
+		"error.hdd_needs_controller": "El proyecto tiene un disco duro (%1), pero la máquina no tiene controlador de disco duro: elija uno en los ajustes.",
 		"error.mouse_not_taken": "Esta máquina no admite el ratón %1. Admite: %2",
 		"error.no_frame_buffer": "No hay espacio para la imagen.",
 		"error.no_such_machine": "En este núcleo no hay ninguna máquina llamada %1.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "ROM de caracteres de IBM: %1",
 		"firmware.font_rom.about": "Las formas con las que las tarjetas CGA, MDA y Hercules dibujan el texto. Es el archivo %1 del juego de ROM de 86Box, que usted aporta. Sin él la pantalla se queda en blanco.",
+		"firmware.hdc_rom": "ROM de %1: %2",
+		"firmware.hdc_rom.about": "La ROM del controlador de disco duro %1. Es el archivo %2 del juego de ROM de 86Box, que usted aporta.",
 		"firmware.machine_rom": "ROM de %1: %2",
 		"firmware.machine_rom.about": "Una ROM del %1. Es el archivo %2 del juego de ROM de 86Box, que usted aporta.",
 		"firmware.video_rom": "ROM de %1: %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "Un coprocesador matemático (FPU) junto al procesador: un 8087 para un 8088, un 287 para un 286. 'none' es una máquina vendida sin él. Forma parte de la máquina, así que una película necesita el mismo valor.",
 		"setting.framespersecond": "Fotogramas por segundo",
 		"setting.framespersecond.about": "Cuánto tiempo de la máquina es un fotograma: 100 hace que un fotograma dure 10 ms, como en las películas de PCem. Forma parte de la película: las mismas entradas a otro ritmo dan otra partida.",
+		"setting.harddiskcontroller": "Controlador de disco duro",
+		"setting.harddiskcontroller.about": "La tarjeta a la que va el disco duro. Las tarjetas XTIDE llevan el XTIDE Universal BIOS, que admite un disco de cualquier tamaño: 'PC/XT XTIDE' para una máquina de 8 bits como un XT, 'PC/AT XTIDE' para un AT. Cada una necesita su archivo ROM. Un proyecto con disco duro necesita uno. Forma parte de la máquina, así que una película necesita el mismo valor.",
 		"setting.joystick": "Joystick",
 		"setting.joystick.about": "Lo que está conectado al puerto de juegos. Forma parte de la máquina, así que una película necesita el mismo valor.",
 		"setting.machine": "Máquina",
@@ -44,8 +50,10 @@
 		"setting.video": "Tarjeta de vídeo",
 		"setting.video.about": "La tarjeta gráfica. CGA, MDA y Hercules dibujan el texto con la ROM de caracteres de IBM; EGA y VGA tienen su propia BIOS. Cada una necesita su archivo ROM. Forma parte de la máquina, así que una película necesita el mismo valor.",
 		"slot.floppy_a": "Disquetes (unidad A:)",
-		"slot.floppy_a.help": "Imágenes de disco para la unidad A:. La primera está en la unidad cuando arranca la máquina. Los discos son de solo lectura: un programa todavía no puede escribir en ellos.",
+		"slot.floppy_a.help": "Imágenes de disco para la unidad A:. La primera está en la unidad cuando arranca la máquina. Sus archivos nunca se modifican: lo que la máquina escribe se queda en su memoria y en sus estados.",
 		"slot.floppy_b": "Disquetes (unidad B:)",
-		"slot.floppy_b.help": "Imágenes de disco para la unidad B:. Funciona igual que la unidad A:. El ajuste Unidad de disquete B: no debe ser 'none'."
+		"slot.floppy_b.help": "Imágenes de disco para la unidad B:. Funciona igual que la unidad A:. El ajuste Unidad de disquete B: no debe ser 'none'.",
+		"slot.hdd": "Disco duro",
+		"slot.hdd.help": "Una imagen de disco duro (una imagen en bruto), en el controlador elegido en el ajuste Controlador de disco duro. Su archivo nunca se modifica: lo que la máquina escribe se queda en su memoria y en sus estados. Los cilindros, cabezas y sectores del disco se calculan a partir del tamaño del archivo."
 	}
 }

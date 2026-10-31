@@ -1,9 +1,10 @@
 {
   "_comment": [
-    "Two floppy drives, each with a swap list. Hard disks and CD-ROMs come",
-    "later: a hard disk needs a writable overlay (the frontend mounts every",
-    "file read-only), and a CD drive's audio is a thread of 86Box's that is",
-    "not yet made to run in place. The disks are write-protected for now."
+    "Two floppy drives, each with a swap list, and a hard disk. The frontend",
+    "mounts every file read-only: what the machine writes to a disk is kept in",
+    "the machine's memory (waterbox/chimera-overlay.c), so states carry it and",
+    "your file is never changed. CD-ROMs come later: a CD drive's audio is a",
+    "thread of 86Box's that is not yet made to run in place."
   ],
   "slots": [
     {
@@ -11,7 +12,17 @@
       "title": "slot.floppy_a",
       "min": 0,
       "max": -1,
-      "formats": ["img", "ima", "dsk", "vfd", "fdi", "86f", "td0", "imd", "mfm"],
+      "formats": [
+        "img",
+        "ima",
+        "dsk",
+        "vfd",
+        "fdi",
+        "86f",
+        "td0",
+        "imd",
+        "mfm"
+      ],
       "help": "slot.floppy_a.help"
     },
     {
@@ -19,8 +30,30 @@
       "title": "slot.floppy_b",
       "min": 0,
       "max": -1,
-      "formats": ["img", "ima", "dsk", "vfd", "fdi", "86f", "td0", "imd", "mfm"],
+      "formats": [
+        "img",
+        "ima",
+        "dsk",
+        "vfd",
+        "fdi",
+        "86f",
+        "td0",
+        "imd",
+        "mfm"
+      ],
       "help": "slot.floppy_b.help"
+    },
+    {
+      "id": "hdd",
+      "title": "slot.hdd",
+      "min": 0,
+      "max": 1,
+      "formats": [
+        "img",
+        "ima",
+        "hdd"
+      ],
+      "help": "slot.hdd.help"
     }
   ]
 }

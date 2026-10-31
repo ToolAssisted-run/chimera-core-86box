@@ -197,6 +197,12 @@ SOUND = ['none', 'adlib', 'cms', 'tndy', 'ssi2001', 'sb', 'sb2.0', 'sbprov1', 's
 MICE = ['none', 'msserial', 'mssystems', 'logibus', 'msbus', 'ps2']
 JOYSTICKS = ['none', '2axis_2button', '2axis_4button', '4axis_4button', '2button_gamepad', '4button_gamepad',
              'ch_flightstick_pro', 'thrustmaster_fcs', 'sidewinder_pad']
+# Hard disk controllers: the XTIDE Universal BIOS cards, which take any
+# geometry and need no machine BIOS support (an XT has none), for an 8-bit
+# and a 16-bit machine. (86Box's tables of controllers are not exported by
+# list-machines; the names are src/disk/hdc_xtide.c's.)
+HDC = [('none', 'None'), ('xtide', 'PC/XT XTIDE'), ('xtide_at_1ch', 'PC/AT XTIDE (Primary Only)')]
+HDC_FILES = {'xtide': ['roms/hdd/xtide/ide_xt.bin'], 'xtide_at_1ch': ['roms/hdd/xtide/ide_at.bin']}
 FLOPPY_DRIVES = ['none', '525_1dd', '525_2dd', '525_2qd', '525_2hd', '35_1dd', '35_2dd', '35_2hd', '35_2ed']
 
 # The files a video card reads, by 86Box's paths (src/video): the character
@@ -304,6 +310,8 @@ def main():
     sticks = {j['id']: j for j in tables[0]['joystick']}
     stick_values = [labelled(sticks[j]) for j in JOYSTICKS]
     setting('joystick', 'joystick', 'enum', stick_values[0], options=stick_values)
+    hdc_values = ['%s - %s' % h for h in HDC]
+    setting('hardDiskController', 'harddiskcontroller', 'enum', hdc_values[0], options=hdc_values)
     setting('clockStart', 'clockstart', 'datetime', 946684800, min=0, max=7258118400)
     setting('framesPerSecond', 'framespersecond', 'int', 100, min=1, max=1000)
 
@@ -335,6 +343,11 @@ def main():
         for f in VIDEO_FILES.get(vid, []):
             need(f, {'setting': 'video', 'is': v})
             names.setdefault(f, ('video', v.split(' - ', 1)[1]))
+
+    for v in hdc_values:
+        for f in HDC_FILES.get(v.split(' - ')[0], []):
+            need(f, {'setting': 'hardDiskController', 'is': v})
+            names.setdefault(f, ('hdc', v.split(' - ', 1)[1]))
 
     firmware = []
     for path in sorted(needs):

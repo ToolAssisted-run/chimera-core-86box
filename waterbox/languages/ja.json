@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "このマシンには %1 という BIOS はありません。あるもの：%2",
 		"error.cpu_not_taken": "このマシンはプロセッサ %1 を受け付けません。受け付けるもの：%2",
 		"error.device_needs_thread": "このマシンの一部（%1）は専用のスレッドを必要とし、このコアにはまだその部分がありません。",
+		"error.hdc_not_taken": "このマシンはハードディスクコントローラ %1 を受け付けません。受け付けるもの：%2",
+		"error.hdd_needs_controller": "プロジェクトにはハードディスク（%1）がありますが、マシンにハードディスクコントローラがありません：設定で選んでください。",
 		"error.mouse_not_taken": "このマシンはマウス %1 を受け付けません。受け付けるもの：%2",
 		"error.no_frame_buffer": "画像を置く場所がありません。",
 		"error.no_such_machine": "このコアには %1 というマシンはありません。",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "IBM 文字 ROM：%1",
 		"firmware.font_rom.about": "CGA、MDA、Hercules カードが文字を描くときの形。あなたが用意する 86Box の ROM セットのファイル %1 です。これがないと画面は空白のままです。",
+		"firmware.hdc_rom": "%1 ROM：%2",
+		"firmware.hdc_rom.about": "ハードディスクコントローラ %1 の ROM。あなたが用意する 86Box の ROM セットのファイル %2 です。",
 		"firmware.machine_rom": "%1 ROM：%2",
 		"firmware.machine_rom.about": "%1 の ROM。あなたが用意する 86Box の ROM セットのファイル %2 です。",
 		"firmware.video_rom": "%1 ROM：%2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "プロセッサの隣に置く数値演算コプロセッサ（FPU）：8088 には 8087、286 には 287。'none' はそれなしで売られたマシンです。これはマシンの一部なので、ムービーには同じ値が必要です。",
 		"setting.framespersecond": "毎秒フレーム数",
 		"setting.framespersecond.about": "1 フレームがマシンの時間でどれだけか：100 なら 1 フレームは 10 ms で、PCem のムービーと同じです。これはムービーの一部です：同じ入力でも別のレートなら別のプレイになります。",
+		"setting.harddiskcontroller": "ハードディスクコントローラ",
+		"setting.harddiskcontroller.about": "ハードディスクがつながるカード。XTIDE カードにはどんな大きさのディスクも扱える XTIDE Universal BIOS が載っています：XT のような 8 ビットのマシンには 'PC/XT XTIDE'、AT には 'PC/AT XTIDE'。どれもその ROM ファイルが必要です。ハードディスクのあるプロジェクトには 1 つ必要です。これはマシンの一部なので、ムービーには同じ値が必要です。",
 		"setting.joystick": "ジョイスティック",
 		"setting.joystick.about": "ゲームポートにつながっているもの。これはマシンの一部なので、ムービーには同じ値が必要です。",
 		"setting.machine": "マシン",
@@ -44,8 +50,10 @@
 		"setting.video": "ビデオカード",
 		"setting.video.about": "グラフィックカード。CGA、MDA、Hercules は IBM の文字 ROM で文字を描き、EGA と VGA は独自の BIOS を持ちます。どれもその ROM ファイルが必要です。これはマシンの一部なので、ムービーには同じ値が必要です。",
 		"slot.floppy_a": "フロッピーディスク（ドライブ A:）",
-		"slot.floppy_a.help": "ドライブ A: 用のディスクイメージ。マシンの起動時には最初のものがドライブに入っています。ディスクは読み取り専用で、プログラムはまだ書き込めません。",
+		"slot.floppy_a.help": "ドライブ A: 用のディスクイメージ。マシンの起動時には最初のものがドライブに入っています。あなたのファイルが変わることはありません：マシンが書いたものはマシンのメモリとステートに残ります。",
 		"slot.floppy_b": "フロッピーディスク（ドライブ B:）",
-		"slot.floppy_b.help": "ドライブ B: 用のディスクイメージ。ドライブ A: と同じように働きます。設定「フロッピードライブ B:」は 'none' であってはいけません。"
+		"slot.floppy_b.help": "ドライブ B: 用のディスクイメージ。ドライブ A: と同じように働きます。設定「フロッピードライブ B:」は 'none' であってはいけません。",
+		"slot.hdd": "ハードディスク",
+		"slot.hdd.help": "設定「ハードディスクコントローラ」で選んだコントローラにつなぐハードディスクイメージ（生のイメージ）。あなたのファイルが変わることはありません：マシンが書いたものはマシンのメモリとステートに残ります。ディスクのシリンダ、ヘッド、セクタはファイルの大きさから決まります。"
 	}
 }

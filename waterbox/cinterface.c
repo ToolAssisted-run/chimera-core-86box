@@ -30,6 +30,7 @@
 #include <86box/fdd.h>
 #include <86box/keyboard.h>
 #include <86box/mouse.h>
+#include <86box/hdc.h>
 #include <86box/gameport.h>
 #include "cpu.h"
 #include <86box/mouse.h>
@@ -129,11 +130,23 @@ static const char *setting_id(const char *key, const char *dflt, char *out, int 
 	return out;
 }
 
-/* ROM files 86Box looked for and did not find, while it was asked whether a
- * machine or a card is there and while the machine was built: the load
- * error names them. */
-static char g_missing[2048];
+/* ROM files 86Box read and did not find while the machine was built
+ * (g_missing), and those it only asked about, while it was asked whether a
+ * machine or a card is there (g_asked): the load error names them. Asking is
+ * not reading: a machine asks about every file of every BIOS it could have. */
+static char g_missing[2048], g_asked[2048];
 static int g_watchMissing;
+
+void chimera_file_asked(const char *name, int rom, int found)
+{
+	if (!g_watchMissing || !rom || found || strstr(g_asked, name))
+		return;
+	if (strlen(g_asked) + strlen(name) + 3 < sizeof g_asked) {
+		if (g_asked[0])
+			strcat(g_asked, ", ");
+		strcat(g_asked, name);
+	}
+}
 
 void chimera_file_opened(const char *name, int rom, int found)
 {
@@ -218,6 +231,32 @@ static const char *snd_name(int c) { return sound_card_get_internal_name(c); }
 static const device_t *mouse_dev(int c) { return mouse_get_device(c); }
 static const char *mouse_name(int c) { return mouse_get_internal_name(c); }
 
+static const device_t *hdc_dev(int c) { return hdc_get_device(c); }
+static const char *hdc_name(int c) { return hdc_get_internal_name(c); }
+
+/* A raw hard disk image's geometry (sectors a track, heads, cylinders),
+ * from its size: the first of the usual shapes that divides it exactly, so
+ * an image made for a machine reads back as that machine made it; else 63
+ * sectors and 16 heads, with the cylinders that fit. */
+static void hdd_geometry(int64_t size, unsigned *spt, unsigned *hpc, unsigned *cyl)
+{
+	static const unsigned shapes[][2] = { { 17, 4 }, { 17, 5 }, { 17, 6 }, { 17, 8 }, { 26, 4 }, { 63, 16 },
+	                                      { 63, 15 }, { 32, 16 }, { 63, 255 } };
+	const int64_t sectors = size / 512;
+	for (unsigned i = 0; i < sizeof shapes / sizeof shapes[0]; i++) {
+		const int64_t track = (int64_t)shapes[i][0] * shapes[i][1];
+		if (sectors > 0 && sectors % track == 0 && sectors / track <= 65535) {
+			*spt = shapes[i][0];
+			*hpc = shapes[i][1];
+			*cyl = (unsigned)(sectors / track);
+			return;
+		}
+	}
+	*spt = 63;
+	*hpc = 16;
+	*cyl = (unsigned)(sectors / (63 * 16));
+}
+
 static int refuse(const char *key, const char *what, const char *choices)
 {
 	snprintf(g_loadError, sizeof g_loadError, "%s" TEXT_ARG "%s" TEXT_ARG "%s", key, what, choices);
@@ -227,8 +266,8 @@ static int refuse(const char *key, const char *what, const char *choices)
 static int compose_cfg(void)
 {
 	char machineName[64], bios[64], cpu[64], fpu[32], video[64], sound[64];
-	char fddA[32], fddB[32], mouseName[32], joystickName[64];
-	char slotA[256], slotB[256], choices[1024];
+	char fddA[32], fddB[32], mouseName[32], joystickName[64], hdc[64];
+	char slotA[256], slotB[256], slotHdd[256], choices[1024];
 	long mem;
 	int m;
 
@@ -248,6 +287,7 @@ static int compose_cfg(void)
 	setting_id("floppyB", "none", fddB, sizeof fddB);
 	setting_id("mouse", "none", mouseName, sizeof mouseName);
 	setting_id("joystick", "none", joystickName, sizeof joystickName);
+	setting_id("hardDiskController", "none", hdc, sizeof hdc);
 
 	g_cfgLen = 0;
 	cfg_add("[General]\n");
@@ -289,14 +329,43 @@ static int compose_cfg(void)
 		return refuse("error.mouse_not_taken", mouseName, choices);
 	cfg_add("\n[Input devices]\nmouse_type = %s\njoystick_type = %s\n", mouseName, joystickName);
 
-	cfg_add("\n[Storage controllers]\nfdc = internal\nhdc = none\n");
+	if (!device_taken(m, hdc, hdc_dev, hdc_name, choices, sizeof choices))
+		return refuse("error.hdc_not_taken", hdc, choices);
+	cfg_add("\n[Storage controllers]\nfdc = internal\nhdc = %s\n", hdc);
+	/* the XTIDE Universal BIOS build each controller reads: the plain one
+	 * (the "+" build for a V20 is a choice 86Box offers; this core does not
+	 * yet) */
+	if (!strcmp(hdc, "xtide"))
+		cfg_add("\n[PC/XT XTIDE]\nbios = xt\n");
+	else if (!strcmp(hdc, "xtide_at_1ch"))
+		cfg_add("\n[PC/AT XTIDE (Primary Only)]\nbios = at\n");
+
+	/* the hard disk: a raw image, on the controller's first channel; what
+	 * the machine writes to it stays in memory (chimera-overlay.c) */
+	if (wbx_slot_first("hdd", slotHdd, sizeof slotHdd) && slotHdd[0]) {
+		FILE *f = fopen(slotHdd, "rb");
+		int64_t size = 0;
+		unsigned spt, hpc, cyl;
+		if (f) {
+			fseeko(f, 0, SEEK_END);
+			size = ftello(f);
+			fclose(f);
+		}
+		if (!strcmp(hdc, "none")) {
+			snprintf(g_loadError, sizeof g_loadError, "error.hdd_needs_controller" TEXT_ARG "%s", slotHdd);
+			return 0;
+		}
+		hdd_geometry(size, &spt, &hpc, &cyl);
+		cfg_add("\n[Hard disks]\nhdd_01_parameters = %u, %u, %u, 0, ide\nhdd_01_fn = %s\nhdd_01_ide_channel = 0:0\n",
+		        spt, hpc, cyl, slotHdd);
+	}
 
 	cfg_add("\n[Floppy and CD-ROM drives]\n");
 	cfg_add("fdd_01_type = %s\nfdd_02_type = %s\n", fddA, fddB);
 	if (wbx_slot_first("floppy_a", slotA, sizeof slotA) && slotA[0])
-		cfg_add("fdd_01_fn = wp://%s\nfdd_01_writeprot = 1\n", slotA);
+		cfg_add("fdd_01_fn = %s\n", slotA);
 	if (wbx_slot_first("floppy_b", slotB, sizeof slotB) && slotB[0])
-		cfg_add("fdd_02_fn = wp://%s\nfdd_02_writeprot = 1\n", slotB);
+		cfg_add("fdd_02_fn = %s\n", slotB);
 
 	if (strcmp(bios, "auto")) {
 		const device_config_t *bc = bios_config(m);
@@ -390,13 +459,14 @@ ECL_EXPORT int Init(void)
 	 * machine or card whose ROMs are there (pc_init_modules), or runs on
 	 * without a file; the core refuses instead, naming the files. */
 	g_watchMissing = 1;
-	g_missing[0] = 0;
+	g_missing[0] = g_asked[0] = 0;
 	int have = machine_available(machine);
 	g_watchMissing = 0;
 	if (!have) {
 		/* none of the machine's BIOS choices is there: name the chosen one's
 		 * files when the machine has choices, else every file it looked for */
 		const device_config_t *bc = bios_config(machine);
+		snprintf(g_missing, sizeof g_missing, "%s", g_asked);
 		if (bc) {
 			char chosen[64];
 			setting_id("bios", "auto", chosen, sizeof chosen);
@@ -417,12 +487,12 @@ ECL_EXPORT int Init(void)
 		return 0;
 	}
 	g_watchMissing = 1;
-	g_missing[0] = 0;
+	g_missing[0] = g_asked[0] = 0;
 	have = video_card_available(gfxcard[0]);
 	g_watchMissing = 0;
 	if (!have) {
 		snprintf(g_loadError, sizeof g_loadError, "error.roms_missing" TEXT_ARG "%s" TEXT_ARG "%s",
-		         video_get_internal_name(gfxcard[0]), g_missing);
+		         video_get_internal_name(gfxcard[0]), g_asked);
 		return 0;
 	}
 	video_setblit(chimera_blit);

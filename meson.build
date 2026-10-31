@@ -68,7 +68,7 @@ emu = static_library('emu86', upstream_sources, include_directories: inc,
   pic: not meson.is_cross_build())
 
 plat_sources = files('waterbox/chimera-plat.c', 'waterbox/cinterface.c', 'waterbox/chimera-input.c',
-  'waterbox/chimera-audio.c',
+  'waterbox/chimera-audio.c', 'waterbox/chimera-overlay.c',
   up / 'unix/dummy_cdrom_ioctl.c', up / 'unix/dummy_floppy_ioctl.c')
 
 if meson.is_cross_build()

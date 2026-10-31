@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "Ta maszyna nie ma BIOS-u o nazwie %1. Ma: %2",
 		"error.cpu_not_taken": "Ta maszyna nie przyjmuje procesora %1. Przyjmuje: %2",
 		"error.device_needs_thread": "Część tej maszyny (%1) potrzebuje własnego wątku, a ten rdzeń jeszcze nie ma tej części.",
+		"error.hdc_not_taken": "Ta maszyna nie przyjmuje kontrolera dysku twardego %1. Przyjmuje: %2",
+		"error.hdd_needs_controller": "Projekt ma dysk twardy (%1), ale maszyna nie ma kontrolera dysku twardego: wybierz go w ustawieniach.",
 		"error.mouse_not_taken": "Ta maszyna nie przyjmuje myszy %1. Przyjmuje: %2",
 		"error.no_frame_buffer": "Nie ma miejsca na obraz.",
 		"error.no_such_machine": "W tym rdzeniu nie ma maszyny o nazwie %1.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "ROM znaków IBM: %1",
 		"firmware.font_rom.about": "Kształty, którymi karty CGA, MDA i Hercules rysują tekst. To plik %1 z zestawu ROM-ów 86Box, który dostarczasz sam. Bez niego ekran pozostaje pusty.",
+		"firmware.hdc_rom": "ROM %1: %2",
+		"firmware.hdc_rom.about": "ROM kontrolera dysku twardego %1. To plik %2 z zestawu ROM-ów 86Box, który dostarczasz sam.",
 		"firmware.machine_rom": "ROM %1: %2",
 		"firmware.machine_rom.about": "ROM maszyny %1. To plik %2 z zestawu ROM-ów 86Box, który dostarczasz sam.",
 		"firmware.video_rom": "ROM %1: %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "Koprocesor matematyczny (FPU) obok procesora: 8087 do 8088, 287 do 286. 'none' to maszyna sprzedawana bez niego. To część maszyny, więc film potrzebuje tej samej wartości.",
 		"setting.framespersecond": "Klatki na sekundę",
 		"setting.framespersecond.about": "Ile czasu maszyny trwa jedna klatka: 100 daje klatkę długości 10 ms, jak w filmach PCem. To część filmu: te same wejścia w innym tempie dają inny przebieg.",
+		"setting.harddiskcontroller": "Kontroler dysku twardego",
+		"setting.harddiskcontroller.about": "Karta, do której podłączony jest dysk twardy. Karty XTIDE mają XTIDE Universal BIOS, który przyjmuje dysk dowolnej wielkości: 'PC/XT XTIDE' dla maszyny 8-bitowej, takiej jak XT, 'PC/AT XTIDE' dla AT. Każda potrzebuje swojego pliku ROM. Projekt z dyskiem twardym potrzebuje jednego. To część maszyny, więc film potrzebuje tej samej wartości.",
 		"setting.joystick": "Joystick",
 		"setting.joystick.about": "To, co jest podłączone do portu gier. To część maszyny, więc film potrzebuje tej samej wartości.",
 		"setting.machine": "Maszyna",
@@ -44,8 +50,10 @@
 		"setting.video": "Karta graficzna",
 		"setting.video.about": "Karta graficzna. CGA, MDA i Hercules rysują tekst za pomocą ROM-u znaków IBM; EGA i VGA mają własny BIOS. Każda potrzebuje swojego pliku ROM. To część maszyny, więc film potrzebuje tej samej wartości.",
 		"slot.floppy_a": "Dyskietki (stacja A:)",
-		"slot.floppy_a.help": "Obrazy dyskietek dla stacji A:. Pierwszy jest w stacji, gdy maszyna startuje. Dyskietki są tylko do odczytu: program nie może jeszcze na nich zapisywać.",
+		"slot.floppy_a.help": "Obrazy dyskietek dla stacji A:. Pierwszy jest w stacji, gdy maszyna startuje. Twoje pliki nigdy nie są zmieniane: to, co maszyna zapisuje, zostaje w jej pamięci i w jej stanach.",
 		"slot.floppy_b": "Dyskietki (stacja B:)",
-		"slot.floppy_b.help": "Obrazy dyskietek dla stacji B:. Działa tak samo jak stacja A:. Ustawienie Stacja dyskietek B: nie może być 'none'."
+		"slot.floppy_b.help": "Obrazy dyskietek dla stacji B:. Działa tak samo jak stacja A:. Ustawienie Stacja dyskietek B: nie może być 'none'.",
+		"slot.hdd": "Dysk twardy",
+		"slot.hdd.help": "Obraz dysku twardego (obraz surowy) na kontrolerze wybranym w ustawieniu Kontroler dysku twardego. Twój plik nigdy nie jest zmieniany: to, co maszyna zapisuje, zostaje w jej pamięci i w jej stanach. Cylindry, głowice i sektory dysku są wyliczane z rozmiaru pliku."
 	}
 }

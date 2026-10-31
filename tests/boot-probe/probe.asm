@@ -11,6 +11,19 @@
 ;   0000:7E0C  word   the sum of those bytes
 ;   0000:7E0E  byte   the game port (0x201) as last read: the buttons are
 ;                     bits 4-7, 0 while held
+;   0000:7E10  word   the first word of the floppy's sector 2 as last read
+;   0000:7E12  word   the BIOS's status (AX) after that read
+;   0000:7E14  word   the BIOS's status (AX) after the write at start
+;   0000:7E16  byte   an XT-IDE card at 300h, driven directly (no BIOS of
+;                     its own needed): the drive's status after the read of
+;                     its sector 2 (50h when all went well, FFh with no card)
+;   0000:7E18  word   the first word of that sector as read
+;   0000:7E1A  byte   the drive's status after "HD" was written there at start
+;
+; At start it writes "WR" and the timer's count to sector 2 of the floppy
+; (head 0, track 0) and reads the sector back; it reads it again after every
+; key, so a test can ask after a state was loaded whether the written sector
+; is still the machine's.
 ;
 ; At start it also plays one held note on an AdLib's FM chip (ports
 ; 0x388/0x389): with an AdLib in the machine the sound has it, without one
@@ -21,7 +34,29 @@
 ; 8088 code only. Written for these tests; free to distribute.
         cpu 8086
         bits 16
-        org 0x7c00
+
+; Sector 1 loads the program (sectors 3 to 9 of track 0) to 0000:9000 and
+; runs it; sector 2 is the sector the program writes and reads.
+        section boot start=0 vstart=0x7c00
+        cli
+        xor ax, ax
+        mov ds, ax
+        mov es, ax
+        mov ss, ax
+        mov sp, 0x7c00
+        sti
+.load:  mov ax, 0x0207          ; read 7 sectors
+        mov bx, 0x9000
+        mov cx, 0x0003          ; track 0, from sector 3
+        xor dh, dh              ; head 0; dl is the boot drive
+        int 0x13
+        jc .load
+        jmp 0x0000:0x9000
+        times 510 - ($ - $$) db 0
+        dw 0xaa55
+        times 512 db 0          ; sector 2
+
+        section main start=1024 vstart=0x9000
 
 start:
         cli
@@ -58,6 +93,34 @@ start:
         xor ah, ah              ; the timer now
         int 0x1a
         mov [last], dx
+        mov word [0x8000], 'WR' ; sector 2: "WR", the timer's low word
+        mov [0x8002], dx
+        mov ax, 0x0301          ; write one sector
+        mov bx, 0x8000
+        mov cx, 0x0002          ; track 0, sector 2
+        xor dx, dx              ; head 0, drive A:
+        int 0x13
+        mov [0x7e14], ax
+        mov word [0x8000], 'HD' ; the hard disk's sector 2 likewise
+        mov al, 0x30            ; WRITE SECTORS
+        call ide_command
+        jc .nowrite
+        mov si, 0x8000
+        mov cx, 256
+.wword: lodsw
+        mov dx, 0x308           ; rev 1: the high byte first, at +8,
+        xchg al, ah
+        out dx, al
+        xchg al, ah
+        mov dx, 0x300           ; then the low byte, which writes the word
+        out dx, al
+        loop .wword
+        call ide_wait
+.nowrite:
+        mov dx, 0x307
+        in al, dx
+        mov [0x7e1a], al
+        call readback
 
 main:
         xor ah, ah
@@ -88,6 +151,7 @@ main:
         int 0x16
         mov [0x7e04], ax
         inc word [0x7e02]
+        call readback
 .show:
         mov ah, 0x02            ; cursor to 0,0
         xor bh, bh
@@ -115,6 +179,93 @@ main:
         call puthex
         hlt                     ; until the next interrupt
         jmp main
+
+readback:                       ; sector 2 into 0000:8200
+        mov ax, 0x0201
+        mov bx, 0x8200
+        mov cx, 0x0002
+        xor dx, dx
+        int 0x13
+        mov [0x7e12], ax
+        mov ax, [0x8200]
+        mov [0x7e10], ax
+        mov word [0x8200], 0
+        mov al, 0x20            ; and the hard disk's: READ SECTORS
+        call ide_command
+        jc .noread
+        mov di, 0x8200
+        mov cx, 256
+.rword: mov dx, 0x300           ; the low byte reads the word,
+        in al, dx
+        mov dx, 0x308           ; the high byte waits at +8
+        mov ah, al
+        in al, dx
+        xchg al, ah
+        stosw
+        loop .rword
+        call ide_wait
+.noread:
+        mov dx, 0x307
+        in al, dx
+        mov [0x7e16], al
+        mov ax, [0x8200]
+        mov [0x7e18], ax
+        ret
+
+; One sector, number 2 of cylinder 0, head 0, of the master drive at 300h:
+; the command in al. Carry set when the drive never became ready (no card).
+ide_command:
+        push ax
+        call ide_wait
+        jc .fail
+        mov dx, 0x306           ; master, head 0
+        mov al, 0xa0
+        out dx, al
+        call ide_wait
+        jc .fail
+        mov dx, 0x302           ; one sector
+        mov al, 1
+        out dx, al
+        inc dx                  ; sector 2
+        mov al, 2
+        out dx, al
+        inc dx                  ; cylinder 0
+        xor al, al
+        out dx, al
+        inc dx
+        out dx, al
+        mov dx, 0x307
+        pop ax
+        out dx, al
+        mov cx, 0xffff          ; until the drive asks for the data
+.drq:   in al, dx
+        test al, 0x80
+        jnz .drqn
+        test al, 0x08
+        jnz .ok
+.drqn:  loop .drq
+        stc
+        ret
+.ok:    clc
+        ret
+.fail:  pop ax
+        stc
+        ret
+
+; until the drive is not busy; carry set if it stays busy (or is not there)
+ide_wait:
+        mov dx, 0x307
+        mov cx, 0xffff
+.w:     in al, dx
+        cmp al, 0xff
+        je .gone
+        test al, 0x80
+        jz .done
+        loop .w
+.gone:  stc
+        ret
+.done:  clc
+        ret
 
 puts:                           ; ds:si, zero-terminated
         lodsb
@@ -159,5 +310,4 @@ mouse:  db ' M=', 0
 msum:   db ' S=', 0
 last:   dw 0
 
-        times 510 - ($ - $$) db 0
-        dw 0xaa55
+        times 3584 - ($ - $$) db 0

@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "Esta máquina não tem nenhum BIOS chamado %1. Ela tem: %2",
 		"error.cpu_not_taken": "Esta máquina não aceita o processador %1. Ela aceita: %2",
 		"error.device_needs_thread": "Uma parte desta máquina (%1) precisa de uma thread própria, e este núcleo ainda não tem essa parte.",
+		"error.hdc_not_taken": "Esta máquina não aceita o controlador de disco rígido %1. Ela aceita: %2",
+		"error.hdd_needs_controller": "O projeto tem um disco rígido (%1), mas a máquina não tem controlador de disco rígido: escolha um nas configurações.",
 		"error.mouse_not_taken": "Esta máquina não aceita o mouse %1. Ela aceita: %2",
 		"error.no_frame_buffer": "Não há espaço para a imagem.",
 		"error.no_such_machine": "Não há nenhuma máquina chamada %1 neste núcleo.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "ROM de caracteres da IBM: %1",
 		"firmware.font_rom.about": "As formas com que as placas CGA, MDA e Hercules desenham o texto. É o arquivo %1 do conjunto de ROMs do 86Box, que você fornece. Sem ele a tela fica em branco.",
+		"firmware.hdc_rom": "ROM de %1: %2",
+		"firmware.hdc_rom.about": "A ROM do controlador de disco rígido %1. É o arquivo %2 do conjunto de ROMs do 86Box, que você fornece.",
 		"firmware.machine_rom": "ROM de %1: %2",
 		"firmware.machine_rom.about": "Uma ROM do %1. É o arquivo %2 do conjunto de ROMs do 86Box, que você fornece.",
 		"firmware.video_rom": "ROM de %1: %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "Um coprocessador matemático (FPU) ao lado do processador: um 8087 para um 8088, um 287 para um 286. 'none' é uma máquina vendida sem ele. Faz parte da máquina, então um filme precisa do mesmo valor.",
 		"setting.framespersecond": "Quadros por segundo",
 		"setting.framespersecond.about": "Quanto do tempo da máquina é um quadro: 100 faz um quadro durar 10 ms, como nos filmes do PCem. Faz parte do filme: as mesmas entradas em outro ritmo dão outra partida.",
+		"setting.harddiskcontroller": "Controlador de disco rígido",
+		"setting.harddiskcontroller.about": "A placa em que fica o disco rígido. As placas XTIDE trazem o XTIDE Universal BIOS, que aceita um disco de qualquer tamanho: 'PC/XT XTIDE' para uma máquina de 8 bits como um XT, 'PC/AT XTIDE' para um AT. Cada uma precisa do seu arquivo ROM. Um projeto com disco rígido precisa de um. Faz parte da máquina, então um filme precisa do mesmo valor.",
 		"setting.joystick": "Joystick",
 		"setting.joystick.about": "O que está ligado à porta de jogos. Faz parte da máquina, então um filme precisa do mesmo valor.",
 		"setting.machine": "Máquina",
@@ -44,8 +50,10 @@
 		"setting.video": "Placa de vídeo",
 		"setting.video.about": "A placa de vídeo. CGA, MDA e Hercules desenham o texto com a ROM de caracteres da IBM; EGA e VGA têm BIOS próprio. Cada uma precisa do seu arquivo ROM. Faz parte da máquina, então um filme precisa do mesmo valor.",
 		"slot.floppy_a": "Disquetes (unidade A:)",
-		"slot.floppy_a.help": "Imagens de disco para a unidade A:. A primeira está na unidade quando a máquina inicia. Os discos são somente leitura: um programa ainda não pode gravar neles.",
+		"slot.floppy_a.help": "Imagens de disco para a unidade A:. A primeira está na unidade quando a máquina inicia. Seus arquivos nunca são alterados: o que a máquina grava fica na memória dela e nos seus estados.",
 		"slot.floppy_b": "Disquetes (unidade B:)",
-		"slot.floppy_b.help": "Imagens de disco para a unidade B:. Funciona como a unidade A:. A configuração Unidade de disquete B: não pode ser 'none'."
+		"slot.floppy_b.help": "Imagens de disco para a unidade B:. Funciona como a unidade A:. A configuração Unidade de disquete B: não pode ser 'none'.",
+		"slot.hdd": "Disco rígido",
+		"slot.hdd.help": "Uma imagem de disco rígido (uma imagem bruta), no controlador escolhido na configuração Controlador de disco rígido. Seu arquivo nunca é alterado: o que a máquina grava fica na memória dela e nos seus estados. Os cilindros, cabeças e setores do disco são calculados a partir do tamanho do arquivo."
 	}
 }

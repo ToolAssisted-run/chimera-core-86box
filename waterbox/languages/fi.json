@@ -3,6 +3,8 @@
 		"error.bios_not_taken": "Tällä koneella ei ole BIOSia nimeltä %1. Sillä on: %2",
 		"error.cpu_not_taken": "Tämä kone ei ota suoritinta %1. Se ottaa: %2",
 		"error.device_needs_thread": "Osa tästä koneesta (%1) tarvitsee oman säikeen, eikä tässä ytimessä ole sitä osaa vielä.",
+		"error.hdc_not_taken": "Tämä kone ei ota kiintolevyohjainta %1. Se ottaa: %2",
+		"error.hdd_needs_controller": "Projektissa on kiintolevy (%1), mutta koneessa ei ole kiintolevyohjainta: valitse sellainen asetuksista.",
 		"error.mouse_not_taken": "Tämä kone ei ota hiirtä %1. Se ottaa: %2",
 		"error.no_frame_buffer": "Kuvalle ei ole tilaa.",
 		"error.no_such_machine": "Tässä ytimessä ei ole konetta nimeltä %1.",
@@ -13,6 +15,8 @@
 		"firmware.file": "%1",
 		"firmware.font_rom": "IBM:n merkki-ROM: %1",
 		"firmware.font_rom.about": "Muodot, joilla CGA-, MDA- ja Hercules-kortit piirtävät tekstin. Se on tiedosto %1 86Boxin ROM-kokoelmasta, jonka toimitat itse. Ilman sitä näyttö pysyy tyhjänä.",
+		"firmware.hdc_rom": "%1 ROM: %2",
+		"firmware.hdc_rom.about": "Kiintolevyohjaimen %1 ROM. Se on tiedosto %2 86Boxin ROM-kokoelmasta, jonka toimitat itse.",
 		"firmware.machine_rom": "%1 ROM: %2",
 		"firmware.machine_rom.about": "Koneen %1 ROM. Se on tiedosto %2 86Boxin ROM-kokoelmasta, jonka toimitat itse.",
 		"firmware.video_rom": "%1 ROM: %2",
@@ -31,6 +35,8 @@
 		"setting.fpu.about": "Matematiikkasuoritin (FPU) suorittimen rinnalla: 8087 8088:lle, 287 286:lle. 'none' on kone, joka myytiin ilman. Se on osa konetta, joten elokuva tarvitsee saman arvon.",
 		"setting.framespersecond": "Ruutua sekunnissa",
 		"setting.framespersecond.about": "Kuinka paljon koneen aikaa yksi ruutu on: 100 tekee ruudusta 10 ms pitkän, kuten PCem-elokuvissa. Se on osa elokuvaa: samat syötteet eri tahdissa antavat eri kulun.",
+		"setting.harddiskcontroller": "Kiintolevyohjain",
+		"setting.harddiskcontroller.about": "Kortti, johon kiintolevy on liitetty. XTIDE-korteissa on XTIDE Universal BIOS, joka ottaa minkä kokoisen levyn tahansa: 'PC/XT XTIDE' 8-bittiselle koneelle kuten XT:lle, 'PC/AT XTIDE' AT:lle. Jokainen tarvitsee ROM-tiedostonsa. Projekti, jossa on kiintolevy, tarvitsee sellaisen. Se on osa konetta, joten elokuva tarvitsee saman arvon.",
 		"setting.joystick": "Peliohjain",
 		"setting.joystick.about": "Mitä peliporttiin on liitetty. Se on osa konetta, joten elokuva tarvitsee saman arvon.",
 		"setting.machine": "Kone",
@@ -44,8 +50,10 @@
 		"setting.video": "Näytönohjain",
 		"setting.video.about": "Näytönohjain. CGA, MDA ja Hercules piirtävät tekstin IBM:n merkki-ROMilla; EGA:lla ja VGA:lla on oma BIOS. Jokainen tarvitsee ROM-tiedostonsa. Se on osa konetta, joten elokuva tarvitsee saman arvon.",
 		"slot.floppy_a": "Levykkeet (asema A:)",
-		"slot.floppy_a.help": "Levykevedokset asemalle A:. Ensimmäinen on asemassa, kun kone käynnistyy. Levykkeet ovat vain luettavia: ohjelma ei vielä voi kirjoittaa niille.",
+		"slot.floppy_a.help": "Levykevedokset asemalle A:. Ensimmäinen on asemassa, kun kone käynnistyy. Tiedostojasi ei koskaan muuteta: mitä kone kirjoittaa, jää sen muistiin ja sen tiloihin.",
 		"slot.floppy_b": "Levykkeet (asema B:)",
-		"slot.floppy_b.help": "Levykevedokset asemalle B:. Se toimii kuten asema A:. Asetus Levykeasema B: ei saa olla 'none'."
+		"slot.floppy_b.help": "Levykevedokset asemalle B:. Se toimii kuten asema A:. Asetus Levykeasema B: ei saa olla 'none'.",
+		"slot.hdd": "Kiintolevy",
+		"slot.hdd.help": "Kiintolevyvedos (raaka vedos) asetuksessa Kiintolevyohjain valitulla ohjaimella. Tiedostoasi ei koskaan muuteta: mitä kone kirjoittaa, jää sen muistiin ja sen tiloihin. Levyn sylinterit, päät ja sektorit lasketaan tiedoston koosta."
 	}
 }
