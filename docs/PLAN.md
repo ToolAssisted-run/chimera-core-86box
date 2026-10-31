@@ -127,28 +127,56 @@ to remove, a different file layer (86Box asks the platform to open every
 file, so no `fopen` renaming is needed) and a curated list of machines
 rather than all 500.
 
-## 2. Decisions awaiting the owner
+## 2. The owner's decisions (user-decided, 2026-10-31)
 
-- **A new public repository** (`chimera-core-86box`) and a roster row: not
-  done; this repository is local only.
-- **Which machines to offer first.** The default taken here: the Xi 8088
-  (free BIOS, the CI machine), then the IBM PC 5150, IBM XT 5160 and IBM AT
-  as the machines most people have ROMs for, then one 486 and one Pentium
-  board once the recompiler is in. All 500 would mean about 1,000 firmware
-  entries in the package; a curated list is what is offered.
-- **The frame rate.** 100 frames a second (10 ms of machine time a frame),
-  like the PCem core, so the two PC cores and the TASVideos PCem movies use
-  the same cadence. A setting can change it.
-- **The licence of the package**: GPL-3.0-or-later, because 86Box's
-  Teledisk reader carries LGPL-3.0-or-later LZW routines (upstream's own
-  builds are in the same position). The default taken: keep them, as
-  upstream does. The alternative is to leave them out, keep the package
-  GPL-2.0-or-later, and not read .td0 images saved with the old
-  compression.
-- **The controller** is the PCem core's, name for name, so the two PC
-  cores' movies have the same columns. The default taken; a different
-  layout (players, headers for the keyboard's columns) would be a choice
-  for both PC cores at once.
+The owner accepted every recommendation the first round put to them. Each
+answers an entry this section held as "awaiting the owner".
+
+- **Licence.** 86Box's LZW routines (its Teledisk .td0 reader) are kept, so
+  the package is GPL-3.0-or-later, as upstream's own builds are. Nothing
+  changed: the package already said so.
+- **Machines.** A curated list, added one at a time, each with a test. The
+  first five (the Xi 8088, IBM PC 1981 and 1982, IBM XT, IBM AT) stay; a
+  486 and a Pentium board come with the recompiler.
+- **Controller.** System id `PC` and the PCem core's controller layout,
+  button for button, so a PC movie's columns mean the same in both cores.
+  Kept as it is.
+- **Floppies** are writable, with no write-protect setting. Already so
+  (section 3, "disks the machine writes").
+- **Publishing.** A public repository and a roster row come after the IBM
+  machines have run with the owner's ROMs. Until then the repository stays
+  local.
+- **Frame rate.** 100 frames a second (10 ms of machine time a frame), like
+  the PCem core; a setting changes it. Kept.
+
+### Proper nouns are never translated or bent (user-decided, 2026-10-31)
+
+The owner's rule for every language table: the names of programs, chips,
+machines, games and companies (86Box, PCem, IBM, Hercules, the XTIDE
+Universal BIOS, the 8088, Chimera, Windows...) are written as they are. A
+language whose grammar puts endings on names says the sentence with a
+common noun beside the name instead ("86Box-emulaattorin", "a 8088
+processzorhoz", "tegn-ROM fra IBM"). No case ending, genitive "s" or other
+letters are glued to a name; a particle in another script (Korean,
+Japanese) is fine.
+
+Found and fixed by hand: 23 texts in 7 tables. Finnish (8: "86Boxin",
+"IBM:n", "8088:lle", "XT:lle", "EGA:lla"), Hungarian (4: "8088-hoz",
+"XT-hez", "PS/2-es", "EGA-nak"), Danish, Norwegian and Swedish (2 each:
+"IBMs", "IBM:s"), Turkish (1: "VGA'nin") and English itself (4: "86Box's
+ROM set" is now "the ROM set of 86Box"). The other 19 tables already wrote
+every name whole.
+
+The check is `tools/check-names.py`, a leg of the gate beside Chimera's own
+`tools/check-proper-nouns.py` (which knows only Chimera's names). It reads
+all 26 tables, English too, and fails when a name the English text holds is
+missing from a translation, when a letter of any script but Chinese,
+Japanese and Korean is glued to a name or to a placeholder (`%1` stands for
+a machine's or a card's name), or when an ending is hung on one with an
+apostrophe, a colon or a hyphen ("IBM'in", "IBM:n", "IBM-a"; a hyphen and a
+word of four letters or more is a compound and is allowed, as is "PS/2-mus",
+a mouse, by name). Seen to fail with the last bent text still in place
+(Turkish "VGA'nin": "VGA is not there as itself"), and to pass after it.
 
 ## 3. Log
 
@@ -311,8 +339,8 @@ rather than all 500.
 - **Licence**: 86Box is GPL-2.0-or-later, but its Teledisk (.td0) reader
   uses LZW routines under LGPL-3.0-or-later, so the package is GPL-3.0-or-
   later, as 86Box's own builds are. Leaving the LZW routines out would keep
-  GPL-2.0-or-later and cost old-compression .td0 images: the owner's call
-  (section 2).
+  GPL-2.0-or-later and cost old-compression .td0 images. The owner kept
+  them (section 2).
 - **Measured.** Gate, 25 passed, 0 failed, 0 skipped: the package builds
   (reproducibly: the same zip twice); Chimera's contract tests, 22 passed;
   `check-core-texts.py`, 47 keys all named; a project made with

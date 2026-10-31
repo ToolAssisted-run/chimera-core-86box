@@ -48,7 +48,7 @@
 		"setting.sound": "Ses kartı",
 		"setting.sound.about": "Her makinede bulunan PC hoparlörünün yanında ses kartı. Makinenin bir parçasıdır, bu yüzden bir film aynı değere ihtiyaç duyar.",
 		"setting.video": "Ekran kartı",
-		"setting.video.about": "Grafik kartı. CGA, MDA ve Hercules metni IBM karakter ROM'u ile çizer; EGA ve VGA'nın kendi BIOS'u vardır. Her biri kendi ROM dosyasına ihtiyaç duyar. Makinenin bir parçasıdır, bu yüzden bir film aynı değere ihtiyaç duyar.",
+		"setting.video.about": "Grafik kartı. CGA, MDA ve Hercules metni IBM karakter ROM'u ile çizer; EGA ve VGA kartlarının kendi BIOS'u vardır. Her biri kendi ROM dosyasına ihtiyaç duyar. Makinenin bir parçasıdır, bu yüzden bir film aynı değere ihtiyaç duyar.",
 		"slot.floppy_a": "Disketler (A: sürücüsü)",
 		"slot.floppy_a.help": "A: sürücüsü için disket görüntüleri. Makine başladığında ilki sürücüdedir. Dosyalarınız asla değiştirilmez: makinenin yazdıkları onun belleğinde ve durumlarında kalır.",
 		"slot.floppy_b": "Disketler (B: sürücüsü)",

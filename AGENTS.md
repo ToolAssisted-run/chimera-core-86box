@@ -62,6 +62,11 @@ window leg needs the window's Qt on `LD_LIBRARY_PATH`.
   changing the machines, the controller or the generator.
 - Every text a person reads is a key of `waterbox/languages/en.json`, and
   every language table has every key.
+- Names are never translated or bent, in any table, English too (the
+  owner, 2026-10-31): 86Box, IBM, the 8088, Chimera... are written as they
+  are, with no ending glued or hung on them ("86Box's", "IBM:n", "IBM-a");
+  say it with a common noun beside the name. A new name goes into
+  `tools/check-names.py`'s list; the gate runs it on all 26 tables.
 - Never commit a ROM, BIOS, disk image or game; never look for them on the
   machine. The owner supplies them.
 - Scripts under `waterbox/` and `tests/` are POSIX `sh` (the window test is
