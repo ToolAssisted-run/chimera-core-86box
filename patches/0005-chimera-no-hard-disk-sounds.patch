@@ -1,0 +1,17 @@
+diff --git a/src/86box.c b/src/86box.c
+index 4f5da88f1..cbc52c2bc 100644
+--- a/src/86box.c
++++ b/src/86box.c
+@@ -1521,8 +1521,12 @@ pc_init_modules(void)
+         fdd_audio_init();
+     }
+     
++#ifndef CHIMERA_CORE
++    /* A Chimera core has no hard disk sounds: they are mixed by a thread of
++     * their own, and the core has one thread. */
+     hdd_audio_load_profiles();
+     hdd_audio_init();
++#endif
+ 
+     sound_init();
+ 

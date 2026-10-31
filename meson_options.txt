@@ -1,0 +1,2 @@
+option('minibox_dir', type: 'string', value: '', description: 'miniBox checkout (guest kit + host)')
+option('dynarec', type: 'boolean', value: false, description: 'compile the x86-64 recompiler (src/codegen)')

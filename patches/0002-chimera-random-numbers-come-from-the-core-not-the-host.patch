@@ -1,0 +1,52 @@
+diff --git a/src/sound/snd_sn76489.c b/src/sound/snd_sn76489.c
+index f5e29b60b..55bc962de 100644
+--- a/src/sound/snd_sn76489.c
++++ b/src/sound/snd_sn76489.c
+@@ -263,7 +263,11 @@ sn76489_init(sn76489_t *sn76489, uint16_t base, uint16_t size, int type, int fre
+     sn76489->vol[0]                                                               = 0;
+     sn76489->vol[1] = sn76489->vol[2] = sn76489->vol[3] = 8;
+     sn76489->stat[0] = sn76489->stat[1] = sn76489->stat[2] = sn76489->stat[3] = 127;
++#ifndef CHIMERA_CORE
++    /* A Chimera core does not seed from the host's clock: the generator is
++     * the core's own and starts the same every run. */
+     srand(time(NULL));
++#endif
+     sn76489->count[0] = 0;
+     sn76489->count[1] = (rand() & 0x3FF) << 6;
+     sn76489->count[2] = (rand() & 0x3FF) << 6;
+diff --git a/src/utils/random.c b/src/utils/random.c
+index 5658bc3fb..79c607447 100644
+--- a/src/utils/random.c
++++ b/src/utils/random.c
+@@ -64,7 +64,17 @@ rdtsc(void)
+ static uint32_t
+ RDTSC(void)
+ {
++#ifdef CHIMERA_CORE
++    /* A Chimera core: the processor's time stamp counter is the host's and
++     * differs every run, and a sandbox cannot stand in front of the
++     * instruction. The C library's generator stands in for it; the core
++     * compiles 86Box with rand() and srand() as its own generator, whose
++     * state is machine memory. */
++    (void) rdtsc;
++    return (uint32_t) rand();
++#else
+     return (uint32_t) (rdtsc());
++#endif
+ }
+ 
+ static void
+@@ -88,7 +98,13 @@ random_generate(void)
+ void
+ random_init(void)
+ {
++#ifdef CHIMERA_CORE
++    /* the same start every run */
++    preconst = 0x6ED9EBA1;
++    srand(1);
++#else
+     uint32_t seed = RDTSC();
+     srand(seed);
++#endif
+     return;
+ }

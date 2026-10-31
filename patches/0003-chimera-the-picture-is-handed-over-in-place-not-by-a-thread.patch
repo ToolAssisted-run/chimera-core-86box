@@ -1,0 +1,44 @@
+diff --git a/src/video/video.c b/src/video/video.c
+index 600e59748..aebc1616b 100644
+--- a/src/video/video.c
++++ b/src/video/video.c
+@@ -445,7 +445,16 @@ video_blit_memtoscreen_monitor(int x, int y, int w, int h, int monitor_index)
+     monitors[monitor_index].mon_blit_data_ptr->h             = h;
+     monitors[monitor_index].mon_renderedframes++;
+ 
++#ifdef CHIMERA_CORE
++    /* A Chimera core has one thread: the picture is handed over here, in
++     * place, and not by a thread of its own that runs when the host gets to
++     * it. The platform's blit_func calls video_blit_complete_monitor(). */
++    if (blit_func)
++        blit_func(x, y, w, h, monitor_index);
++    monitors[monitor_index].mon_blit_data_ptr->busy = 0;
++#else
+     thread_set_event(monitors[monitor_index].mon_blit_data_ptr->wake_blit_thread);
++#endif
+     MTR_END("video", "video_blit_memtoscreen");
+ }
+ 
+@@ -820,7 +829,11 @@ video_monitor_init(int index)
+     atomic_init(&monitors[index].mon_screenshots_raw_clipboard, 0);
+     if (index >= 1)
+         ui_init_monitor(index);
++#ifndef CHIMERA_CORE
+     monitors[index].mon_blit_data_ptr->blit_thread = thread_create(blit_thread, monitors[index].mon_blit_data_ptr);
++#else
++    (void) blit_thread;
++#endif
+ }
+ 
+ void
+@@ -830,8 +843,10 @@ video_monitor_close(int monitor_index)
+         return;
+     }
+     monitors[monitor_index].mon_blit_data_ptr->thread_run = 0;
++#ifndef CHIMERA_CORE
+     thread_set_event(monitors[monitor_index].mon_blit_data_ptr->wake_blit_thread);
+     thread_wait(monitors[monitor_index].mon_blit_data_ptr->blit_thread);
++#endif
+     if (monitor_index >= 1)
+         ui_deinit_monitor(monitor_index);
+     thread_destroy_event(monitors[monitor_index].mon_blit_data_ptr->buffer_not_in_use);

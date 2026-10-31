@@ -1,0 +1,45 @@
+diff --git a/src/utils/ini.c b/src/utils/ini.c
+index 5e7550f60..04d84e93a 100644
+--- a/src/utils/ini.c
++++ b/src/utils/ini.c
+@@ -337,6 +337,29 @@ ini_detect_bom(const char *fn)
+     return 0;
+ }
+ 
++#ifdef CHIMERA_CORE
++/* A Chimera core reads its configuration from memory (a stream fmemopen
++ * made), and the C library cannot read wide characters from such a stream:
++ * glibc crashes in fgetws. A line is read as bytes and each byte widened, so
++ * both builds of the core read it the same way and the bytes of a file name
++ * come through as they were. */
++static wchar_t *
++ini_fgets_bytes(wchar_t *str, int count, FILE *stream)
++{
++    char line[1024];
++    int  i;
++
++    if (!fgets(line, sizeof(line), stream)) {
++        str[0] = 0;
++        return NULL;
++    }
++    for (i = 0; line[i] && (i < (count - 1)); i++)
++        str[i] = (wchar_t) (unsigned char) line[i];
++    str[i] = 0;
++    return str;
++}
++#endif
++
+ #ifdef __HAIKU__
+ /* Local version of fgetws to avoid a crash */
+ static wchar_t *
+@@ -405,7 +428,9 @@ ini_read_ex(const char *fn, int is_rom)
+ 
+     while (1) {
+         memset(buff, 0x00, sizeof(buff));
+-#ifdef __HAIKU__
++#if defined(CHIMERA_CORE)
++        ini_fgets_bytes(buff, sizeof_w(buff), fp);
++#elif defined(__HAIKU__)
+         ini_fgetws(buff, sizeof_w(buff), fp);
+ #else
+         (void) !fgetws(buff, sizeof_w(buff), fp);

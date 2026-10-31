@@ -1,0 +1,21 @@
+diff --git a/src/nvr.c b/src/nvr.c
+index 6cd39da1e..6477a45e4 100644
+--- a/src/nvr.c
++++ b/src/nvr.c
+@@ -311,6 +311,16 @@ nvr_time_sync(void)
+     struct tm tm;
+     time_t    now;
+ 
++#ifdef CHIMERA_CORE
++    /* A Chimera core: the date the machine is switched on at is the
++     * project's (a setting), never the host's, and it is read as UTC so the
++     * host's time zone cannot change it either. */
++    extern int64_t plat_machine_clock_start(void);
++    now = (time_t) plat_machine_clock_start();
++    gmtime_r(&now, &tm);
++    nvr_time_set(&tm);
++    return;
++#endif
+     /* Get the current time of day, and convert to local time. */
+     (void) time(&now);
+ 
