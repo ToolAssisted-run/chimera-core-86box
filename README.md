@@ -7,12 +7,16 @@ is a frontend for tool-assisted speedruns; this repository builds one file,
 
 ## What it runs
 
-- Five machines for now: the Xi 8088, the IBM PC (1981 and 1982), the IBM
-  XT and the IBM AT, with CGA, MDA, Hercules, EGA or VGA, an AdLib, Game
-  Blaster, Tandy, SSI-2001 or Sound Blaster, two floppy drives, a mouse and
-  joysticks.
+- Seven machines for now: the Xi 8088, the IBM PC (1981 and 1982), the IBM
+  XT, the IBM AT, a 486 board (ASUS PCI/I-486SP3) and a Pentium board (ASUS
+  P/I-P55T2P4), with CGA, MDA, Hercules, EGA or VGA, an AdLib, Game Blaster,
+  Tandy, SSI-2001 or Sound Blaster, two floppy drives, a mouse and joysticks.
+- The 486 and the Pentium run on the interpreter of 86Box or, with the
+  Recompiler setting, on its recompiler: two different machines, so the
+  setting is part of a movie.
 - Two floppy drives and a hard disk (on an XT-IDE card, whose ROM, the free
-  XTIDE Universal BIOS, is built into the core). What the machine
+  XTIDE Universal BIOS, is built into the core, or on the 486 and Pentium
+  boards' own IDE port). What the machine
   writes stays in its memory and its states, and Emulator > Export Save
   Data gives the disks back as files; your own files are never changed.
 - A CD-ROM drive (an ISO, or a cue with data and audio tracks), the second

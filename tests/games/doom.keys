@@ -1,0 +1,32 @@
+# Doom v1.9 shareware (id Software, 1995): installed from its own archive
+# with its DEICE inside DOS, set up, and started to its first level.
+# tests/keys.py turns this into the runners' --key options. The machine:
+# the ASUS P/I-P55T2P4 (Pentium, 133 MHz) with its Award BIOS, 16 MB, IBM
+# VGA, no sound card, the recompiler on, and a 30 MB hard disk on the
+# board's own IDE port that the gate makes: FreeDOS, and the archive in
+# C:\DMINST.
+# The BIOS's CMOS is empty: "CMOS checksum error - Defaults loaded, Press F1
+# to continue". The defaults find the hard disk; FreeDOS's prompt by 2600.
+1500 key F1 5
+2600 type cd dminst\n
+2700 type install\n
+# DEICE: drive C; the folder \DOOMS, as offered; create it, Y. It joins
+# DOOMS_19.1 and .2 into DOOMS_19.EXE, the batch file runs it (it unpacks
+# the game) and then SETUP.
+3200 type c
+3400 key Enter 4
+3600 type y
+# SETUP: keyboard only; no music; no sound effects (the machine has no sound
+# card, the default each time); "Save parameters and launch DOOM".
+5000 key Enter 4
+5200 key Enter 4
+5400 key Enter 4
+5600 key Enter 4
+# Doom's demo plays; Escape for the menu, New Game, the first episode
+# (Knee-Deep in the Dead), the offered skill: E1M1 by frame 7600. Tab opens
+# the map, which names the level at its foot: "E1M1: HANGAR".
+7000 key Escape 4
+7100 key Enter 4
+7200 key Enter 4
+7300 key Enter 4
+7600 key Tab 4

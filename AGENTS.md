@@ -56,7 +56,8 @@ The gate must end with `0 failed`. Read the skipped count: without
 `FREE_BIOS_SRC` no machine runs. `FREEDOS_FLOPPY` adds the FreeDOS legs
 (from its floppy, and from a hard disk through the carried XTIDE Universal
 BIOS); `PCBOX_ROMS` (the ROM set of 86Box, v6.0) adds IBM's machines with
-IBM's ROMs, and `PCBOX_KROZ` a real game (docs/BUILDING.md); the window leg
+IBM's ROMs and the 486 and Pentium boards, and `PCBOX_KROZ` and
+`PCBOX_DOOM` two real games (docs/BUILDING.md); the window leg
 needs the window's Qt on `LD_LIBRARY_PATH`.
 
 ## Rules of this repository
@@ -70,6 +71,10 @@ needs the window's Qt on `LD_LIBRARY_PATH`.
   in 86Box is refused at load by name; make the device run in place instead.
 - A new gate leg is broken on purpose once and seen to fail; say so in the
   commit. Assert the machine is alive before comparing anything.
+- The recompiler's code must be the same length wherever the host puts
+  things (patch 0008): a block ends when its host code fills a buffer, so
+  code of another length is another machine. A new emitter path that picks
+  a short form by address breaks native == sandbox.
 - Regenerate `waterbox/waterbox.config` with `tools/gen-config.py` after
   changing the machines, the controller or the generator.
 - Every text a person reads is a key of `waterbox/languages/en.json`, and

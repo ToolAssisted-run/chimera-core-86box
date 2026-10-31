@@ -336,7 +336,14 @@ static int compose_cfg(void)
 		g_cardKB = card;
 	}
 	cfg_add("mem_size = %ld\n", mem);
-	cfg_add("cpu_use_dynarec = 0\n");
+	/* The recompiler (86Box's, for a 386-class processor and up) or the
+	 * interpreter: two machines, not one, so the setting is part of a movie.
+	 * It is there only in a build with -Ddynarec (meson_options.txt). */
+#ifdef USE_DYNAREC
+	cfg_add("cpu_use_dynarec = %d\n", wbx_setting_bool("recompiler", 0) ? 1 : 0);
+#else
+	cfg_add("cpu_use_dynarec = 0\n");   /* a build without it: the interpreter */
+#endif
 	/* the RTC is set at power-on from the project's date (patch 0001) */
 	cfg_add("time_sync = utc\n");
 
@@ -357,6 +364,10 @@ static int compose_cfg(void)
 
 	if (!device_taken(m, hdc, hdc_dev, hdc_name, choices, sizeof choices))
 		return refuse("error.hdc_not_taken", hdc, choices);
+	/* "internal" is the motherboard's own IDE port, which only some
+	 * machines have (86Box's table lets any machine name it) */
+	if (!strcmp(hdc, "internal") && !(machines[m].flags & MACHINE_IDE_PRI))
+		return refuse("error.hdc_not_taken", hdc, "none, xtide, xtide_at_1ch");
 	if (card > 0)
 		cfg_add("\n[Other peripherals]\nisamem0_type = genericxt\n"
 		        "\n[Generic PC/XT Memory Expansion #1]\nsize = %ld\nstart = %ld\n", card, mem);

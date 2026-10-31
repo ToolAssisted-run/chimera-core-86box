@@ -2,6 +2,7 @@
   "_comment": "SHA-1 of each declared ROM file in the ROM set of 86Box, tag v6.0 (written by tools/pin-roms.py; read by tools/gen-config.py)",
   "romSet": "https://github.com/86Box/roms/tree/v6.0",
   "sha1": {
+    "roms/machines/486sp3/awsi2737.bin": "6c68c23cc5e8ae66261e9fe931f2ce07efe767b6",
     "roms/machines/glabios/GLABIOS_0.4.0_8P.ROM": "fd023bbf445ed64e42ec0cf4ff10e907ccff4017",
     "roms/machines/glabios/GLABIOS_0.4.0_8X.ROM": "84ba11ffdf4b6177a9fc84ce0fc7ab7849baf258",
     "roms/machines/glabios/GLABIOS_0.4.0_VP.ROM": "24e19f12baa2e4241f9b85c4127a68b617627882",
@@ -24,6 +25,7 @@
     "roms/machines/ibmxt/BIOS_5160_08NOV82_U19_5000027.BIN": "64769b7a8b60ffeefa04e4afbec778069a2840c9",
     "roms/machines/ibmxt/BIOS_5160_16AUG82_U18_5000026.BIN": "271c9f4cef5029a1560075550b67c3395db09fef",
     "roms/machines/ibmxt/BIOS_5160_16AUG82_U19_5000027.BIN": "64769b7a8b60ffeefa04e4afbec778069a2840c9",
+    "roms/machines/p55t2p4/0207_j2.bin": "a8870f2f3767cda8e28662c7880b87e904c2e11d",
     "roms/machines/xi8088/bios-xi8088-128k.bin": "da541a93b688c82aaf23d39f8f70abc713fe1016",
     "roms/video/ega/ibm_6277356_ega_card_u44_27128.bin": "3af56105530366669a8905c14439619bf6b76b25",
     "roms/video/mda/mda.rom": "c2a8b10808bf51a3c123ba3eb1e9dd608231916f",

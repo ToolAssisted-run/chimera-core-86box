@@ -17,6 +17,7 @@
 #   PCBOX_ROMS       the ROM set of 86Box, tag v6.0 (the owner's, for local
 #                    tests only: never on a public runner)
 #   PCBOX_KROZ       Kingdom of Kroz II's archive, 1kroz.zip
+#   PCBOX_DOOM       Doom v1.9 shareware's archive, doom19s.zip
 #
 # Without FREE_BIOS_SRC (and nasm and cmake) no machine runs: the legs that
 # need one say SKIP, with that reason. A gate that skipped everything is not
@@ -346,7 +347,7 @@ else
 fi
 HARNESS_BREAK_STALE_STATE=1 "$rw" "$wbx" "$cfg" $xi $probe $input --frames 2500 --rerecord > "$work/stale.txt" 2> "$work/stale.err"
 if grep -q '^end ' "$work/stale.txt" && [ "$(tail -1 "$work/stale.txt")" != "$(tail -1 "$work/probe-wbx.txt")" ]; then
-	report PASS "states: a stale state is noticed" "negative control: frame 749's state loaded at frame 750"
+	report PASS "states: a stale state is noticed" "negative control: frame 1249's state loaded at frame 1250"
 else
 	report FAIL "states: a stale state is noticed" "it was not: the leg above is blind"
 fi
@@ -690,6 +691,149 @@ PY
 			report PASS "Kroz: the movie through chimera-run" "18900 frames twice, in two processes: the same memory, and the sandbox runner's; the exported disk holds C:\\KROZ\\KINGDOM.EXE ($kex bytes); the project's file unchanged"
 		else
 			report FAIL "Kroz: the movie through chimera-run" "see build/gate/kroz/project ($(tail -1 "$kp/run1.log" | cut -c1-100))"
+		fi
+	fi
+fi
+
+# ------------------------------------- 10. a 486 and a Pentium: the recompiler
+# The ASUS PCI/I-486SP3 (a 486DX2 at 66 MHz, Award BIOS 4.50) and the ASUS
+# P/I-P55T2P4 (a Pentium at 133 MHz, Award BIOS 4.51PG), with their own
+# BIOS from the ROM set (PCBOX_ROMS), 16 MB, IBM VGA. 86Box's recompiler
+# runs a 386-class processor and up; the setting "recompiler" chooses it or
+# the interpreter, two machines. Each board starts FreeDOS from a 1.44 MB
+# floppy made here (its CMOS is empty, so the BIOS loads its defaults and
+# waits for F1, given at frame 1500), with each, natively and in the sandbox.
+if [ -z "$pr" ] || [ -z "$fd" ] || [ ! -d "${ir:-/nonexistent}" ]; then
+	report SKIP "486 and Pentium: FreeDOS, both ways" "needs PCBOX_ROMS and FREEDOS_FLOPPY"
+	report SKIP "486 and Pentium: states, recompiler on" "needs PCBOX_ROMS and FREEDOS_FLOPPY"
+else
+	pd="$work/pc32"; mkdir -p "$pd"
+	python3 "$root/tests/dos-disk/make-dos-disk.py" --freedos "$fd" --out "$pd/fd1440.img" --floppy 1440 \
+		--autoexec '@echo off\nset FDBOOT=%COMSPEC%\necho FreeDOS started from a 1.44 MB floppy.\n' > "$pd/disk.log" 2>&1
+	f1=$(python3 "$root/tests/keys.py" "$here/chimera-input.c" /dev/stdin <<'KEYS'
+1500 key F1 5
+KEYS
+)
+	ok=""; bad=""
+	for spec in 486sp3:i486dx2/66666666 p55t2p4:pentium_p54c/133333333; do
+		m=${spec%%:*}; cpu=${spec#*:}
+		for r in false true; do
+			brun="--roms $ir --set machine=$m --set cpu=$cpu --set video=vga --set memoryKB=16384 --set recompiler=$r"
+			brun="$brun --set floppyA=35_2hd --file floppy_a=$pd/fd1440.img --frames 3000 $f1"
+			t0=$(date +%s%N)
+			native_run $brun --dump-ram "$pd/$m-$r.ram" --digests "$pd/$m-$r-native.dig" > /dev/null
+			secs=$(( ($(date +%s%N) - t0) / 1000000000 ))
+			"$rw" "$wbx" "$cfg" $brun --digests "$pd/$m-$r-wbx.dig" > /dev/null 2> "$pd/$m-$r-wbx.err"
+			marker=$(grep -a -c 'FDBOOT=A:\\COMMAND.COM' "$pd/$m-$r.ram" 2>/dev/null)
+			if [ "${marker:-0}" -ge 1 ] && [ "$(wc -l < "$pd/$m-$r-native.dig")" -eq 3000 ] \
+			   && cmp -s "$pd/$m-$r-native.dig" "$pd/$m-$r-wbx.dig"; then ok="$ok $m/$([ $r = true ] && echo recompiler || echo interpreter):${secs}s"
+			else bad="$bad $m/$r(marker ${marker:-0})"; fi
+		done
+		# the two are two machines: their streams differ
+		cmp -s "$pd/$m-false-native.dig" "$pd/$m-true-native.dig" && bad="$bad $m(interpreter and recompiler gave one stream: is the setting read?)"
+	done
+	if [ -z "$bad" ]; then
+		report PASS "486 and Pentium: FreeDOS, both ways" "FDBOOT=A:\\COMMAND.COM by frame 3000, sandbox == native, each:$ok (native, host time); interpreter and recompiler streams differ"
+	else
+		report FAIL "486 and Pentium: FreeDOS, both ways" "failed:$bad; see build/gate/pc32"
+	fi
+	# States with the recompiler on, where the machine is tens of MB: saved
+	# and loaded before every frame from 2500 to 3000 (FreeDOS running), the
+	# run ends as the straight one; a state saved at 2900 carries on in
+	# another process; a stale state loaded once is noticed (control).
+	ok=""; bad=""
+	for spec in 486sp3:i486dx2/66666666 p55t2p4:pentium_p54c/133333333; do
+		m=${spec%%:*}; cpu=${spec#*:}
+		brun="--roms $ir --set machine=$m --set cpu=$cpu --set video=vga --set memoryKB=16384 --set recompiler=true"
+		brun="$brun --set floppyA=35_2hd --file floppy_a=$pd/fd1440.img --frames 3000 $f1"
+		"$rw" "$wbx" "$cfg" $brun > "$pd/$m-straight.txt" 2>&1
+		"$rw" "$wbx" "$cfg" $brun --rerecord-from 2500 > "$pd/$m-rerecord.txt" 2>&1
+		HARNESS_BREAK_STALE_STATE=1 "$rw" "$wbx" "$cfg" $brun --rerecord-from 2500 > "$pd/$m-stale.txt" 2>&1
+		"$rw" "$wbx" "$cfg" $brun --save-state "$pd/$m.state" --at 2900 > "$pd/$m-save.txt" 2>&1
+		"$rw" "$wbx" "$cfg" $brun --state "$pd/$m.state" > "$pd/$m-session.txt" 2>&1
+		end=$(grep '^end ' "$pd/$m-straight.txt")
+		size=$(sed -n 's/^saved frame=[0-9]* bytes=\([0-9]*\).*/\1/p' "$pd/$m-save.txt")
+		if [ -n "$end" ] && [ "$(grep '^end ' "$pd/$m-rerecord.txt")" = "$end" ] && [ "$(grep '^end ' "$pd/$m-session.txt")" = "$end" ] \
+		   && grep -q '^end ' "$pd/$m-stale.txt" && [ "$(grep '^end ' "$pd/$m-stale.txt")" != "$end" ]; then
+			ok="$ok $m:$((${size:-0} / 1048576))MB"
+		else
+			bad="$bad $m"
+		fi
+	done
+	if [ -z "$bad" ]; then
+		report PASS "486 and Pentium: states, recompiler on" "a state before every frame 2500-3000 and one carried to another process end as the straight run; a stale one is noticed; state sizes:$ok"
+	else
+		report FAIL "486 and Pentium: states, recompiler on" "failed:$bad; see build/gate/pc32"
+	fi
+fi
+
+# ------------------------------------------- 11. Doom, on the Pentium
+# Doom v1.9 shareware (id Software, 1995), from its own archive,
+# doom19s.zip (INSTALL.BAT, DEICE.EXE, DOOMS_19.DAT, DOOMS_19.1 and .2):
+#   PCBOX_DOOM   the path of that zip (SHA-1 below)
+# On the P/I-P55T2P4 with the recompiler, 16 MB, IBM VGA, no sound card,
+# and a 30 MB hard disk made here on the board's IDE port: FreeDOS and the
+# archive in C:\DMINST. The movie (tests/games/doom.keys) installs it with
+# DEICE inside DOS, answers SETUP, and starts a new game: E1M1, whose map
+# (Tab) names the level in red at its foot. The same input with the
+# interpreter reaches the same place; and as a movie in a project,
+# chimera-run gives back the disk with the game the installer wrote.
+dm="${PCBOX_DOOM:-}"
+dm_sha1=8d0fbbbeba5ecb692a99f97e55dfb5365cfe5b77
+if [ -z "$dm" ] || [ -z "$pr" ] || [ -z "$fd" ] || [ ! -d "${ir:-/nonexistent}" ] || [ ! -f "$work/mbr.bin" ]; then
+	report SKIP "Doom: installed in DOS, to E1M1" "needs PCBOX_DOOM (doom19s.zip), PCBOX_ROMS and FREEDOS_FLOPPY"
+elif [ "$(sha1sum "$dm" | cut -c1-40)" != "$dm_sha1" ]; then
+	report FAIL "Doom: installed in DOS, to E1M1" "PCBOX_DOOM is not doom19s.zip (sha1 $dm_sha1)"
+else
+	dd="$work/doom"; mkdir -p "$dd"
+	python3 "$root/tests/dos-disk/make-dos-disk.py" --freedos "$fd" --out "$dd/doom-hd.img" --hdd 61:16:63 \
+		--cluster 16 --mbr "$work/mbr.bin" --autoexec '@echo off\n' --put-zip "DMINST=$dm" > "$dd/disk.log" 2>&1
+	keys=$(python3 "$root/tests/keys.py" "$here/chimera-input.c" "$root/tests/games/doom.keys")
+	drun="--roms $ir --set machine=p55t2p4 --set cpu=pentium_p54c/133333333 --set video=vga --set memoryKB=16384"
+	drun="$drun --set floppyA=35_2hd --set hardDiskController=internal --file hdd=$dd/doom-hd.img --frames 7700"
+	t0=$(date +%s%N)
+	native_run $drun --set recompiler=true $keys --ppm "$dd/map-recompiler.ppm" --digests "$dd/native.dig" --dump-ram "$dd/native.ram" > /dev/null
+	s_rec=$(( ($(date +%s%N) - t0) / 1000000000 )); t0=$(date +%s%N)
+	native_run $drun --set recompiler=false $keys --ppm "$dd/map-interpreter.ppm" > /dev/null
+	s_int=$(( ($(date +%s%N) - t0) / 1000000000 ))
+	native_run $drun --set recompiler=true $(echo "$keys" | sed 's/--key 7600:4:[0-9]*//') --ppm "$dd/nomap.ppm" > /dev/null
+	"$rw" "$wbx" "$cfg" $drun --set recompiler=true $keys --digests "$dd/wbx.dig" --dump-ram "$dd/wbx.ram" > /dev/null 2> "$dd/wbx.err"
+	# the map's title: red letters in the strip above the status bar
+	title() { python3 - "$1" <<'PY'
+import sys
+d = open(sys.argv[1], 'rb').read().split(b'\n', 3)
+w = int(d[1].split()[0])
+b = d[3]
+print(sum(1 for y in range(318, 332) for x in range(170) if b[(y * w + x) * 3] > 150 and b[(y * w + x) * 3 + 1] < 80))
+PY
+}
+	t_rec=$(title "$dd/map-recompiler.ppm" 2>/dev/null || echo 0); t_int=$(title "$dd/map-interpreter.ppm" 2>/dev/null || echo 0)
+	t_none=$(title "$dd/nomap.ppm" 2>/dev/null || echo x)
+	if [ "${t_rec:-0}" -gt 300 ] && [ "${t_int:-0}" -gt 300 ] && [ "$t_none" = 0 ] \
+	   && [ -s "$dd/wbx.dig" ] && cmp -s "$dd/native.dig" "$dd/wbx.dig" && cmp -s "$dd/native.ram" "$dd/wbx.ram"; then
+		report PASS "Doom: installed in DOS, to E1M1" "the map's title at frame 7700 ($t_rec red pixels; none without the map) with the recompiler (${s_rec}s) and the interpreter (${s_int}s); 7700 frames, sandbox == native"
+	else
+		report FAIL "Doom: installed in DOS, to E1M1" "title recompiler $t_rec interpreter $t_int without map $t_none; see build/gate/doom"
+	fi
+	crun="$chimera_root/build/dll/chimera-run"
+	if [ ! -x "$crun" ]; then
+		report SKIP "Doom: the movie through chimera-run" "no chimera-run at $crun"
+	else
+		dp="$dd/project"; mkdir -p "$dp"; cp "$dd/doom-hd.img" "$dp/"
+		python3 "$here/tests/make-movie.py" "$pkg" 7700 $keys > "$dp/movie.txt"
+		fw="--firmware machines_p55t2p4_0207_j2.bin=$ir/machines_p55t2p4_0207_j2.bin --firmware video_vga_ibm_vga.bin=$ir/video_vga_ibm_vga.bin"
+		"$crun" --new-project "$dp/doom.chimeraProject" "$pkg" --file "hdd=$dp/doom-hd.img" --movie "$dp/movie.txt" \
+			--settings '{"machine": "p55t2p4 - [i430HX] ASUS P/I-P55T2P4", "cpu": "pentium_p54c/133333333 - Pentium (P54C) 133 MHz", "video": "vga - IBM VGA", "memoryKB": 16384, "floppyA": "35_2hd - 3.5\" 1.44M", "hardDiskController": "internal - Internal", "recompiler": true}' \
+			$fw > "$dp/make.log" 2>&1
+		"$crun" --project "$dp/doom.chimeraProject" "$pkg" $fw --frames 7700 --dump "System RAM=$dp/ram.bin" \
+			--export-savedata "$dp/export" > "$dp/run.log" 2>&1
+		wad=$(python3 "$root/tests/dos-disk/make-dos-disk.py" --read "$dp/export/doom-hd.img" 'DOOMS\DOOM1.WAD' 2>/dev/null | wc -c)
+		cfgd=$(python3 "$root/tests/dos-disk/make-dos-disk.py" --read "$dp/export/doom-hd.img" 'DOOMS\DEFAULT.CFG' 2>/dev/null | wc -c)
+		if [ -s "$dp/ram.bin" ] && cmp -s "$dp/ram.bin" "$dd/wbx.ram" && [ "${wad:-0}" -gt 1000000 ] && [ "${cfgd:-0}" -gt 0 ] \
+		   && cmp -s "$dp/doom-hd.img" "$dd/doom-hd.img"; then
+			report PASS "Doom: the movie through chimera-run" "7700 frames: the memory is the sandbox runner's; the exported disk holds C:\\DOOMS\\DOOM1.WAD ($wad bytes) and SETUP's DEFAULT.CFG; the project's file unchanged"
+		else
+			report FAIL "Doom: the movie through chimera-run" "wad $wad cfg $cfgd; see build/gate/doom/project ($(tail -1 "$dp/run.log" | cut -c1-100))"
 		fi
 	fi
 fi

@@ -48,7 +48,9 @@ sh <minibox>/source/guest/check-wbx.sh build/meson-guest/core.wbx
 ```
 
 Both compile the same list of upstream sources (`waterbox/sources.py`, read
-from upstream's CMakeLists.txt files) and the same core files. The native
+from upstream's CMakeLists.txt files) and the same core files, with 86Box's
+older x86-64 recompiler (`src/codegen`; meson option `dynarec`, on by
+default; the newer one, `codegen_new`, is left out). The native
 build is the reference the gate compares the sandbox with.
 
 ## The package
@@ -88,6 +90,14 @@ repository, never named beyond what the legs need:
   the archive on it, installs the game inside DOS on the IBM XT with its own
   installer, plays the first level, and replays the same input as a movie
   through `chimera-run` in two processes.
+- `PCBOX_DOOM`: Doom v1.9 shareware's archive, `doom19s.zip`. With
+  `PCBOX_ROMS` and `FREEDOS_FLOPPY`, the gate installs it inside DOS on the
+  Pentium board and starts its first level, with the recompiler and with
+  the interpreter.
+
+With `PCBOX_ROMS` the gate also runs the 486 and Pentium boards, both
+ways (interpreter and recompiler), natively and in the sandbox, and their
+states.
 
 `XUB_SRC` is the XTIDE Universal BIOS's source, as for the builds. With
 `FREEDOS_FLOPPY` the gate also makes a FreeDOS hard disk and starts FreeDOS

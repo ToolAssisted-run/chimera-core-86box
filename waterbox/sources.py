@@ -75,6 +75,11 @@ def main():
         rel = os.path.relpath(dp, src)
         if rel.split(os.sep)[0] in ('qt', 'unix', 'mac'):
             continue
+        # the newer recompiler (codegen_new, upstream's NEW_DYNAREC, off by
+        # default on x86-64) defines the same library; the core builds the
+        # older one, src/codegen
+        if rel.split(os.sep)[0] == 'codegen_new':
+            continue
         if 'CMakeLists.txt' not in fn:
             continue
         for lib, words in blocks(open(os.path.join(dp, 'CMakeLists.txt')).read()):

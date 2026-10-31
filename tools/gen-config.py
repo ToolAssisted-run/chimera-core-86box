@@ -189,7 +189,10 @@ AXES = [
 # The machines offered, and why: the Xi 8088 has a free BIOS (the tests'
 # machine); IBM's PC, XT and AT are the machines most people have the ROMs
 # of. 86Box has about 500; more are added one at a time, each with a test.
-MACHINES = ['xi8088', 'ibmpc', 'ibmpc82', 'ibmxt', 'ibmat']
+MACHINES = ['xi8088', 'ibmpc', 'ibmpc82', 'ibmxt', 'ibmat',
+            # a 486 (Intel 420TX, Award BIOS) and a Pentium (Intel 430HX, Award
+            # BIOS), the recompiler's machines: both boards have their IDE ports
+            '486sp3', 'p55t2p4']
 
 # Choices the core offers out of what 86Box lets each machine have.
 VIDEO = ['cga', 'mda', 'hercules', 'ega', 'vga']
@@ -201,7 +204,8 @@ JOYSTICKS = ['none', '2axis_2button', '2axis_4button', '4axis_4button', '2button
 # geometry and need no machine BIOS support (an XT has none), for an 8-bit
 # and a 16-bit machine. (86Box's tables of controllers are not exported by
 # list-machines; the names are src/disk/hdc_xtide.c's.)
-HDC = [('none', 'None'), ('xtide', 'PC/XT XTIDE'), ('xtide_at_1ch', 'PC/AT XTIDE (Primary Only)')]
+HDC = [('none', 'None'), ('xtide', 'PC/XT XTIDE'), ('xtide_at_1ch', 'PC/AT XTIDE (Primary Only)'),
+       ('internal', 'Internal')]
 # The XT-IDE cards' ROMs, the XTIDE Universal BIOS, are carried by the core
 # (waterbox/xtide-bios): they are not firmware the user brings.
 HDC_FILES = {}
@@ -221,6 +225,8 @@ VIDEO_FILES = {
 # two files, and the machine then reads the 128 KB one: see PLAN.md.)
 MACHINE_FILES = {
     'xi8088': ['roms/machines/xi8088/bios-xi8088-128k.bin'],
+    '486sp3': ['roms/machines/486sp3/awsi2737.bin'],
+    'p55t2p4': ['roms/machines/p55t2p4/0207_j2.bin'],
 }
 
 # IBM's cassette BASIC for the IBM PC: one 32 KB file (86Box also takes the
@@ -330,6 +336,8 @@ def main():
     # IBM's cassette BASIC, in ROM on the IBM PC and XT: the PC reads it from
     # files of its own when it is on (86Box's enable_basic)
     setting('cassetteBasic', 'cassettebasic', 'bool', True)
+    # the recompiler, for a 386-class processor and up
+    setting('recompiler', 'recompiler', 'bool', False)
     setting('clockStart', 'clockstart', 'datetime', 946684800, min=0, max=7258118400)
     setting('framesPerSecond', 'framespersecond', 'int', 100, min=1, max=1000)
 

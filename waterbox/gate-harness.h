@@ -17,6 +17,8 @@
  *                   CPU's cycles, the picture's hash and the frame's loudest
  *                   sample - the stream two runs are compared by
  * --rerecord        a state saved and loaded before every frame (sandbox)
+ * --rerecord-from F  the same, from frame F on (a machine whose state is tens
+ *                   of MB: the frames that matter, not the boot)
  * --save-state FILE --at F   after frame F, save a state to FILE and stop
  * --state FILE      carry on from a state another process saved
  * --ppm FILE [--ppm-at F]    the picture after frame F (the last one without
@@ -63,7 +65,7 @@ struct harness_core {
 #define HARNESS_MAX_EVENTS 4096
 struct harness_event { uint64_t from, count; int32_t index, value; int axis; };
 struct harness_opts {
-	uint64_t frames, every, save_at, ppm_at, stall_ms;
+	uint64_t frames, every, save_at, ppm_at, stall_ms, rerecord_from;
 	int rerecord;
 	char settings[4096];      /* as the options give them, the object still open */
 	char settings_json[4104]; /* the settings a runner hands the core, as the frontend would */
@@ -92,6 +94,7 @@ static int harness_parse(int argc, char **argv, int first, struct harness_opts *
 		if (!strcmp(a, "--frames")) o->frames = strtoull(v, NULL, 10);
 		else if (!strcmp(a, "--every")) o->every = strtoull(v, NULL, 10);
 		else if (!strcmp(a, "--at")) o->save_at = strtoull(v, NULL, 10);
+		else if (!strcmp(a, "--rerecord-from")) { o->rerecord = 1; o->rerecord_from = strtoull(v, NULL, 10); }
 		else if (!strcmp(a, "--stall-ms")) o->stall_ms = strtoull(v, NULL, 10);
 		else if (!strcmp(a, "--set")) {
 			const char *eq = strchr(v, '=');
@@ -252,7 +255,7 @@ static int harness_run(const struct harness_core *c, const struct harness_opts *
 
 	while (s.frame < o->frames) {
 		const uint64_t f = s.frame + 1;
-		if (o->rerecord) {
+		if (o->rerecord && f >= o->rerecord_from) {
 			uint8_t *buf = NULL;
 			size_t len = 0;
 			if (!c->save(&buf, &len))
@@ -263,7 +266,8 @@ static int harness_run(const struct harness_core *c, const struct harness_opts *
 			static uint8_t *before;
 			static size_t before_len;
 			const char *stale = getenv("HARNESS_BREAK_STALE_STATE");
-			if (stale && *stale && before && f == o->frames / 2) {
+			const uint64_t half = o->rerecord_from + (o->frames - o->rerecord_from) / 2;
+			if (stale && *stale && before && f == half) {
 				if (!c->load(before, before_len))
 					return 1;
 			} else if (!c->load(buf, len)) {

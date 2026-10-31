@@ -3,21 +3,21 @@
 FreeDOS 1.3's boot floppy and the files the test scripts name.
 
   make-dos-disk.py --freedos <x86BOOT.img> --out <image>
-                   (--floppy 360 | --hdd <cylinders>:<heads>:<sectors> --mbr <mbr.bin>)
+                   (--floppy 360|1440 | --hdd <cylinders>:<heads>:<sectors> --mbr <mbr.bin>)
                    [--cluster <sectors>] [--autoexec <text>] [--config <text>]
                    [--put <DOS path>=<file>]... [--put-zip <DOS folder>=<zip>]...
   make-dos-disk.py --read <image> <DOS path>      prints a file of the disk
 
 The test scripts' FreeDOS disks (tests/hdd-dos made the first one, a 10 MB
-hard disk; this does the same for any size and for a 360 KB floppy):
+hard disk; this does the same for any size and for a 360 KB or 1.44 MB floppy):
 
 - one FAT12 file system, on the whole floppy, or on one active partition
   from cylinder 0, head 1, of a hard disk whose master boot record is ours
   (tests/hdd-dos/mbr.asm);
 - its boot sector is the floppy's FreeDOS FAT12 boot code with the file
   system's own BPB (the drive, the geometry, where it starts): that code
-  reads all it needs from the BPB, so it starts FreeDOS from a 360 KB
-  floppy or a hard disk as it does from its own 1.44 MB one;
+  reads all it needs from the BPB, so it starts FreeDOS from a 360 KB or
+  1.44 MB floppy or a hard disk as it does from its own 1.44 MB one;
 - the files are the floppy's KERNEL.SYS and FREEDOS\\BIN\\COMMAND.COM, an
   AUTOEXEC.BAT and a CONFIG.SYS if given, and the test's own files (--put,
   --put-zip: every file of a zip into a folder). Folders are made as needed.
@@ -38,6 +38,7 @@ DATE = ((2026 - 1980) << 9) | (1 << 5) | 1     # 2026-01-01
 FLOPPIES = {
     # KB: sectors a track, heads, cylinders, sectors a cluster, root entries, media
     360: (9, 2, 40, 2, 112, 0xFD),
+    1440: (18, 2, 80, 1, 224, 0xF0),
 }
 
 

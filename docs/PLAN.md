@@ -684,6 +684,92 @@ The owner supplied 86Box's ROM set at tag v6.0 for local tests
 - **Not tested**: playing past the first steps; Kroz's sound (the PC
   speaker, which the frame's sound carries, was not looked at).
 
+### 2026-10-31 (third round): a 486 and a Pentium, and the recompiler
+
+- **Two boards.** The ASUS PCI/I-486SP3 (Intel 420TX, Award BIOS 4.50,
+  `486sp3`) and the ASUS P/I-P55T2P4 (Intel 430HX, Award BIOS 4.51PG,
+  `p55t2p4`), each with its one BIOS file from the ROM set, now declared
+  (`MACHINE_FILES` in `gen-config.py`) and pinned. Neither board's devices
+  start a thread. Their hard disk goes on the board's own IDE port: a new
+  controller choice, "Internal", refused by name on a machine that has no
+  such port (86Box's table lets any machine name it). Memory up to the
+  boards' 128 MB and 512 MB; only 16 MB was run.
+- **The recompiler is in the build** (meson option `dynarec`, now on by
+  default): 86Box's older x86-64 recompiler, `src/codegen`. The source
+  list picked up the newer one, `codegen_new`, too (both define the same
+  library): it is left out. A setting, "Recompiler" (`recompiler`, off by
+  default), turns it on for a 386-class processor and up; with it off the
+  same build interprets. The two are two machines (their streams differ
+  from the first frame), so the setting is part of a movie. `check-wbx`:
+  clean.
+- **Faults are not its fast path.** Read in the source: the recompiler
+  gets its code memory from `plat_mmap` (ours: ordinary memory, read,
+  write and run), finds code the machine overwrites with the dirty masks
+  the memory write functions keep, and has no page protection, no signal
+  handler and no host CPU test (`codegen/`, `cpu/386_dynarec*.c`). What it
+  emits is SSE2 at most, the baseline.
+- **Found: the same machine was not the same in the sandbox (patch
+  0008).** With the recompiler on, the Pentium's sandbox run left the
+  native one at frame 1534 (one cycle, in the BIOS at F000:6E10), and the
+  sandbox was the same as itself every time. Traced block by block: the
+  block starting at F000:6E10 ended one instruction later in the sandbox.
+  A block ends when its host code fills `BLOCK_MAX` (1620) bytes, and the
+  emitter picks a 5-byte call when the function is within 2 GB of the
+  code buffer and a 12-byte one when it is not: in the sandbox the core's
+  code and its buffers are near each other, natively they are far apart.
+  Code of another length ends blocks elsewhere, and the cycles counted at a
+  block's end move. Patch 0008 makes the emitter always take the long form
+  (calls, the 32-bit-address shortcuts), under `CHIMERA_CORE`: the code
+  is the same length wherever the host puts things. After it, Doom's 7700
+  frames are the same natively and in the sandbox. Before it the
+  interpreter was already the same both ways.
+- **States.** A Pentium with 16 MB is a 57 MB state at FreeDOS's prompt
+  and 69 MB in Doom (the 486, 58 MB); saving and loading one before every frame over a whole run is
+  slow, so the runners take `--rerecord-from F` (the stale-state control
+  moves with it).
+- **Measured** (gate legs, which SKIP without `PCBOX_ROMS` and
+  `FREEDOS_FLOPPY`): each board starts FreeDOS from a 1.44 MB
+  floppy the gate makes (`FDBOOT=A:\COMMAND.COM` by frame 3000, the BIOS
+  given F1 at 1500), with the interpreter and with the recompiler,
+  natively and in the sandbox, the same stream both ways for each, and the
+  interpreter's stream is not the recompiler's. Host time, native, 3000
+  frames: 5 s for the 486 either way, 7 s for the Pentium either way (most
+  of it the BIOS waiting). With the recompiler on, states saved and loaded
+  before every frame from 2500 to 3000, and a state of frame 2900 carried
+  to another process, end as the straight run; a stale state is noticed.
+  Broken on purpose: with patch 0008 taken out, the Pentium's recompiled
+  run in the sandbox leaves the native one at frame 1534 again.
+- **Doom.** Doom v1.9 shareware (id Software, 1995), from the owner's copy
+  of `doom19s.zip` (SHA-1 `8d0fbbbe...`; `PCBOX_DOOM`), on the P/I-P55T2P4
+  with the Pentium at 133 MHz, 16 MB, IBM VGA, no sound card. A 30 MB hard
+  disk made by the gate (63 sectors, 16 heads, 61 cylinders; one FAT12
+  partition with 8 KB clusters) holds FreeDOS and the archive in
+  `C:\DMINST`; the BIOS's defaults find it on the board's IDE port. The
+  movie (`tests/games/doom.keys`) presses F1 at the BIOS's CMOS message,
+  types `install`, answers DEICE (drive C, `\DOOMS`, create it), lets the
+  batch file unpack the game and run SETUP (keyboard only, no music, no
+  sound effects, save and launch), and from the title's demo starts a new
+  game: Knee-Deep in the Dead at the offered skill. The first level, E1M1,
+  is on screen at frame 7600; Tab opens the map, whose foot names it "E1M1:
+  HANGAR" (seen in the picture). Measured (legs that SKIP without
+  `PCBOX_DOOM`, `PCBOX_ROMS` and `FREEDOS_FLOPPY`): the map's title is drawn
+  at frame 7700 (784 red pixels where none are without the map) with the
+  recompiler (17 s, native) and with the interpreter (20 s): the game asks
+  little of the processor at its first level, so the recompiler is worth 15
+  percent here. 7700 frames, sandbox == native. As a movie in a project,
+  `chimera-run` ends with the sandbox runner's memory, and Export Save Data
+  gives back the disk with `C:\DOOMS\DOOM1.WAD` (4,196,020 bytes) and
+  SETUP's `DEFAULT.CFG`; the project's file unchanged. Broken on purpose:
+  the same movie with the interpreter ends with other memory, so the
+  movie leg would fail; without the map the title's red is 0.
+- **Not tested**: playing Doom (the movie only reaches the level); Doom's
+  sound (no sound card was given, and SETUP was told none); a Pentium or
+  486 with more than 16 MB; other processors the boards take; the boards'
+  other BIOS settings (the CMOS defaults were used as loaded); EGA, the
+  sound cards or a CD on these boards; the recompiler on any other board.
+- **Gate**, with `PCBOX_ROMS`, `FREEDOS_FLOPPY`, `PCBOX_KROZ` and
+  `PCBOX_DOOM`: 43 passed, 0 failed, 0 skipped, in 15 minutes.
+
 ## 4. Where this stands (2026-10-31, second round)
 
 Local repository `~/chimera-cores/86box`, no remote (publishing waits for

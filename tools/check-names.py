@@ -38,7 +38,9 @@ NAMES = [
     # cards
     "CGA", "MDA", "EGA", "VGA",
     # chips
-    "8088", "8087", "286", "287",
+    "8088", "8087", "286", "287", "386", "486", "Pentium",
+    # the ports and buses the boards have
+    "IDE",
 ]
 # a name inside another name is not counted twice: "XT" in "PC/XT"
 APOS = "'’ʼ:"
