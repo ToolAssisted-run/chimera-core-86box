@@ -240,3 +240,27 @@ rather than all 500.
   reads a control every tick, so about 120 of 1500 frames read one, idle or
   not. The sticks' axes are not tested: the probe does not time the game
   port's axis pulses.
+
+### 2026-10-31: sound
+
+- 86Box hands its sound over as up to four streams, each at its own rate
+  and in blocks when its own timer says: the cards at 48000 Hz (20 ms
+  blocks), the FM synthesizers at 49716 Hz, wavetables and CD audio at
+  44100 Hz. Chimera takes one stream at one rate. `waterbox/chimera-audio.c`
+  keeps the cards' stream as it comes and converts each other stream to
+  48000 Hz (linear interpolation, in whole numbers), adding it to the
+  cards' stream 2048 samples (43 ms) later than the moment it stands for.
+  A block of another stream is at most 28 ms long, so it has always arrived
+  before the samples it is added to, whatever order the timers fire in:
+  nothing is late and nothing is dropped. FM music is therefore 43 ms
+  behind the cards' sound, the same in every run. All of it is ordinary
+  memory, so a state carries it.
+- The probe plays one held FM note on an AdLib at start. Gate, 19 passed:
+  the loudest sample after frame 1000 is 2042 with an AdLib and 0 with no
+  card; 15 s give 719040 samples (48000 a second, less the cards' 20 ms
+  block not finished by the last frame). The probe's run now has the AdLib,
+  so the sandbox, state and stream legs compare FM sound too. Broken on
+  purpose and seen to fail: the FM stream not added.
+- A trap of the gate's own: a setting given twice to the runners is read as
+  the first, so a leg that needs another value starts from the settings
+  without it.

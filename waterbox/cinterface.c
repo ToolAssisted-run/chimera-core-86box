@@ -252,27 +252,6 @@ static void chimera_blit(int x, int y, int w, int h, int monitor_index)
 	video_blit_complete_monitor(monitor_index);
 }
 
-/* ------------------------------------------------------------- the sound
- *
- * The frame's sound is 86Box's main stream, 48000 Hz stereo, as its cards
- * hand it over (a 20 ms block at a time, so a 10 ms frame has a block or
- * none). The other streams (FM synthesizers at 49716 Hz, wavetables and CD
- * audio at 44100 Hz) come later. */
-#define AUDIO_CAP 48000
-static int16_t g_audio[AUDIO_CAP * 2];
-static int g_audioPairs;
-
-void chimera_audio_take(int stream, const int16_t *buf)
-{
-	if (stream != CHIMERA_STREAM_SOUND)
-		return;
-	for (int i = 0; i < SOUNDBUFLEN && g_audioPairs < AUDIO_CAP; i++) {
-		g_audio[g_audioPairs * 2] = buf[i * 2];
-		g_audio[g_audioPairs * 2 + 1] = buf[i * 2 + 1];
-		g_audioPairs++;
-	}
-}
-
 /* ------------------------------------------------------------ drives */
 
 void chimera_drive_activity(int tag, int active) { (void)tag; (void)active; }
@@ -365,7 +344,7 @@ ECL_EXPORT void FrameAdvance(uint64_t packed)
 	chimera_set_packed(packed);
 	chimera_apply_input(g_width, g_height);
 	chimera_input_read = 0;
-	g_audioPairs = 0;
+	chimera_audio_frame_start();
 	/* machine time in whole milliseconds, one pc_run each; a frame rate that
 	 * does not divide a second runs the rest in the frames after */
 	g_msAcc += (uint64_t)1000 * (uint64_t)g_fpsDen;
@@ -386,8 +365,9 @@ ECL_EXPORT int GetVideoHeight(void) { return g_height; }
 ECL_EXPORT int GetVsyncNumerator(void) { return g_fpsNum; }
 ECL_EXPORT int GetVsyncDenominator(void) { return g_fpsDen; }
 
-ECL_EXPORT int16_t *GetAudio(void) { return g_audio; }
-ECL_EXPORT int GetAudioSampleCount(void) { return g_audioPairs; }
+/* the frame's sound: chimera-audio.c */
+ECL_EXPORT int16_t *GetAudio(void) { return chimera_audio_buffer(); }
+ECL_EXPORT int GetAudioSampleCount(void) { return chimera_audio_pairs(); }
 
 ECL_EXPORT int InputWasRead(void) { return chimera_input_read; }
 

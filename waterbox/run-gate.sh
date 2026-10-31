@@ -86,7 +86,10 @@ if ! sh "$root/tests/boot-probe/build.sh" "$work/probe" > "$work/probe.log" 2>&1
 fi
 report PASS "free PC: the BIOS and the probe floppy build" "$(tail -1 "$work/free-bios.log" | cut -d, -f1-2)"
 
-xi="--roms $roms --set machine=xi8088 --set video=cga --set memoryKB=640 --set floppyA=525_2dd --set mouse=msserial --set joystick=2axis_2button"
+# (a setting given twice is read as the first: a leg that needs another value
+# starts from $xi_base)
+xi_base="--roms $roms --set machine=xi8088 --set video=cga --set memoryKB=640 --set floppyA=525_2dd --set mouse=msserial --set joystick=2axis_2button"
+xi="$xi_base --set sound=adlib"
 probe="--file floppy_a=$work/probe/probe.img"
 # the probe's run: the key A (button 29) held at frame 1200, the mouse moved
 # 30 to the right at 1300 and its position moved at 1350 - so every leg that
@@ -174,6 +177,23 @@ if [ -n "$lag_idle" ] && [ "$lag_idle" -lt "$lag" ] && [ "$lag" -lt 200 ]; then
 	report PASS "input: frames nobody read are lag frames" "frames that read a control: idle $lag_idle, with input $lag, of 1500"
 else
 	report FAIL "input: frames nobody read are lag frames" "idle ${lag_idle:-?}, with input ${lag:-?}"
+fi
+
+# ------------------------------------------------------------ 3b. sound
+# The probe plays one held note on an AdLib's FM chip. 86Box hands FM over as
+# a stream of its own at 49716 Hz, which the core converts and adds to the
+# cards' 48000 Hz (waterbox/chimera-audio.c): the note must be in the
+# frame's sound with an AdLib, and nothing without one (the BIOS's beep is
+# over by frame 1000). And the count: 48000 a second, less the block of 20
+# ms the cards have not finished by the last frame.
+native_run $xi_base $probe --set sound=none --frames 1500 --digests "$work/nosound.dig" > /dev/null
+peak=$(awk '$1 > 1000 && $5 > m { m = $5 } END { print m + 0 }' "$work/probe-native.dig")
+peak_none=$(awk '$1 > 1000 && $5 > m { m = $5 } END { print m + 0 }' "$work/nosound.dig")
+pairs=$(sed -n 's/.*audioPairs=\([0-9]*\).*/\1/p' "$work/probe-native.txt")
+if [ "$peak" -gt 500 ] && [ "$peak_none" = 0 ] && [ "${pairs:-0}" -le 720000 ] && [ "${pairs:-0}" -ge 719040 ]; then
+	report PASS "sound: an AdLib's FM note is in the frame's sound" "loudest after frame 1000: $peak (no card: 0); $pairs samples in 15 s"
+else
+	report FAIL "sound: an AdLib's FM note is in the frame's sound" "loudest $peak (no card: $peak_none); ${pairs:-?} samples in 15 s"
 fi
 
 # ----------------------------------------------------- 4. virtual time

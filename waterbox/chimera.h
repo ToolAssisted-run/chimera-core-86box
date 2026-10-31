@@ -43,6 +43,9 @@ extern int chimera_input_read;
 enum { CHIMERA_STREAM_SOUND, CHIMERA_STREAM_MUSIC, CHIMERA_STREAM_WAVETABLE, CHIMERA_STREAM_CD,
        CHIMERA_STREAMS };
 void chimera_audio_take(int stream, const int16_t *buf);
+void chimera_audio_frame_start(void);
+int16_t *chimera_audio_buffer(void);
+int chimera_audio_pairs(void);
 
 /* The C library's random numbers, as 86Box asks for them (rand and srand
  * are renamed to these in every C file of upstream's the core compiles): one

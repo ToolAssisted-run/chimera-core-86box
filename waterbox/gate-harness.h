@@ -13,8 +13,9 @@
  *                   of that index in the package's declaration is held
  * --axis F:N:INDEX:VALUE   the same for an axis
  * --every K         a line of digest every K frames, and always one at the end
- * --digests FILE    a line a frame: the frame, the machine's clock and the
- *                   picture's hash - the stream two runs are compared by
+ * --digests FILE    a line a frame: the frame, the machine's clock, the
+ *                   CPU's cycles, the picture's hash and the frame's loudest
+ *                   sample - the stream two runs are compared by
  * --rerecord        a state saved and loaded before every frame (sandbox)
  * --save-state FILE --at F   after frame F, save a state to FILE and stop
  * --state FILE      carry on from a state another process saved
@@ -143,7 +144,7 @@ static uint64_t harness_hash(uint64_t h, const void *data, size_t bytes)
 
 /* What a run has added up so far; a state file carries it, so that a run
  * carried on in another process ends with the sums of one that never stopped. */
-struct harness_sums { uint64_t frame, input_frames, audio_samples, audio_hash, video_hash; };
+struct harness_sums { uint64_t frame, input_frames, audio_samples, audio_hash, video_hash, audio_peak; };
 #define HARNESS_STATE_MAGIC "86box-gate-state-1"
 
 static uint64_t harness_picture_hash(const struct harness_core *c)
@@ -157,9 +158,10 @@ static void harness_line(const struct harness_core *c, const struct harness_sums
 	const int w = c->GetVideoWidth(), h = c->GetVideoHeight();
 	const int64_t ram = c->GetMemoryDomainSize(0);
 	printf("%s frame=%" PRIu64 " machineMs=%" PRIu64 " cycles=%" PRIu64 " inputFrames=%" PRIu64
-	       " audioPairs=%" PRIu64 " audioHash=%016" PRIx64 " ramBytes=%" PRId64 " ramHash=%016" PRIx64
+	       " audioPairs=%" PRIu64 " audioPeak=%" PRIu64 " audioHash=%016" PRIx64 " ramBytes=%" PRId64 " ramHash=%016" PRIx64
 	       " video=%dx%d videoHash=%016" PRIx64 " videosHash=%016" PRIx64 "\n",
-	       what, s->frame, c->GetMachineMs(), c->GetCpuCycles(), s->input_frames, s->audio_samples, s->audio_hash,
+	       what, s->frame, c->GetMachineMs(), c->GetCpuCycles(), s->input_frames, s->audio_samples, s->audio_peak,
+	       s->audio_hash,
 	       ram, harness_hash(HARNESS_HASH_START, c->GetMemoryDomainPtr(0), (size_t)ram), w, h,
 	       harness_picture_hash(c), s->video_hash);
 	fflush(stdout);
@@ -222,7 +224,7 @@ static int harness_run(const struct harness_core *c, const struct harness_opts *
 		return 1;
 	printf("machine=%s framesPerSecond=%d/%d\n", c->DebugMachine(), c->GetVsyncNumerator(), c->GetVsyncDenominator());
 
-	struct harness_sums s = { 0, 0, 0, HARNESS_HASH_START, HARNESS_HASH_START };
+	struct harness_sums s = { 0, 0, 0, HARNESS_HASH_START, HARNESS_HASH_START, 0 };
 	if (o->state) {
 		FILE *f = fopen(o->state, "rb");
 		char magic[sizeof HARNESS_STATE_MAGIC];
@@ -280,17 +282,27 @@ static int harness_run(const struct harness_core *c, const struct harness_opts *
 		s.frame = f;
 		s.input_frames += c->InputWasRead() ? 1 : 0;
 		const int n = c->GetAudioSampleCount();
+		uint64_t frame_peak = 0;
 		if (n > 0) {
 			s.audio_samples += (uint64_t)n;
 			s.audio_hash = harness_hash(s.audio_hash, c->GetAudio(), (size_t)n * 4);
+			/* the loudest sample, of the frame and of the run */
+			const int16_t *a = c->GetAudio();
+			for (int i = 0; i < n * 2; i++) {
+				const uint64_t v = (uint64_t)(a[i] < 0 ? -(int)a[i] : a[i]);
+				if (v > frame_peak)
+					frame_peak = v;
+			}
+			if (frame_peak > s.audio_peak)
+				s.audio_peak = frame_peak;
 		}
 		/* every frame's picture, added up: a picture that was wrong for one
 		 * frame in the middle shows at the end */
 		const uint64_t pic = harness_picture_hash(c);
 		s.video_hash = harness_hash(s.video_hash, &pic, sizeof pic);
 		if (digests)
-			fprintf(digests, "%" PRIu64 " %" PRIu64 " %" PRIu64 " %016" PRIx64 "\n", f, c->GetMachineMs(),
-			        c->GetCpuCycles(), pic);
+			fprintf(digests, "%" PRIu64 " %" PRIu64 " %" PRIu64 " %016" PRIx64 " %" PRIu64 "\n", f, c->GetMachineMs(),
+			        c->GetCpuCycles(), pic, frame_peak);
 		if (o->every && f % o->every == 0 && f != o->frames)
 			harness_line(c, &s, "at");
 		if (o->ppm && o->ppm_at == f)

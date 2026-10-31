@@ -12,6 +12,10 @@
 ;   0000:7E0E  byte   the game port (0x201) as last read: the buttons are
 ;                     bits 4-7, 0 while held
 ;
+; At start it also plays one held note on an AdLib's FM chip (ports
+; 0x388/0x389): with an AdLib in the machine the sound has it, without one
+; the writes go nowhere.
+;
 ; Line 0 of the screen: "86BOX PROBE T=xxxx K=xxxx L=xxxx M=xxxx S=xxxx",
 ; in hex.
 ; 8088 code only. Written for these tests; free to distribute.
@@ -39,6 +43,18 @@ start:
         mov dx, 0x3fc           ; COM1: DTR, RTS and OUT2 on - a serial
         mov al, 0x0b            ; mouse takes its power from DTR and RTS
         out dx, al
+        mov si, opl             ; the note: register, value, ..., 0
+.opl:
+        lodsw
+        or al, al
+        jz .opldone
+        mov dx, 0x388
+        out dx, al
+        mov al, ah
+        inc dx
+        out dx, al
+        jmp .opl
+.opldone:
         xor ah, ah              ; the timer now
         int 0x1a
         mov [last], dx
@@ -133,6 +149,9 @@ puthex:                         ; ax as four hex digits (8088 code: a
         jnz .digit
         ret
 
+opl:    db 0x20, 0x01, 0x23, 0x01, 0x40, 0x10, 0x43, 0x00
+        db 0x60, 0xf0, 0x63, 0xf0, 0x80, 0x77, 0x83, 0x77
+        db 0xa0, 0x98, 0xb0, 0x31, 0, 0
 title:  db '86BOX PROBE T=', 0
 keys:   db ' K=', 0
 lastk:  db ' L=', 0
