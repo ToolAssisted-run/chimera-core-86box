@@ -387,3 +387,78 @@ rather than all 500.
   first window zeroed) and seen to fail. Not tested: an exported image
   given back into a new project (the probe writes the sector again at
   start, so it could not tell).
+
+## 4. Where this stands (2026-10-31)
+
+Local repository `~/chimera-cores/86box`, no remote. Upstream 86Box v6.0
+(`4fef696a`), seven patches. The gate (`waterbox/run-gate.sh`): 27 passed,
+0 failed, 1 skipped without `FREEDOS_FLOPPY`; 28 with it (the FreeDOS leg
+passed in the run of 2026-10-31 that added it, 26 legs then).
+
+**What works, and is tested**
+
+- Both builds (native reference, sandboxed guest), `check-wbx` clean, the
+  package (deterministic zip, 26 language tables, Chimera's contract tests
+  22/22), from a fresh clone too.
+- On the free Xi 8088 (8088 at 4.77 MHz, CGA, AdLib, serial mouse, two
+  joysticks, a floppy and a hard disk on an XT-IDE card): the BIOS screen,
+  the gate's probe floppy, keyboard, mouse (relative and position), joystick
+  buttons, lag frames, FM sound mixed to 48000 Hz, floppy and hard disk
+  writes kept in memory, save data export, virtual time, native == sandbox
+  over 1500 frames, states (every frame, a stale one noticed, carried to
+  another process), a project through `chimera-run`, and the same project
+  in Chimera's Qt window, headless. FreeDOS 1.3's boot floppy boots to its
+  installer and takes a key, the sandbox matching the native build for
+  31000 frames.
+- Speed: 60 s of machine time in 7.8 s natively and 7.8 s in the sandbox
+  (an 8088 at 4.77 MHz, about 7.7 times real time); a state is about 4 MB.
+
+**Not tested** (each said where it is claimed)
+
+- The IBM PC, PC (1982), XT and AT: declared, their ROM files named, the
+  refusals tested; never run, for want of their ROMs. No SHA-1 is pinned.
+- EGA, VGA, MDA, Hercules; every sound card but the AdLib; the Game
+  Blaster's, Tandy's and SID's sound; the sticks' axes.
+- A hard disk through the XTIDE Universal BIOS (the free build here is not
+  configured for 86Box's card; 86Box's ROM set has one that is), any
+  operating system on a hard disk, the AT card; an exported image given
+  back into a project.
+- Windows (the same package; the frontend test on Windows was not run).
+
+**Next, in order**
+
+1. With the owner's ROM set (`needs_from_user`): run the four IBM machines
+   to their BIOS and to FreeDOS, pin each ROM file's SHA-1 in
+   `tools/gen-config.py`, and boot a disk through the XTIDE BIOS from 86Box's
+   set. Add a game each to the gate that runs where the ROMs are.
+2. The recompiler (`-Ddynarec=true` builds `src/codegen`; a setting, part
+   of the machine) and a 486 and a Pentium board: the same route, the
+   interpreter against the recompiler compared as two machines.
+3. CD-ROMs: make the CD audio thread run in place (patch), a slot, an IDE
+   or proprietary interface.
+4. More machines, each with a test; the threaded video cards (S3, ViRGE,
+   Voodoo, Matrox, Mach64) only after their command queues run in place.
+5. Windows: the frontend test's scenario on the Windows build.
+
+**Traps hit** (so the next person does not)
+
+- 86Box's "is this machine there" (`machine_available`) is satisfied by
+  ANY of a machine's BIOS files; a machine set to one BIOS with another's
+  file runs with no BIOS and a black screen. The core watches the files the
+  machine actually reads while it is built (`plat_fopen`) and treats
+  "asked about" (`plat_file_check`, a presence check of every variant)
+  separately.
+- 86Box's own interface switches to another machine or video card when one
+  is missing (`pc_init_modules`): refuse before calling it.
+- glibc's `fgetws` crashes on an `fmemopen` stream (patch 0004).
+- A setting given twice to the runners is read as the first.
+- The probe must be 8088 code (no 32-bit moves, no `rol ax, 4`); a 360 KB
+  floppy track has 9 sectors (a loader reading 8 from sector 3 failed and
+  retried for ever).
+- The free XTIDE Universal BIOS image needs padding to 8 KB and its
+  checksum fixed before a BIOS will run it, and even then its default build
+  does not find a drive on 86Box's XT-IDE card.
+- 86Box keeps a floppy's track in its own memory and writes sectors back to
+  the file: a test of whether written blocks are in a state has to use the
+  hard disk, which reads its file every time.
+- The Qt window needs the Qt it was built with on `LD_LIBRARY_PATH`.
