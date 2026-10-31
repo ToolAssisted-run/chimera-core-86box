@@ -392,8 +392,8 @@ rather than all 500.
 
 Local repository `~/chimera-cores/86box`, no remote. Upstream 86Box v6.0
 (`4fef696a`), six patches. The gate (`waterbox/run-gate.sh`): 27 passed,
-0 failed, 1 skipped without `FREEDOS_FLOPPY`; 28 with it (the FreeDOS leg
-passed in the run of 2026-10-31 that added it, 26 legs then).
+0 failed, 1 skipped without `FREEDOS_FLOPPY`; with it, 28 passed, 0 failed,
+0 skipped (3 min 30 s, run last on 2026-10-31 at commit e75e25e).
 
 **What works, and is tested**
 
