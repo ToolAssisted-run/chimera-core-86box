@@ -59,6 +59,31 @@ else
 	report FAIL "core.wbx is sandbox-clean" "$(tail -1 "$work/check-wbx.log")"
 fi
 
+# ------------------------------------------------------------ the package
+# built into this repository's build/Cores, never into the Chimera checkout
+pkgdir="$root/build/Cores"
+pkg="$pkgdir/86box.chimeraCore"
+if sh "$here/build-package.sh" -m "$mb" -o "$pkgdir" > "$work/package.log" 2>&1; then
+	report PASS "the package builds" "$(grep 'package sha1' "$work/package.log")"
+else
+	report FAIL "the package builds" "$(tail -2 "$work/package.log" | tr '\n' ' ')"
+fi
+tp="$chimera_root/build/meson-linux/source/ui/test-packages"
+if [ ! -x "$tp" ]; then
+	report SKIP "Chimera's contract tests" "no test-packages at $tp (Chimera built with its window)"
+elif [ "$(ls "$pkgdir")" != "86box.chimeraCore" ]; then
+	report FAIL "Chimera's contract tests" "build/Cores holds more than this package: $(ls "$pkgdir" | tr '\n' ' ')"
+elif env -u DISPLAY "$tp" "$pkgdir" > "$work/contract.log" 2>&1; then
+	report PASS "Chimera's contract tests" "$(grep -c '^PASS' "$work/contract.log") passed"
+else
+	report FAIL "Chimera's contract tests" "$(grep -m1 '^FAIL' "$work/contract.log")"
+fi
+if python3 "$chimera_root/tools/check-core-texts.py" "$root" > "$work/texts.log" 2>&1; then
+	report PASS "the code's texts are keys of the English table" "$(tail -1 "$work/texts.log")"
+else
+	report FAIL "the code's texts are keys of the English table" "$(tail -1 "$work/texts.log")"
+fi
+
 rn="$native/run-native"
 rw="$native/run-wbx"
 wbx="$guest/core.wbx"
@@ -107,6 +132,24 @@ PY
 }
 word_at() { python3 -c "import struct,sys; d=open(sys.argv[1],'rb').read(); print(struct.unpack_from('<H', d, int(sys.argv[2], 16))[0])" "$1" "$2"; }
 
+# ------------------------------------------- 0. what the core refuses
+# A machine whose ROM files are not all there is refused with the files'
+# names, never switched for another or run without them. The Xi 8088 with
+# only its 64 KB file is the case that once ran with no BIOS and said
+# nothing (86Box's "available" is satisfied by either of its two files).
+refusal() { rm -rf "$work/refuse"; "$rn" "$work/refuse" "$@" --frames 1 2>&1 | sed -n 's/^Init: //p' | tr '\037' '|'; }
+r_pc=$(refusal --roms "$roms" --set machine=ibmpc)
+mkdir -p "$work/roms64"; cp "$work/free-bios/machines_xi8088_bios-xi8088.bin" "$work/free-bios/video_mda_mda.rom" "$work/roms64/"
+r_64=$(refusal --roms "$work/roms64" --set machine=xi8088)
+r_cpu=$(refusal --roms "$roms" --set machine=ibmat --set cpu=8088/4772728)
+if [ "$r_pc" = "error.roms_missing|[8088] IBM PC (1981)|machines_ibmpc_BIOS_IBM5150_19OCT81_5700671_U33.BIN" ] \
+   && [ "$r_64" = "error.roms_missing|[8088] Xi8088|machines_xi8088_bios-xi8088-128k.bin" ] \
+   && [ "$r_cpu" = "error.cpu_not_taken|8088/4772728|286/6000000, 286/8000000" ]; then
+	report PASS "refused, by name: missing ROMs, a CPU" "IBM PC without its BIOS; Xi 8088 with only the 64 KB file; an 8088 in an AT"
+else
+	report FAIL "refused, by name: missing ROMs, a CPU" "[$r_pc] [$r_64] [$r_cpu]"
+fi
+
 # ------------------------------------------- 1. the native reference runs
 # The BIOS screen: lit, and not the picture of a moment before it (a machine
 # that shows one still picture is not running).
@@ -136,7 +179,7 @@ else
 	report FAIL "native: two runs give the same stream" "see build/gate/probe-native*.dig"
 fi
 # negative control: the stream sees another machine (a faster CPU)
-native_run $xi $probe $input --set cpuFamily=8088 --set cpuSpeed=7159092 --frames 1500 --digests "$work/probe-fast.dig" > /dev/null
+native_run $xi $probe $input --set cpu=8088/7159092 --frames 1500 --digests "$work/probe-fast.dig" > /dev/null
 if [ -s "$work/probe-fast.dig" ] && ! cmp -s "$work/probe-native.dig" "$work/probe-fast.dig"; then
 	report PASS "native: the stream notices a faster CPU" "negative control"
 else
@@ -247,6 +290,44 @@ if [ "$(tail -1 "$work/session2.txt")" = "$(tail -1 "$work/probe-wbx.txt")" ]; t
 	report PASS "states: another process carries on from a state" "saved at frame 900, ends as the straight run at 1500"
 else
 	report FAIL "states: another process carries on from a state" "see build/gate/session*"
+fi
+
+
+# ------------------------------------------- 7. through the engine, and the window
+# A project, as a person makes one: the probe floppy in its slot, the
+# settings, the firmware, a movie that holds A at frame 1200. chimera-run runs
+# it; the machine's memory at the end must be the sandbox runner's.
+crun="$chimera_root/build/dll/chimera-run"
+if [ ! -x "$crun" ]; then
+	report SKIP "a project runs through the engine" "no chimera-run at $crun"
+else
+	pj="$work/project"; mkdir -p "$pj"; cp "$work/probe/probe.img" "$pj/"
+	python3 "$here/tests/make-movie.py" "$pkg" 1500 --key 1200:5:29 > "$pj/movie.txt"
+	fwb=machines_xi8088_bios-xi8088-128k.bin; fwf=video_mda_mda.rom
+	if "$crun" --new-project "$pj/p.chimeraProject" "$pkg" --file "floppy_a=$pj/probe.img" --movie "$pj/movie.txt" \
+		--settings '{"machine": "xi8088 - [8088] Xi8088", "video": "cga - IBM CGA", "memoryKB": 640, "sound": "adlib - AdLib"}' \
+		--firmware "$fwb=$roms/$fwb" --firmware "$fwf=$roms/$fwf" > "$pj/make.log" 2>&1 \
+	   && "$crun" --project "$pj/p.chimeraProject" "$pkg" --firmware "$fwb=$roms/$fwb" --firmware "$fwf=$roms/$fwf" \
+		--frames 1500 --dump "System RAM=$pj/engine.ram" > "$pj/run.log" 2>&1; then
+		"$rw" "$wbx" "$cfg" --roms "$roms" --set machine=xi8088 --set video=cga --set memoryKB=640 --set sound=adlib \
+			--file "floppy_a=$pj/probe.img" --frames 1500 --key 1200:5:29 --dump-ram "$pj/wbx.ram" > /dev/null 2>&1
+		if cmp -s "$pj/engine.ram" "$pj/wbx.ram" && [ "$(word_at "$pj/engine.ram" 7e02)" = 1 ]; then
+			report PASS "a project runs through the engine" "chimera-run --project: 1500 frames, the memory is the sandbox runner's, A read"
+		else
+			report FAIL "a project runs through the engine" "the memory differs from the sandbox runner's (see build/gate/project)"
+		fi
+	else
+		report FAIL "a project runs through the engine" "$(tail -1 "$pj/make.log" "$pj/run.log" | tr '\n' ' ')"
+	fi
+fi
+win="$chimera_root/build/meson-linux/source/ui/chimera"
+if [ ! -x "$win" ]; then
+	report SKIP "Chimera's window" "no window at $win"
+elif env -u DISPLAY bash "$here/tests/run-frontend.sh" --chimera-root "$chimera_root" --package "$pkg" \
+	--roms "$roms" --probe "$work/probe/probe.img" > "$work/frontend.log" 2>&1; then
+	report PASS "Chimera's window" "$(tail -1 "$work/frontend.log"): memory, a setting, the keys (build/gate/frontend.log)"
+else
+	report FAIL "Chimera's window" "$(grep -m1 FAIL "$work/frontend.log")"
 fi
 
 finish

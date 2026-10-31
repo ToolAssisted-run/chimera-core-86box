@@ -1,0 +1,48 @@
+GNU General Public License, version 2 or later
+
+This repository's own files - the platform layer, the guest interface and
+the test runners under waterbox/, the tools under tools/, the tests under
+tests/, the build files and the documents - are Copyright (c) 2026 Sergio
+Martin and the Chimera contributors, and are free software: you can
+redistribute them and/or modify them under the terms of the GNU General
+Public License as published by the Free Software Foundation, either version
+2 of the License, or (at your option) any later version. They are
+distributed in the hope that they will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details:
+extern/86box/COPYING has its text (version 2).
+
+The patches under patches/ are changes to 86Box and are under 86Box's terms,
+the GNU General Public License version 2 or later.
+
+-------------------------------------------------------------------------------
+
+What this licence covers, and what it does not
+
+It does not cover what the repository builds from. The emulator is 86Box
+(https://86box.net, https://github.com/86Box/86Box), at the commit pinned in
+extern/86box (the v6.0 release), under the GNU General Public License
+version 2 or later. The parts of 86Box the package is built from carry other
+free licences beside it, each listed with its text in
+waterbox/package-licenses.json: ymfm (BSD 3-Clause), Berkeley SoftFloat 3e
+with Bochs' extensions (BSD 3-Clause and SoftFloat 2 terms), Nuked OPL3 and
+ESFMu (GNU Lesser General Public License 2.1 or later), reSID-fp (GNU
+General Public License 2 or later), MiniVHD, ayumi and cJSON (MIT), and the
+LZW routines of Michael Dipperstein (GNU Lesser General Public License
+version 3 or later), with which 86Box reads Teledisk (.td0) images saved
+with the old compression.
+
+Because of those LZW routines, the program in the built package,
+86box.chimeraCore, is under the GNU General Public License version 3 or
+later: 86Box's "or later" allows it, and the version 3 of the Lesser GPL
+needs it. The same is true of 86Box's own published builds. (Leaving the
+routines out would keep the package under version 2 or later and cost
+those .td0 images; that choice is the project owner's, docs/PLAN.md.)
+
+The tests build Sergey Kiselev's 8088 BIOS (GNU General Public License
+version 3) and a stand-in character ROM from its font for the test machine.
+Neither is in this repository or in the package.
+
+No ROM, BIOS or firmware of any computer is in this repository or in the
+package: a user supplies them. No game is in this repository or in the
+package.

@@ -17,6 +17,7 @@
 
 /* the platform layer */
 const char *chimera_flat_name(const char *path, char *out, size_t outsz);
+const char *chimera_flat_name_ex(const char *path, char *out, size_t outsz, int *is_rom);
 extern char chimera_thread_refused[128];
 extern char chimera_first_message[512];
 
@@ -24,7 +25,7 @@ extern char chimera_first_message[512];
 extern uint64_t chimera_ms;           /* milliseconds of machine time run */
 extern int chimera_powered_off;
 FILE *chimera_cfg_open(void);
-void chimera_file_opened(const char *name, int found);
+void chimera_file_opened(const char *name, int rom, int found);
 void chimera_drive_activity(int tag, int active);
 
 /* the controller (chimera-input.c); the axes in the declaration's order */

@@ -139,6 +139,16 @@ rather than all 500.
 - **The frame rate.** 100 frames a second (10 ms of machine time a frame),
   like the PCem core, so the two PC cores and the TASVideos PCem movies use
   the same cadence. A setting can change it.
+- **The licence of the package**: GPL-3.0-or-later, because 86Box's
+  Teledisk reader carries LGPL-3.0-or-later LZW routines (upstream's own
+  builds are in the same position). The default taken: keep them, as
+  upstream does. The alternative is to leave them out, keep the package
+  GPL-2.0-or-later, and not read .td0 images saved with the old
+  compression.
+- **The controller** is the PCem core's, name for name, so the two PC
+  cores' movies have the same columns. The default taken; a different
+  layout (players, headers for the keyboard's columns) would be a choice
+  for both PC cores at once.
 
 ## 3. Log
 
@@ -264,3 +274,57 @@ rather than all 500.
 - A trap of the gate's own: a setting given twice to the runners is read as
   the first, so a leg that needs another value starts from the settings
   without it.
+
+### 2026-10-31: the package, the engine, the window
+
+- **The declaration is generated** (`tools/gen-config.py`) from 86Box's own
+  tables as the pinned 86Box reports them: `list-machines`, a native-only
+  program built with the emulator, prints each offered machine's memory,
+  CPUs, FPUs, BIOS choices with their files, and the video cards, sound
+  cards and mice 86Box lets it have. `build-package.sh` regenerates it and
+  refuses a committed `waterbox.config` that differs.
+- **Five machines** for now: the Xi 8088, the IBM PC (1981 and 1982), the
+  IBM XT and the IBM AT. Video: CGA, MDA, Hercules, EGA, VGA. Sound: none,
+  AdLib, Game Blaster, Tandy, SSI-2001, Sound Blaster 1.0 to 16 (none of
+  them needs a ROM). Floppy drives, mice, joysticks, the clock at start and
+  the frame rate are settings. A choice is "id - Name" (the PCem core's
+  convention), so no names need translating; `auto` for the BIOS and the
+  CPU means the machine's own, and memory 0 means the most its
+  motherboard takes.
+- **Firmware**: one entry per ROM file of 86Box's ROM set, its id the path
+  in the set with `/` as `_`, required when the machine and BIOS (or the
+  video card) that read it are chosen. No SHA-1 is pinned: the ROMs were
+  not available here (the owner supplies them), so a file is known by its
+  name. Pinning the hashes is the first thing to do with the ROM set.
+- **What the core refuses, by name.** A CPU, BIOS, video card, sound card
+  or mouse the machine does not take, with the list of what it takes. ROM
+  files: 86Box's own interface switches to another machine whose ROMs are
+  there, and its "available" check is satisfied by any of a machine's BIOS
+  choices; the core instead watches every ROM file the machine reads while
+  it is built and refuses it, naming the files. The Xi 8088 with only its
+  64 KB file used to run with no BIOS and a black screen; now it is refused
+  naming the 128 KB file.
+- **Texts**: 47 keys in `waterbox/languages/en.json` and the 25 other
+  languages Chimera has, translated by an AI model (Claude), checked by
+  Chimera's rules (same keys, same placeholders); nobody who speaks them has
+  read them.
+- **Licence**: 86Box is GPL-2.0-or-later, but its Teledisk (.td0) reader
+  uses LZW routines under LGPL-3.0-or-later, so the package is GPL-3.0-or-
+  later, as 86Box's own builds are. Leaving the LZW routines out would keep
+  GPL-2.0-or-later and cost old-compression .td0 images: the owner's call
+  (section 2).
+- **Measured.** Gate, 25 passed, 0 failed, 0 skipped: the package builds
+  (reproducibly: the same zip twice); Chimera's contract tests, 22 passed;
+  `check-core-texts.py`, 47 keys all named; a project made with
+  `chimera-run --new-project` (the probe floppy in its slot, a movie
+  holding A) runs through the engine and ends with the sandbox runner's
+  memory; Chimera's Qt window, headless, runs the project 1500 frames and
+  ends with the native build's memory (and not the memory of a run without
+  the key), a project at 7.16 MHz ends with the native build's memory at
+  that speed, and the package's 106 key bindings and 4 axis bindings are
+  the window's. Broken on purpose and seen to fail: the window run with the
+  movie holding another key; the refusal with the ROM check after the
+  machine is built taken out (the Xi 8088 then ran 600 frames with 0 lit
+  pixels).
+- The window needs the Qt it was built with on `LD_LIBRARY_PATH` here
+  (`~/qt/6.12.0/gcc_64/lib`); the gate passes the environment through.

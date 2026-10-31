@@ -76,11 +76,18 @@ plat_joystick_state_t plat_joystick_state[MAX_PLAT_JOYSTICKS];
 
 const char *chimera_flat_name(const char *path, char *out, size_t outsz)
 {
+	return chimera_flat_name_ex(path, out, outsz, NULL);
+}
+
+const char *chimera_flat_name_ex(const char *path, char *out, size_t outsz, int *is_rom)
+{
 	const char *r = NULL, *p;
 	size_t i;
 	for (p = path; (p = strstr(p, "roms/")) != NULL; p += 5)
 		if (p == path || p[-1] == '/')
 			r = p + 5;
+	if (is_rom)
+		*is_rom = r != NULL;
 	if (r) {
 		for (i = 0; i + 1 < outsz && r[i]; i++)
 			out[i] = (r[i] == '/' || r[i] == '\\') ? '_' : r[i];
@@ -102,9 +109,10 @@ static int writes(const char *mode)
 FILE *plat_fopen(const char *path, const char *mode)
 {
 	char name[1024];
+	int rom = 0;
 	if (!path || !mode)
 		return NULL;
-	chimera_flat_name(path, name, sizeof name);
+	chimera_flat_name_ex(path, name, sizeof name, &rom);
 	if (!strcmp(name, CHIMERA_CFG_NAME))
 		return writes(mode) ? NULL : chimera_cfg_open();
 	if (writes(mode)) {
@@ -115,7 +123,7 @@ FILE *plat_fopen(const char *path, const char *mode)
 		return NULL;
 	/* "rt, ccs=UTF-8" and the like are Windows' modes: read is read */
 	FILE *f = fopen(name, "rb");
-	chimera_file_opened(name, f != NULL);
+	chimera_file_opened(name, rom, f != NULL);
 	return f;
 }
 

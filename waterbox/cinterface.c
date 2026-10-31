@@ -32,6 +32,7 @@
 #include <86box/mouse.h>
 #include <86box/gameport.h>
 #include "cpu.h"
+#include <86box/mouse.h>
 
 #include "chimera.h"
 
@@ -128,17 +129,18 @@ static const char *setting_id(const char *key, const char *dflt, char *out, int 
 	return out;
 }
 
-/* Missing files, as plat_fopen saw them while 86Box looked for a machine's
- * or a card's ROMs: the load error names them. */
+/* ROM files 86Box looked for and did not find, while it was asked whether a
+ * machine or a card is there and while the machine was built: the load
+ * error names them. */
 static char g_missing[2048];
 static int g_watchMissing;
 
-void chimera_file_opened(const char *name, int found)
+void chimera_file_opened(const char *name, int rom, int found)
 {
 	/* for whoever is finding out which files a machine wants */
 	if (getenv("CHIMERA_86BOX_TRACE_FILES"))
 		fprintf(stderr, "86box: %s %s\n", found ? "opened" : "no such file", name);
-	if (!g_watchMissing || found || strstr(g_missing, name))
+	if (!g_watchMissing || !rom || found || strstr(g_missing, name))
 		return;
 	if (strlen(g_missing) + strlen(name) + 3 < sizeof g_missing) {
 		if (g_missing[0])
@@ -147,12 +149,87 @@ void chimera_file_opened(const char *name, int found)
 	}
 }
 
+/* What a machine will take, for a refusal that says what to choose instead
+ * - a list is worth more than "invalid". */
+static void append(char *out, size_t outsz, const char *item)
+{
+	if (strlen(out) + strlen(item) + 3 >= outsz)
+		return;
+	if (out[0])
+		strcat(out, ", ");
+	strcat(out, item);
+}
+
+/* the machine's BIOS choices (a device config of type CONFIG_BIOS) */
+static const device_config_t *bios_config(int m)
+{
+	const device_t *d = machine_get_device(m);
+	for (const device_config_t *c = d ? d->config : NULL; c && c->type != CONFIG_END; c++)
+		if (c->type == CONFIG_BIOS)
+			return c;
+	return NULL;
+}
+
+/* "family/speed" against the machine: 1 when it takes that CPU */
+static int cpu_taken(int m, const char *family, long speed, char *choices, size_t chsz)
+{
+	int found = 0;
+	choices[0] = 0;
+	for (int f = 0; cpu_families[f].package; f++) {
+		const cpu_family_t *fam = &cpu_families[f];
+		if (!cpu_family_is_eligible(fam, m))
+			continue;
+		for (int c = 0; fam->cpus[c].cpu_type; c++) {
+			char item[96];
+			if (!cpu_is_eligible(fam, c, m))
+				continue;
+			snprintf(item, sizeof item, "%s/%u", fam->internal_name, fam->cpus[c].rspeed);
+			append(choices, chsz, item);
+			if (!strcmp(fam->internal_name, family) && (long)fam->cpus[c].rspeed == speed)
+				found = 1;
+		}
+	}
+	return found;
+}
+
+/* a device of a table (a video card, a sound card, a mouse) by its
+ * internal name, and whether the machine can have it */
+static int device_taken(int m, const char *want, const device_t *(*get)(int), const char *(*name)(int),
+                        char *choices, size_t chsz)
+{
+	int found = 0;
+	choices[0] = 0;
+	for (int c = 0; c < 4096; c++) {
+		const device_t *d = get(c);
+		if (!d && c > 1)
+			break;
+		if (!name(c)[0] || (d && !device_is_valid(d, m)))
+			continue;
+		append(choices, chsz, name(c));
+		if (!strcmp(name(c), want))
+			found = 1;
+	}
+	return found;
+}
+static const device_t *vid_dev(int c) { return video_card_getdevice(c); }
+static const char *vid_name(int c) { return video_get_internal_name(c); }
+static const device_t *snd_dev(int c) { return sound_card_getdevice(c); }
+static const char *snd_name(int c) { return sound_card_get_internal_name(c); }
+static const device_t *mouse_dev(int c) { return mouse_get_device(c); }
+static const char *mouse_name(int c) { return mouse_get_internal_name(c); }
+
+static int refuse(const char *key, const char *what, const char *choices)
+{
+	snprintf(g_loadError, sizeof g_loadError, "%s" TEXT_ARG "%s" TEXT_ARG "%s", key, what, choices);
+	return 0;
+}
+
 static int compose_cfg(void)
 {
-	char machineName[64], bios[64], cpuFamily[64], fpu[32], video[64], sound[64];
-	char fddA[32], fddB[32], mouseName[32], joystickName[32], hdc[64], fdc[64];
-	char slotA[256], slotB[256];
-	long mem, cpuSpeed;
+	char machineName[64], bios[64], cpu[64], fpu[32], video[64], sound[64];
+	char fddA[32], fddB[32], mouseName[32], joystickName[64];
+	char slotA[256], slotB[256], choices[1024];
+	long mem;
 	int m;
 
 	setting_id("machine", "xi8088", machineName, sizeof machineName);
@@ -161,17 +238,14 @@ static int compose_cfg(void)
 		snprintf(g_loadError, sizeof g_loadError, "error.no_such_machine" TEXT_ARG "%s", machineName);
 		return 0;
 	}
-	setting_id("bios", "", bios, sizeof bios);
-	setting_id("cpuFamily", "", cpuFamily, sizeof cpuFamily);
-	cpuSpeed = wbx_setting_long("cpuSpeed", 0);
+	setting_id("bios", "auto", bios, sizeof bios);
+	setting_id("cpu", "auto", cpu, sizeof cpu);
 	setting_id("fpu", "none", fpu, sizeof fpu);
 	mem = wbx_setting_long("memoryKB", 0);
-	setting_id("video", "internal", video, sizeof video);
+	setting_id("video", "cga", video, sizeof video);
 	setting_id("sound", "none", sound, sizeof sound);
 	setting_id("floppyA", "525_2dd", fddA, sizeof fddA);
 	setting_id("floppyB", "none", fddB, sizeof fddB);
-	setting_id("hardDiskController", "none", hdc, sizeof hdc);
-	setting_id("floppyController", "internal", fdc, sizeof fdc);
 	setting_id("mouse", "none", mouseName, sizeof mouseName);
 	setting_id("joystick", "none", joystickName, sizeof joystickName);
 
@@ -184,28 +258,38 @@ static int compose_cfg(void)
 
 	cfg_add("\n[Machine]\n");
 	cfg_add("machine = %s\n", machineName);
-	if (cpuFamily[0]) {
-		cfg_add("cpu_family = %s\n", cpuFamily);
-		cfg_add("cpu_speed = %ld\n", cpuSpeed);
-		cfg_add("cpu_multi = %s\n", "0");
+	if (strcmp(cpu, "auto")) {
+		char family[64];
+		const char *slash = strchr(cpu, '/');
+		long speed = slash ? strtol(slash + 1, NULL, 10) : 0;
+		snprintf(family, sizeof family, "%.*s", slash ? (int)(slash - cpu) : (int)strlen(cpu), cpu);
+		if (!cpu_taken(m, family, speed, choices, sizeof choices))
+			return refuse("error.cpu_not_taken", cpu, choices);
+		cfg_add("cpu_family = %s\ncpu_speed = %ld\ncpu_multi = 0\n", family, speed);
 	}
 	cfg_add("fpu_type = %s\n", fpu);
-	if (mem > 0)
-		cfg_add("mem_size = %ld\n", mem);
-	cfg_add("cpu_use_dynarec = %d\n", wbx_setting_bool("dynarec", 0) ? 1 : 0);
-	cfg_add("fpu_softfloat = %d\n", wbx_setting_bool("softfloat", 1) ? 1 : 0);
+	if (mem <= 0)
+		mem = (long)machines[m].ram.max;   /* the most the motherboard takes */
+	cfg_add("mem_size = %ld\n", mem);
+	cfg_add("cpu_use_dynarec = 0\n");
 	/* the RTC is set at power-on from the project's date (patch 0001) */
 	cfg_add("time_sync = utc\n");
 
+	if (!device_taken(m, video, vid_dev, vid_name, choices, sizeof choices))
+		return refuse("error.video_not_taken", video, choices);
 	cfg_add("\n[Video]\ngfxcard = %s\n", video);
 
+	if (!device_taken(m, sound, snd_dev, snd_name, choices, sizeof choices))
+		return refuse("error.sound_not_taken", sound, choices);
 	cfg_add("\n[Sound]\nsndcard = %s\n", sound);
 	cfg_add("sound_type = int16\n");
 	cfg_add("fm_driver = nuked\n");
 
+	if (!device_taken(m, mouseName, mouse_dev, mouse_name, choices, sizeof choices))
+		return refuse("error.mouse_not_taken", mouseName, choices);
 	cfg_add("\n[Input devices]\nmouse_type = %s\njoystick_type = %s\n", mouseName, joystickName);
 
-	cfg_add("\n[Storage controllers]\nfdc = %s\nhdc = %s\n", fdc, hdc);
+	cfg_add("\n[Storage controllers]\nfdc = internal\nhdc = none\n");
 
 	cfg_add("\n[Floppy and CD-ROM drives]\n");
 	cfg_add("fdd_01_type = %s\nfdd_02_type = %s\n", fddA, fddB);
@@ -214,13 +298,18 @@ static int compose_cfg(void)
 	if (wbx_slot_first("floppy_b", slotB, sizeof slotB) && slotB[0])
 		cfg_add("fdd_02_fn = wp://%s\nfdd_02_writeprot = 1\n", slotB);
 
-	if (bios[0]) {
-		const device_t *d = machine_get_device(m);
-		if (!d || !d->config) {
-			snprintf(g_loadError, sizeof g_loadError, "error.machine_has_one_bios" TEXT_ARG "%s", machineName);
-			return 0;
+	if (strcmp(bios, "auto")) {
+		const device_config_t *bc = bios_config(m);
+		int found = 0;
+		choices[0] = 0;
+		for (int b = 0; bc && b < 32 && bc->bios[b].files_no; b++) {
+			append(choices, sizeof choices, bc->bios[b].internal_name);
+			if (!strcmp(bc->bios[b].internal_name, bios))
+				found = 1;
 		}
-		cfg_add("\n[%s]\nbios = %s\n", d->name, bios);
+		if (!found)
+			return refuse("error.bios_not_taken", bios, choices[0] ? choices : "-");
+		cfg_add("\n[%s]\nbios = %s\n", machine_get_device(m)->name, bios);
 	}
 	return 1;
 }
@@ -297,28 +386,61 @@ ECL_EXPORT int Init(void)
 		return 0;
 	}
 
-	/* the machine's ROMs: refused by name rather than replaced by another
-	 * machine, which is what 86Box's own interface does */
+	/* The machine's ROMs. 86Box's own interface quietly switches to another
+	 * machine or card whose ROMs are there (pc_init_modules), or runs on
+	 * without a file; the core refuses instead, naming the files. */
 	g_watchMissing = 1;
 	g_missing[0] = 0;
-	if (!machine_available(machine)) {
-		g_watchMissing = 0;
-		snprintf(g_loadError, sizeof g_loadError, "error.machine_roms_missing" TEXT_ARG "%s" TEXT_ARG "%s",
+	int have = machine_available(machine);
+	g_watchMissing = 0;
+	if (!have) {
+		/* none of the machine's BIOS choices is there: name the chosen one's
+		 * files when the machine has choices, else every file it looked for */
+		const device_config_t *bc = bios_config(machine);
+		if (bc) {
+			char chosen[64];
+			setting_id("bios", "auto", chosen, sizeof chosen);
+			if (!strcmp(chosen, "auto"))
+				snprintf(chosen, sizeof chosen, "%s", bc->default_string);
+			g_missing[0] = 0;
+			for (int b = 0; b < 32 && bc->bios[b].files_no; b++) {
+				if (strcmp(bc->bios[b].internal_name, chosen))
+					continue;
+				for (int f = 0; f < bc->bios[b].files_no; f++) {
+					char flat[512];
+					append(g_missing, sizeof g_missing, chimera_flat_name(bc->bios[b].files[f], flat, sizeof flat));
+				}
+			}
+		}
+		snprintf(g_loadError, sizeof g_loadError, "error.roms_missing" TEXT_ARG "%s" TEXT_ARG "%s",
 		         machine_getname(machine), g_missing);
 		return 0;
 	}
+	g_watchMissing = 1;
 	g_missing[0] = 0;
-	if (!video_card_available(gfxcard[0])) {
-		g_watchMissing = 0;
-		snprintf(g_loadError, sizeof g_loadError, "error.video_roms_missing" TEXT_ARG "%s" TEXT_ARG "%s",
+	have = video_card_available(gfxcard[0]);
+	g_watchMissing = 0;
+	if (!have) {
+		snprintf(g_loadError, sizeof g_loadError, "error.roms_missing" TEXT_ARG "%s" TEXT_ARG "%s",
 		         video_get_internal_name(gfxcard[0]), g_missing);
 		return 0;
 	}
-	g_watchMissing = 0;
-
 	video_setblit(chimera_blit);
 	pc_init_modules();
+	/* Built: every ROM file the machine reads now must be there. (Being
+	 * "available" is not enough: it is satisfied by any of a machine's BIOS
+	 * choices, and the Xi 8088 set to its 128 KB BIOS with only the 64 KB
+	 * file passed it and then ran with no BIOS at all - a black screen and
+	 * no word, docs/PLAN.md.) */
+	g_watchMissing = 1;
+	g_missing[0] = 0;
 	pc_reset_hard_init();
+	g_watchMissing = 0;
+	if (g_missing[0]) {
+		snprintf(g_loadError, sizeof g_loadError, "error.roms_missing" TEXT_ARG "%s" TEXT_ARG "%s",
+		         machine_getname(machine), g_missing);
+		return 0;
+	}
 	plat_pause(0);
 	/* the mice report only while 86Box's window holds the pointer; the
 	 * core's machine always does: its mouse is the movie's */

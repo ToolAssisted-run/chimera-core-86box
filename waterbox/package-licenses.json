@@ -1,0 +1,77 @@
+{
+  "package": "86box",
+  "effectiveTerms": "GPL-3.0-or-later",
+  "commercialUse": "allowed under the GPL",
+  "note": "86Box is GPL-2.0-or-later. Its Teledisk (.td0) reader decompresses old images with Michael Dipperstein's LZW routines, which are LGPL-3.0-or-later, so the program as built is under the GPL version 3 or later, as 86Box's own builds are. The other parts carry permissive or LGPL-2.1-or-later terms that the GPL allows. No ROM, BIOS or firmware is in this package: the user supplies them, from 86Box's ROM set (https://github.com/86Box/roms). No game is in this package.",
+  "components": [
+    {
+      "name": "chimera-core-86box (integration)",
+      "license": "GPL-2.0-or-later",
+      "url": "https://github.com/ToolAssisted-run/chimera-core-86box",
+      "commit": "{selfCommit}",
+      "file": "LICENSE"
+    },
+    {
+      "name": "86Box",
+      "license": "GPL-2.0-or-later",
+      "url": "https://github.com/86Box/86Box",
+      "commit": "{submodule:extern/86box}",
+      "file": "extern/86box/COPYING",
+      "sourceUrl": "https://github.com/86Box/86Box/archive/{commit}.tar.gz"
+    },
+    {
+      "name": "LZW routines (Michael Dipperstein), in 86Box's floppy/lzw",
+      "license": "LGPL-3.0-or-later",
+      "url": "https://github.com/MichaelDipperstein/lzw",
+      "file": "extern/86box/src/floppy/lzw/lzwdecode.c"
+    },
+    {
+      "name": "ymfm (Aaron Giles), in 86Box's sound/ymfm",
+      "license": "BSD-3-Clause",
+      "url": "https://github.com/aaronsgiles/ymfm",
+      "file": "extern/86box/src/sound/ymfm/ymfm.h"
+    },
+    {
+      "name": "Berkeley SoftFloat 3e with Bochs' extensions, in 86Box's cpu/softfloat3e",
+      "license": "BSD-3-Clause, and the SoftFloat 2 terms for Bochs' extensions",
+      "url": "http://www.jhauser.us/arithmetic/SoftFloat.html",
+      "file": "extern/86box/src/cpu/softfloat3e/COPYING.txt"
+    },
+    {
+      "name": "Nuked OPL3 (Nuke.YKT), in 86Box's sound/snd_opl3_nuked.c",
+      "license": "LGPL-2.1-or-later",
+      "url": "https://github.com/nukeykt/Nuked-OPL3",
+      "file": "extern/86box/src/sound/snd_opl3_nuked.c"
+    },
+    {
+      "name": "ESFMu (Kagamiin~), in 86Box's sound/esfmu",
+      "license": "LGPL-2.1-or-later",
+      "url": "https://github.com/Kagamiin/ESFMu",
+      "file": "extern/86box/src/sound/esfmu/esfm.c"
+    },
+    {
+      "name": "reSID-fp, in 86Box's sound/resid-fp",
+      "license": "GPL-2.0-or-later",
+      "url": "https://github.com/libsidplayfp/resid",
+      "file": "extern/86box/src/sound/resid-fp/COPYING"
+    },
+    {
+      "name": "MiniVHD (Sherman Perry), in 86Box's disk/minivhd",
+      "license": "MIT",
+      "url": "https://github.com/shermp/MiniVHD",
+      "file": "extern/86box/src/disk/minivhd/LICENSE"
+    },
+    {
+      "name": "ayumi (Peter Sovietov), in 86Box's sound/ayumi",
+      "license": "MIT",
+      "url": "https://github.com/true-grue/ayumi",
+      "file": "extern/86box/src/sound/ayumi/LICENSE"
+    },
+    {
+      "name": "cJSON (Dave Gamble and contributors), in 86Box's utils",
+      "license": "MIT",
+      "url": "https://github.com/DaveGamble/cJSON",
+      "file": "extern/86box/src/utils/cJSON.c"
+    }
+  ]
+}

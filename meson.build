@@ -97,6 +97,13 @@ else
     link_whole: emu,
     dependencies: [m])
 
+  # 86Box's own tables, for the declaration (tools/gen-config.py)
+  executable('list-machines', plat_sources + files('waterbox/list-machines.c'),
+    include_directories: [include_directories('waterbox/native-shim', 'waterbox')] + inc,
+    c_args: ['-I' + mb / 'source/guest/include', '-I' + mb / 'extern/jsmn'],
+    link_whole: emu,
+    dependencies: [m])
+
   mbhost = mb / 'build/meson-linux/source/host'
   executable('run-wbx', files('waterbox/run-wbx.c'),
     c_args: ['-I' + mb / 'source/host'],
