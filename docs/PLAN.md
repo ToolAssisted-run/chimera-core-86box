@@ -559,6 +559,88 @@ The owner accepted the second round's two recommendations:
   fails. (86Box does not refuse an XT-IDE card without its ROM; it runs
   without one. The core no longer depends on that.)
 
+### 2026-10-31 (third round): IBM's machines, with IBM's ROMs
+
+The owner supplied 86Box's ROM set at tag v6.0 for local tests
+(`PCBOX_ROMS`; never on a public runner, never in the repository).
+
+- **SHA-1s pinned.** `tools/pin-roms.py` reads each file the package
+  declares from the set and writes its SHA-1 into `tools/rom-sha1.json`;
+  `tools/gen-config.py` puts it in the declaration (`sha1`), so Chimera
+  takes only that file. 27 files are declared now; 26 are pinned. One is not
+  in the set: `machines/ibmxt/BIOS_5160_08NOV82_U19_6359116.BIN`, the second
+  chip of the XT's "(Alt)" BIOS, which 86Box offers but its ROM set does not
+  hold; it stays declared by name. With `--copy` the same tool is how the
+  gate takes the files out of the set, each checked against its pin.
+- **Cassette BASIC: a file the declaration missed.** The IBM PC (1981 and
+  1982) reads IBM's cassette BASIC from files of its own
+  (`ibm-basic-1.00.rom`, `ibm-basic-1.10.rom`, or the four chips' files)
+  whenever 86Box's `enable_basic` is on, which is its default. The package
+  did not declare them, so the PC was refused at load ("these ROM files are
+  missing") with every file the frontend had asked for given: found the
+  first time it ran. Now a setting, "Cassette BASIC from IBM"
+  (`cassetteBasic`, on by default, written into the machine's section of
+  the configuration), and the BASIC file is required while it is on. The
+  XT's BASIC is in its BIOS chips and needs nothing more.
+- **Memory beyond the motherboard.** 86Box's IBM PC takes 64 KB on its
+  motherboard and the XT 256 KB; more was cut to that, silently. A real
+  machine had a memory card, and DOS games want 640 KB: on an 8-bit machine
+  a `memoryKB` above the motherboard's is now the motherboard full plus
+  86Box's generic PC/XT memory card for the rest, up to 640 KB. The BIOS
+  counts it through the switches 86Box sets from both. The card's memory is
+  a second memory domain, "Memory Card RAM" (it starts at the address where
+  the motherboard's ends; 86Box keeps it in the card's own buffer), and the
+  runners' `--dump-ram` writes every domain in turn. The IBM PC's 1981 BIOS
+  reads four memory switches and counts at most 544 KB (with 640 it counted
+  128); the 1982 BIOS counts 640.
+- **The character ROM and EGA/VGA.** 86Box reads IBM's character ROM
+  (`mda.rom`) at every video reset, whatever the card, but only CGA, MDA
+  and Hercules draw with it. The package asks for it only for those three,
+  and the core refused an EGA or VGA machine without it (found by the EGA
+  test's control). The core now lets that file be missing when the card
+  does not draw with it; EGA and VGA run with no character ROM.
+- **The IBM AT's empty CMOS.** The core keeps no CMOS memory between runs,
+  so the AT's BIOS says "161-System Options Not Set-(Run SETUP)" and waits
+  for F1 (and F1 held during the keyboard test gives "301-Keyboard Error"
+  instead). After F1 it starts from a 360 KB floppy, but not from a 1.44 MB
+  one: it knows a drive's kind only from the CMOS. Not changed: running
+  IBM's SETUP disk inside the machine would set it for that run only, and a
+  CMOS kept with the project is a question for the owner (questions).
+- **What ran, with IBM's own BIOS** (the gate's new legs, which SKIP without
+  `PCBOX_ROMS`):
+  - each machine's BIOS: the IBM PC (1981, 544 KB) and PC (1982, 640 KB) and
+    the XT (640 KB) count their memory and go into IBM's cassette BASIC; the
+    AT counts 512 KB and stops at the 161 message. The PC with its BASIC file
+    taken away is refused naming it; with cassette BASIC off it runs.
+  - FreeDOS on all four, from a 360 KB floppy the gate makes from FreeDOS
+    1.3's boot floppy (the floppy round 1 used is 1.44 MB, which the PC and
+    XT cannot read): `tests/dos-disk/make-dos-disk.py` writes a FAT12 floppy
+    or hard disk with FreeDOS's boot code, kernel and shell and the test's
+    files. AUTOEXEC.BAT sets `FDBOOT=%COMSPEC%`, and
+    `FDBOOT=A:\COMMAND.COM` is in memory by frame 12000 on each (the AT is
+    given F1 at frame 3000). Sandbox == native on each, 12000 frames.
+  - the AT card's XTIDE Universal BIOS, the core's: FreeDOS from the hard
+    disk of the Xi 8088's test, on the IBM AT; with the carried ROM turned
+    off, no marker. Sandbox == native, 8000 frames.
+  - each video card with IBM's ROMs: MDA 720x350, Hercules 720x350, CGA
+    640x200 on the XT; EGA 640x350 and VGA 720x400 on the AT, both with no
+    character ROM; each picture lit. Control: the EGA with 16 KB of zeros as
+    its BIOS lights no pixel.
+- **Broken on purpose, each seen to fail:** the BIOS leg at first (the
+  1981 PC at 544 KB still testing its memory at frame 6000, and the refusal
+  naming more files than the leg expected: it now runs 9000 frames and
+  reads the first file named); the video leg at first (the EGA refused for
+  want of the character ROM, the bug above); FreeDOS on the 1981 PC with
+  64 KB, no memory card: no marker by frame 12000; the AT's hard disk with
+  the carried ROM off: no marker (the leg's own control).
+- **Gate**, with `PCBOX_ROMS` and `FREEDOS_FLOPPY` (and the Kroz legs of
+  the next entry, committed after this): 39 passed, 0 failed, 0 skipped, in
+  10 minutes.
+- **Typing.** `tests/keys.py` turns a script of typed text and keys into the
+  runners' `--key` options (a shifted character holds Shift from the frame
+  before: keys of one frame are pressed in the table's order); the runners
+  now take 4096 input events instead of 128.
+
 ## 4. Where this stands (2026-10-31, second round)
 
 Local repository `~/chimera-cores/86box`, no remote (publishing waits for

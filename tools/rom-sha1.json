@@ -1,0 +1,35 @@
+{
+  "_comment": "SHA-1 of each declared ROM file in the ROM set of 86Box, tag v6.0 (written by tools/pin-roms.py; read by tools/gen-config.py)",
+  "romSet": "https://github.com/86Box/roms/tree/v6.0",
+  "sha1": {
+    "roms/machines/glabios/GLABIOS_0.4.0_8P.ROM": "fd023bbf445ed64e42ec0cf4ff10e907ccff4017",
+    "roms/machines/glabios/GLABIOS_0.4.0_8X.ROM": "84ba11ffdf4b6177a9fc84ce0fc7ab7849baf258",
+    "roms/machines/glabios/GLABIOS_0.4.0_VP.ROM": "24e19f12baa2e4241f9b85c4127a68b617627882",
+    "roms/machines/glabios/GLABIOS_0.4.0_VX.ROM": "f0b834a9af85419f13cc556605a0b26b0b066c62",
+    "roms/machines/ibmat/BIOS_5170_10JAN84_U27.BIN": "3e52cfa6a6a62b4e8576f4fe076c858c220e6c1a",
+    "roms/machines/ibmat/BIOS_5170_10JAN84_U47.BIN": "a7b885cfd38710c9bc509da1e3ba9b543a2760be",
+    "roms/machines/ibmat/BIOS_5170_10JUN85_U27.BIN": "18022e93a0412c8477e58f8c61a87718a0b9ab0e",
+    "roms/machines/ibmat/BIOS_5170_10JUN85_U47.BIN": "bfa15d2180a1902cb6d38c6eed3740f5617afd16",
+    "roms/machines/ibmat/BIOS_5170_15NOV85_U27.BIN": "ff9373c1a1f34a32fb6acdabc189c61b01acf9aa",
+    "roms/machines/ibmat/BIOS_5170_15NOV85_U27_61X9266.BIN": "8e8e5c863ae3b8c55fd394e345d8cca48b6e575c",
+    "roms/machines/ibmat/BIOS_5170_15NOV85_U47.BIN": "2a1aeb9ae3cd7e60fc4c383ca026208b82156810",
+    "roms/machines/ibmat/BIOS_5170_15NOV85_U47_61X9265.BIN": "22ed4e2be9f948682891e2fd056a97dbea01203c",
+    "roms/machines/ibmpc/BIOS_IBM5150_19OCT81_5700671_U33.BIN": "bdb06f846c4768f39eeff7e16b6dbff8cd2117d2",
+    "roms/machines/ibmpc/BIOS_IBM5150_24APR81_5700051_U33.BIN": "f046058faa016ad13aed5a082a45b21dea43d346",
+    "roms/machines/ibmpc/ibm-basic-1.00.rom": "815b13c6da5cdc215200e504b80013666cbdef16",
+    "roms/machines/ibmpc82/BIOS_5150_16AUG82_5000024_U33.BIN": "df24000fca262ab4ab54aa5e9c50669641b03572",
+    "roms/machines/ibmpc82/BIOS_5150_27OCT82_1501476_U33.BIN": "40fce6a94dda4328a8b608c7ae2f39d1dc688af4",
+    "roms/machines/ibmpc82/ibm-basic-1.10.rom": "07449ebca18f979b9ab748582b736e402f2bf940",
+    "roms/machines/ibmxt/BIOS_5160_08NOV82_U18_1501512.BIN": "6bac726d8d033491d52507278aa388ec04cf8b7e",
+    "roms/machines/ibmxt/BIOS_5160_08NOV82_U19_5000027.BIN": "64769b7a8b60ffeefa04e4afbec778069a2840c9",
+    "roms/machines/ibmxt/BIOS_5160_16AUG82_U18_5000026.BIN": "271c9f4cef5029a1560075550b67c3395db09fef",
+    "roms/machines/ibmxt/BIOS_5160_16AUG82_U19_5000027.BIN": "64769b7a8b60ffeefa04e4afbec778069a2840c9",
+    "roms/machines/xi8088/bios-xi8088-128k.bin": "da541a93b688c82aaf23d39f8f70abc713fe1016",
+    "roms/video/ega/ibm_6277356_ega_card_u44_27128.bin": "3af56105530366669a8905c14439619bf6b76b25",
+    "roms/video/mda/mda.rom": "c2a8b10808bf51a3c123ba3eb1e9dd608231916f",
+    "roms/video/vga/ibm_vga.bin": "7b8b0e22ecd002d43d5ed1bb9f9a63d9b9948032"
+  },
+  "notInTheSet": [
+    "roms/machines/ibmxt/BIOS_5160_08NOV82_U19_6359116.BIN"
+  ]
+}

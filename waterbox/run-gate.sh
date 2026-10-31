@@ -12,6 +12,11 @@
 # XUB_SRC is needed by the builds themselves: the core carries the XT-IDE
 # cards' ROM, built from that source.
 #
+# Optional, each adding legs that say SKIP without it:
+#   FREEDOS_FLOPPY   FreeDOS 1.3's boot floppy (FD13-FloppyEdition, 144m/x86BOOT.img)
+#   PCBOX_ROMS       the ROM set of 86Box, tag v6.0 (the owner's, for local
+#                    tests only: never on a public runner)
+#
 # Without FREE_BIOS_SRC (and nasm and cmake) no machine runs: the legs that
 # need one say SKIP, with that reason. A gate that skipped everything is not
 # a pass.
@@ -480,6 +485,127 @@ else
 		report PASS "FreeDOS's writes to C: are kept" "chimera-run --export-savedata: C:\\WROTE.TXT in the exported disk; the project's file unchanged"
 	else
 		report FAIL "FreeDOS's writes to C: are kept" "no C:\\WROTE.TXT in the exported disk, or the project's file changed; see build/gate/hdd-project"
+	fi
+fi
+
+# ------------------------------------------- 8. IBM's machines, with IBM's ROMs
+# The ROM set of 86Box (https://github.com/86Box/roms, tag v6.0), which the
+# owner supplies for local tests and which is never on a public runner:
+#   PCBOX_ROMS   the folder of that set (it holds machines/, video/, ...)
+# The gate copies the files the package declares out of it, each checked
+# against the SHA-1 the package pins (tools/pin-roms.py --copy), and runs
+# IBM's own machines with IBM's own BIOS: the IBM PC (1981 and 1982), the XT
+# and the AT. The character ROM is IBM's here, not the free stand-in.
+pr="${PCBOX_ROMS:-}"
+if [ -z "$pr" ]; then
+	report SKIP "IBM machines: their BIOS runs" "needs PCBOX_ROMS (the ROM set of 86Box, tag v6.0)"
+	report SKIP "IBM machines: FreeDOS from a floppy" "needs PCBOX_ROMS and FREEDOS_FLOPPY"
+	report SKIP "IBM AT: FreeDOS from its XT-IDE card" "needs PCBOX_ROMS and FREEDOS_FLOPPY"
+	report SKIP "IBM video cards draw with IBM's ROMs" "needs PCBOX_ROMS"
+elif ! python3 "$root/tools/pin-roms.py" --copy "$cfg" "$pr" "$work/ibm-roms" > "$work/ibm-roms.log" 2>&1; then
+	report FAIL "IBM machines: their BIOS runs" "$(tail -1 "$work/ibm-roms.log")"
+else
+	ir="$work/ibm-roms"
+	# The BIOS's POST counts the memory and leaves it at 0040:0013 (the PC's
+	# 1981 BIOS reads four memory switches, which say at most 544 KB); the
+	# picture is lit. The PC and XT go into IBM's cassette BASIC with no
+	# disk; the AT, whose clock memory (CMOS) is empty, stops at "161-System
+	# Options Not Set" and waits for F1. And the BASIC file is asked for by
+	# name while cassette BASIC is on, and not when it is off.
+	ok=""; bad=""
+	for spec in ibmpc:544 ibmpc82:640 ibmxt:640 ibmat:512; do
+		m=${spec%:*}; kb=${spec#*:}
+		native_run --roms "$ir" --set machine=$m --set video=cga --set memoryKB=$kb --frames 9000 \
+			--dump-ram "$work/ibm-$m.ram" --ppm "$work/ibm-$m.ppm" > /dev/null
+		got=$(word_at "$work/ibm-$m.ram" 413 2>/dev/null); l=$(lit "$work/ibm-$m.ppm" 2>/dev/null || echo 0)
+		if [ "$got" = "$kb" ] && [ "${l:-0}" -gt 1000 ]; then ok="$ok $m:${got}KB"; else bad="$bad $m:${got:-?}KB,lit=$l"; fi
+	done
+	mkdir -p "$work/ibm-nobasic"; cp "$ir"/* "$work/ibm-nobasic/"; rm "$work/ibm-nobasic/machines_ibmpc_ibm-basic-1.00.rom"
+	r_basic=$(refusal --roms "$work/ibm-nobasic" --set machine=ibmpc --set video=cga)
+	r_nob=$(refusal --roms "$work/ibm-nobasic" --set machine=ibmpc --set video=cga --set cassetteBasic=false)
+	# (86Box also looks for the four chips' files when the one file is not
+	# there, and the refusal names everything it looked for)
+	if [ -z "$bad" ] && [ "${r_basic%%, *}" = "error.roms_missing|[8088] IBM PC (1981)|machines_ibmpc_ibm-basic-1.00.rom" ] && [ -z "$r_nob" ]; then
+		report PASS "IBM machines: their BIOS runs" "memory the BIOS counted:$ok; the PC without its BASIC file is refused by name, and runs with cassette BASIC off"
+	else
+		report FAIL "IBM machines: their BIOS runs" "${bad:-} [$r_basic] [$r_nob]"
+	fi
+
+	# FreeDOS on each, from a 360 KB floppy the gate makes out of FreeDOS
+	# 1.3's boot floppy (its kernel and shell, and an AUTOEXEC.BAT that sets
+	# FDBOOT to the shell's path): the IBM PC and XT cannot read the 1.44 MB
+	# floppy, and the AT's BIOS reads a 1.44 MB drive only when its CMOS says
+	# it has one. The AT is given F1 at frame 3000. The sandbox must give the
+	# native run's stream on every machine.
+	if [ -z "$fd" ] || [ "$(sha1sum "$fd" | cut -c1-40)" != "$fd_sha1" ]; then
+		report SKIP "IBM machines: FreeDOS from a floppy" "needs FREEDOS_FLOPPY (FreeDOS 1.3 FD13-FloppyEdition 144m/x86BOOT.img)"
+	else
+		f1=$(python3 "$root/tests/keys.py" "$here/chimera-input.c" /dev/stdin <<'KEYS'
+3000 key F1 5
+KEYS
+)
+		python3 "$root/tests/dos-disk/make-dos-disk.py" --freedos "$fd" --out "$work/fd360.img" --floppy 360 \
+			--autoexec '@echo off\nset FDBOOT=%COMSPEC%\necho FreeDOS started from a 360 KB floppy.\n' > "$work/fd360.log" 2>&1
+		ok=""; bad=""
+		for spec in ibmpc:544 ibmpc82:640 ibmxt:640 ibmat:512; do
+			m=${spec%:*}; kb=${spec#*:}; extra=""
+			[ "$m" = ibmat ] && extra="$f1"
+			run="--roms $ir --set machine=$m --set video=cga --set memoryKB=$kb --set floppyA=525_2dd --file floppy_a=$work/fd360.img --frames 12000 $extra"
+			native_run $run --dump-ram "$work/fd-$m.ram" --digests "$work/fd-$m-native.dig" > /dev/null
+			"$rw" "$wbx" "$cfg" $run --digests "$work/fd-$m-wbx.dig" > /dev/null 2>&1
+			marker=$(grep -a -c 'FDBOOT=A:\\COMMAND.COM' "$work/fd-$m.ram" 2>/dev/null)
+			if [ "${marker:-0}" -ge 1 ] && [ "$(wc -l < "$work/fd-$m-native.dig")" -eq 12000 ] \
+			   && cmp -s "$work/fd-$m-native.dig" "$work/fd-$m-wbx.dig"; then ok="$ok $m"; else bad="$bad $m(marker ${marker:-0})"; fi
+		done
+		if [ -z "$bad" ]; then
+			report PASS "IBM machines: FreeDOS from a floppy" "FDBOOT=A:\\COMMAND.COM in memory by frame 12000 on$ok; sandbox == native on each"
+		else
+			report FAIL "IBM machines: FreeDOS from a floppy" "failed:$bad; see build/gate/fd-*"
+		fi
+
+		# The AT card's XTIDE Universal BIOS, the core's, on the IBM AT: the
+		# hard disk FreeDOS starts from on the Xi 8088 (6c) starts it here.
+		# Control: the AT with the carried ROM turned off (native build only)
+		# and no file of that name does not.
+		if [ -f "$work/hdd-dos.img" ]; then
+			atd="--set machine=ibmat --set video=cga --set floppyA=525_2dd --set hardDiskController=xtide_at_1ch"
+			atd="$atd --file hdd=$work/hdd-dos.img --frames 8000 $f1"
+			native_run --roms "$ir" $atd --dump-ram "$work/athd.ram" --digests "$work/athd-native.dig" > /dev/null
+			CHIMERA_86BOX_NO_BUILTIN_ROMS=1 native_run --roms "$ir" $atd --dump-ram "$work/athd-control.ram" > /dev/null
+			"$rw" "$wbx" "$cfg" --roms "$ir" $atd --digests "$work/athd-wbx.dig" > /dev/null 2>&1
+			b=$(grep -a -c 'HDBOOT=C:\\COMMAND.COM' "$work/athd.ram" 2>/dev/null); c=$(grep -a -c 'HDBOOT=C:\\COMMAND.COM' "$work/athd-control.ram" 2>/dev/null)
+			if [ "${b:-0}" -ge 1 ] && [ "${c:-1}" = 0 ] && cmp -s "$work/athd-native.dig" "$work/athd-wbx.dig"; then
+				report PASS "IBM AT: FreeDOS from its XT-IDE card" "the carried AT build of XUB r638 starts FreeDOS from C: (HDBOOT=C:\\COMMAND.COM); without it: no; 8000 frames, sandbox == native"
+			else
+				report FAIL "IBM AT: FreeDOS from its XT-IDE card" "marker ${b:-0}, control ${c:-?}; see build/gate/athd-*"
+			fi
+		else
+			report SKIP "IBM AT: FreeDOS from its XT-IDE card" "the hard disk of 6c was not made"
+		fi
+	fi
+
+	# Each video card draws, with IBM's ROMs: the character ROM for MDA,
+	# Hercules and CGA, the EGA's and the VGA's own BIOS - and EGA and VGA
+	# without the character ROM, which 86Box reads for every card but which
+	# only the first three draw with. Each picture is the card's size and
+	# lit. Control: the EGA given 16 KB of zeros as its BIOS draws nothing.
+	ok=""; bad=""
+	mkdir -p "$work/ibm-nofont"; cp "$ir"/* "$work/ibm-nofont/"; rm "$work/ibm-nofont/video_mda_mda.rom"
+	for spec in ibmxt:mda:720x350 ibmxt:hercules:720x350 ibmxt:cga:640x200 ibmat:ega:640x350 ibmat:vga:720x400; do
+		m=${spec%%:*}; rest=${spec#*:}; v=${rest%%:*}; size=${rest#*:}
+		vr="$ir"; case $v in ega|vga) vr="$work/ibm-nofont" ;; esac
+		native_run --roms "$vr" --set machine=$m --set video=$v --frames 3000 --ppm "$work/vid-$v.ppm" > "$work/vid-$v.txt"
+		got=$(grep -o 'video=[0-9x]*' "$work/vid-$v.txt" | cut -d= -f2); l=$(lit "$work/vid-$v.ppm" 2>/dev/null || echo 0)
+		if [ "$got" = "$size" ] && [ "${l:-0}" -gt 1000 ]; then ok="$ok $v:$got"; else bad="$bad $v:${got:-?},lit=$l"; fi
+	done
+	mkdir -p "$work/ega-zero"; cp "$ir"/machines_ibmat_* "$work/ega-zero/"
+	head -c 16384 /dev/zero > "$work/ega-zero/video_ega_ibm_6277356_ega_card_u44_27128.bin"
+	native_run --roms "$work/ega-zero" --set machine=ibmat --set video=ega --frames 3000 --ppm "$work/vid-ega-zero.ppm" > /dev/null
+	l0=$(lit "$work/vid-ega-zero.ppm" 2>/dev/null || echo x)
+	if [ -z "$bad" ] && [ "$l0" = 0 ]; then
+		report PASS "IBM video cards draw with IBM's ROMs" "$ok, each lit (EGA and VGA with no character ROM); the EGA with a BIOS of zeros: 0 lit pixels"
+	else
+		report FAIL "IBM video cards draw with IBM's ROMs" "${bad:-} EGA with zeros: $l0 lit"
 	fi
 fi
 

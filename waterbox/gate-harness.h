@@ -60,7 +60,7 @@ struct harness_core {
 	int (*load)(const uint8_t *buf, size_t len);
 };
 
-#define HARNESS_MAX_EVENTS 128
+#define HARNESS_MAX_EVENTS 4096
 struct harness_event { uint64_t from, count; int32_t index, value; int axis; };
 struct harness_opts {
 	uint64_t frames, every, save_at, ppm_at, stall_ms;
@@ -330,9 +330,14 @@ static int harness_run(const struct harness_core *c, const struct harness_opts *
 	if (o->ppm && !o->ppm_at)
 		harness_ppm(c, o->ppm);
 	if (o->dump_ram) {
+		/* every memory domain, one after another: the motherboard's memory,
+		 * then a memory card's (which starts where the motherboard's ends) */
 		FILE *out = fopen(o->dump_ram, "wb");
-		if (!out || fwrite(c->GetMemoryDomainPtr(0), 1, (size_t)c->GetMemoryDomainSize(0), out) !=
-		                    (size_t)c->GetMemoryDomainSize(0) || fclose(out) != 0) {
+		int ok = out != NULL;
+		for (int d = 0; ok && d < 8 && c->GetMemoryDomainPtr(d) && c->GetMemoryDomainSize(d) > 0; d++)
+			ok = fwrite(c->GetMemoryDomainPtr(d), 1, (size_t)c->GetMemoryDomainSize(d), out) ==
+			     (size_t)c->GetMemoryDomainSize(d);
+		if (!ok || fclose(out) != 0) {
 			fprintf(stderr, "cannot write %s\n", o->dump_ram);
 			return 2;
 		}

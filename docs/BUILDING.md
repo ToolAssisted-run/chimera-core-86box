@@ -74,6 +74,16 @@ CHIMERA_ROOT=<chimera> XUB_SRC=<xub> FREE_BIOS_SRC=<src> [FREEDOS_FLOPPY=<x86BOO
     LD_LIBRARY_PATH=<the window's Qt lib folder> sh waterbox/run-gate.sh
 ```
 
+One more input adds legs, saying SKIP with the reason when it is
+absent. It is for local tests: never on a public runner, never in the
+repository, never named beyond what the legs need:
+
+- `PCBOX_ROMS`: a folder holding the ROM set of 86Box at tag v6.0. The gate
+  copies out the files the package declares, each checked against its
+  pinned SHA-1 (`tools/pin-roms.py --copy`), and runs the IBM PC (1981 and
+  1982), XT and AT with IBM's BIOS, FreeDOS on each, the AT's XT-IDE card,
+  and the MDA, Hercules, CGA, EGA and VGA cards with IBM's ROMs.
+
 `XUB_SRC` is the XTIDE Universal BIOS's source, as for the builds. With
 `FREEDOS_FLOPPY` the gate also makes a FreeDOS hard disk and starts FreeDOS
 from it through the ROM the core carries; its negative control hands the

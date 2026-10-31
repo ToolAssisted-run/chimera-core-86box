@@ -148,12 +148,19 @@ void chimera_file_asked(const char *name, int rom, int found)
 	}
 }
 
+static int g_needsCharRom = 1;
+
 void chimera_file_opened(const char *name, int rom, int found)
 {
 	/* for whoever is finding out which files a machine wants */
 	if (getenv("CHIMERA_86BOX_TRACE_FILES"))
 		fprintf(stderr, "86box: %s %s\n", found ? "opened" : "no such file", name);
 	if (!g_watchMissing || !rom || found || strstr(g_missing, name))
+		return;
+	/* 86Box reads IBM's character ROM whenever the video is reset, for
+	 * every card; only CGA, MDA and Hercules draw with it (EGA and VGA have
+	 * their own in their BIOS). Missing, it is not needed for those. */
+	if (!g_needsCharRom && !strcmp(name, "video_mda_mda.rom"))
 		return;
 	if (strlen(g_missing) + strlen(name) + 3 < sizeof g_missing) {
 		if (g_missing[0])
@@ -263,6 +270,10 @@ static int refuse(const char *key, const char *what, const char *choices)
 	return 0;
 }
 
+/* the memory card's size (an 8-bit machine with more memory than its
+ * motherboard takes), for its memory domain */
+static long g_cardKB;
+
 static int compose_cfg(void)
 {
 	char machineName[64], bios[64], cpu[64], fpu[32], video[64], sound[64];
@@ -310,6 +321,20 @@ static int compose_cfg(void)
 	cfg_add("fpu_type = %s\n", fpu);
 	if (mem <= 0)
 		mem = (long)machines[m].ram.max;   /* the most the motherboard takes */
+	/* More than an 8-bit machine's motherboard takes (the IBM PC's 64 KB,
+	 * the XT's 256 KB) is on a memory card, as it was on the real machines:
+	 * 86Box's generic PC/XT memory expansion, from where the motherboard's
+	 * ends, up to 640 KB in all. The BIOS counts it through the machine's
+	 * switches, which 86Box sets from both. */
+	long card = 0;
+	g_cardKB = 0;
+	if (mem > (long)machines[m].ram.max && !IS_AT(m)) {
+		if (mem > 640)
+			mem = 640;
+		card = mem - (long)machines[m].ram.max;
+		mem = (long)machines[m].ram.max;
+		g_cardKB = card;
+	}
 	cfg_add("mem_size = %ld\n", mem);
 	cfg_add("cpu_use_dynarec = 0\n");
 	/* the RTC is set at power-on from the project's date (patch 0001) */
@@ -317,6 +342,7 @@ static int compose_cfg(void)
 
 	if (!device_taken(m, video, vid_dev, vid_name, choices, sizeof choices))
 		return refuse("error.video_not_taken", video, choices);
+	g_needsCharRom = !strcmp(video, "cga") || !strcmp(video, "mda") || !strcmp(video, "hercules");
 	cfg_add("\n[Video]\ngfxcard = %s\n", video);
 
 	if (!device_taken(m, sound, snd_dev, snd_name, choices, sizeof choices))
@@ -331,6 +357,9 @@ static int compose_cfg(void)
 
 	if (!device_taken(m, hdc, hdc_dev, hdc_name, choices, sizeof choices))
 		return refuse("error.hdc_not_taken", hdc, choices);
+	if (card > 0)
+		cfg_add("\n[Other peripherals]\nisamem0_type = genericxt\n"
+		        "\n[Generic PC/XT Memory Expansion #1]\nsize = %ld\nstart = %ld\n", card, mem);
 	cfg_add("\n[Storage controllers]\nfdc = internal\nhdc = %s\n", hdc);
 	/* the XTIDE Universal BIOS build each controller reads: the plain one
 	 * (the "+" build for a V20 is a choice 86Box offers; this core does not
@@ -389,7 +418,22 @@ static int compose_cfg(void)
 		}
 		if (!found)
 			return refuse("error.bios_not_taken", bios, choices[0] ? choices : "-");
-		cfg_add("\n[%s]\nbios = %s\n", machine_get_device(m)->name, bios);
+	}
+	/* the machine's own options: its BIOS, and IBM's cassette BASIC (the
+	 * IBM PC and XT read it from ROM files of their own when it is on) */
+	{
+		const device_t *md = machine_get_device(m);
+		int has_basic = 0;
+		for (const device_config_t *c = md ? md->config : NULL; c && c->type != CONFIG_END; c++)
+			if (!strcmp(c->name, "enable_basic"))
+				has_basic = 1;
+		if (md && (strcmp(bios, "auto") || has_basic)) {
+			cfg_add("\n[%s]\n", md->name);
+			if (strcmp(bios, "auto"))
+				cfg_add("bios = %s\n", bios);
+			if (has_basic)
+				cfg_add("enable_basic = %d\n", wbx_setting_bool("cassetteBasic", 1) ? 1 : 0);
+		}
 	}
 	return 1;
 }
@@ -583,11 +627,30 @@ ECL_EXPORT uint64_t GetCpuCycles(void) { return tsc; }
 ECL_EXPORT uint64_t GetBlitCount(void) { return g_blits; }
 ECL_EXPORT const char *DebugMachine(void) { return machine_get_internal_name(); }
 
-ECL_EXPORT int GetMemoryDomainCount(void) { return 1; }
-ECL_EXPORT const char *GetMemoryDomainName(int i) { return i == 0 ? "System RAM" : NULL; }
-ECL_EXPORT uint8_t *GetMemoryDomainPtr(int i) { return i == 0 ? ram : NULL; }
-ECL_EXPORT int64_t GetMemoryDomainSize(int i) { return i == 0 ? (int64_t)mem_size * 1024 : 0; }
-ECL_EXPORT int GetMemoryDomainWritable(int i) { return i == 0; }
+/* The memory: the motherboard's, and a memory card's when the machine has
+ * one (the card's starts at the address where the motherboard's ends; 86Box
+ * keeps it apart, in the card's own buffer, which is one block of memory
+ * from that address on: _mem_exec holds where each 4 KB of it is). */
+static uint8_t *card_memory(void)
+{
+	const uint32_t base = (uint32_t)mem_size * 1024;
+	uint8_t *p = g_cardKB > 0 ? _mem_exec[base >> MEM_GRANULARITY_BITS] : NULL;
+	for (uint32_t a = base; p && a < base + (uint32_t)g_cardKB * 1024; a += 1u << MEM_GRANULARITY_BITS)
+		if (_mem_exec[a >> MEM_GRANULARITY_BITS] != p + (a - base))
+			return NULL;
+	return p;
+}
+ECL_EXPORT int GetMemoryDomainCount(void) { return card_memory() ? 2 : 1; }
+ECL_EXPORT const char *GetMemoryDomainName(int i)
+{
+	return i == 0 ? "System RAM" : (i == 1 && card_memory()) ? "Memory Card RAM" : NULL;
+}
+ECL_EXPORT uint8_t *GetMemoryDomainPtr(int i) { return i == 0 ? ram : i == 1 ? card_memory() : NULL; }
+ECL_EXPORT int64_t GetMemoryDomainSize(int i)
+{
+	return i == 0 ? (int64_t)mem_size * 1024 : (i == 1 && card_memory()) ? (int64_t)g_cardKB * 1024 : 0;
+}
+ECL_EXPORT int GetMemoryDomainWritable(int i) { return i == 0 || (i == 1 && card_memory()); }
 
 /* The controls: chimera-input.c. */
 ECL_EXPORT void SetButton(int32_t index, int32_t state) { chimera_set_button(index, state); }

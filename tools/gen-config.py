@@ -223,6 +223,19 @@ MACHINE_FILES = {
     'xi8088': ['roms/machines/xi8088/bios-xi8088-128k.bin'],
 }
 
+# IBM's cassette BASIC for the IBM PC: one 32 KB file (86Box also takes the
+# four 8 KB chips' files, and reads them only when this one is missing)
+BASIC_FILES = {
+    'ibmpc': 'roms/machines/ibmpc/ibm-basic-1.00.rom',
+    'ibmpc82': 'roms/machines/ibmpc82/ibm-basic-1.10.rom',
+}
+
+# Each declared file's SHA-1 in the ROM set of 86Box, tag v6.0
+# (tools/pin-roms.py writes the table). A file the set does not hold is
+# declared by name only.
+PINS = json.load(open(__file__.rsplit('/', 1)[0] + '/rom-sha1.json'))['sha1'] \
+    if __import__('os').path.exists(__file__.rsplit('/', 1)[0] + '/rom-sha1.json') else {}
+
 TEXT_ARG = '\x1f'
 
 
@@ -314,6 +327,9 @@ def main():
     setting('joystick', 'joystick', 'enum', stick_values[0], options=stick_values)
     hdc_values = ['%s - %s' % h for h in HDC]
     setting('hardDiskController', 'harddiskcontroller', 'enum', hdc_values[0], options=hdc_values)
+    # IBM's cassette BASIC, in ROM on the IBM PC and XT: the PC reads it from
+    # files of its own when it is on (86Box's enable_basic)
+    setting('cassetteBasic', 'cassettebasic', 'bool', True)
     setting('clockStart', 'clockstart', 'datetime', 946684800, min=0, max=7258118400)
     setting('framesPerSecond', 'framespersecond', 'int', 100, min=1, max=1000)
 
@@ -340,6 +356,11 @@ def main():
         for f in MACHINE_FILES.get(m['id'], []):
             need(f, {'setting': 'machine', 'is': mv})
             names[f] = ('machine', names_m)
+    for mid, path in BASIC_FILES.items():
+        if mid not in by_id:
+            continue
+        need(path, {'all': [{'setting': 'machine', 'is': labelled(by_id[mid])}, {'setting': 'cassetteBasic', 'is': True}]})
+        names[path] = ('machine', by_id[mid]['name'])
     for v in video_values:
         vid = v.split(' - ')[0]
         for f in VIDEO_FILES.get(vid, []):
@@ -364,6 +385,8 @@ def main():
             'label': 'firmware.file%s%s' % (TEXT_ARG, path),
             'requiredWhen': conds[0] if len(conds) == 1 else {'any': conds},
         }
+        if path in PINS:
+            entry['sha1'] = PINS[path]
         if path.endswith('mda.rom'):
             entry['display'] = 'firmware.font_rom' + TEXT_ARG + base
             entry['description'] = 'firmware.font_rom.about' + TEXT_ARG + path
