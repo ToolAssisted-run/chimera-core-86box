@@ -293,6 +293,34 @@ else
 fi
 
 
+# ------------------------------------------------- 6b. a real system: FreeDOS
+# FreeDOS 1.3's boot floppy (GPL; "FD13-FloppyEdition.zip", 144m/x86BOOT.img,
+# from freedos.org), named by its SHA-1, on the free Xi 8088 at 4.77 MHz: it
+# loads its kernel (about frame 2000), starts FreeCOM and the installer, and
+# at frame 30000 asks "Do you want to proceed [Y,N]?". N is typed at 30000.
+# The sandbox must give the native run's stream for all 31000 frames, and
+# the picture with the N must not be the picture without it.
+#   FREEDOS_FLOPPY   the path of that x86BOOT.img
+fd="${FREEDOS_FLOPPY:-}"
+fd_sha1=7f687f2d0b89ab2e4992b4800c89b8fb2c251a6a
+if [ -z "$fd" ]; then
+	report SKIP "FreeDOS boots and takes a key" "needs FREEDOS_FLOPPY (FreeDOS 1.3 FD13-FloppyEdition 144m/x86BOOT.img)"
+elif [ "$(sha1sum "$fd" | cut -c1-40)" != "$fd_sha1" ]; then
+	report FAIL "FreeDOS boots and takes a key" "FREEDOS_FLOPPY is not the 1.3 boot floppy (sha1 $fd_sha1)"
+else
+	fdos="--roms $roms --set machine=xi8088 --set video=cga --set memoryKB=640 --set floppyA=35_2hd --file floppy_a=$fd"
+	native_run $fdos --frames 31000 --key 30000:5:48 --digests "$work/fdos-native.dig" --ppm "$work/fdos-n.ppm" > /dev/null
+	native_run $fdos --frames 31000 --ppm "$work/fdos-nokey.ppm" > /dev/null
+	"$rw" "$wbx" "$cfg" $fdos --frames 31000 --key 30000:5:48 --digests "$work/fdos-wbx.dig" > /dev/null 2>&1
+	l_fd=$(lit "$work/fdos-n.ppm" 2>/dev/null || echo 0)
+	if [ -s "$work/fdos-wbx.dig" ] && cmp -s "$work/fdos-native.dig" "$work/fdos-wbx.dig" && [ "${l_fd:-0}" -gt 5000 ] \
+	   && ! cmp -s "$work/fdos-n.ppm" "$work/fdos-nokey.ppm"; then
+		report PASS "FreeDOS boots and takes a key" "31000 frames, sandbox == native; the installer's question answered N"
+	else
+		report FAIL "FreeDOS boots and takes a key" "see build/gate/fdos-*"
+	fi
+fi
+
 # ------------------------------------------- 7. through the engine, and the window
 # A project, as a person makes one: the probe floppy in its slot, the
 # settings, the firmware, a movie that holds A at frame 1200. chimera-run runs
