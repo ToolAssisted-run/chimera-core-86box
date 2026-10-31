@@ -1,0 +1,101 @@
+diff --git a/src/sound/sound.c b/src/sound/sound.c
+index afdab37d3..7408e92cf 100644
+--- a/src/sound/sound.c
++++ b/src/sound/sound.c
+@@ -304,7 +304,14 @@ sound_cd_clean_buffers(void)
+ }
+ 
+ static void
++#ifdef CHIMERA_CORE
++/* A Chimera core has one thread: the block of CD audio the thread would
++ * make when sound_poll wakes it, sound_poll makes itself, in place, at the
++ * same moment of machine time. */
++sound_cd_fill(void)
++#else
+ sound_cd_thread(UNUSED(void *param))
++#endif
+ {
+     int      temp_buffer[2];
+     int      channel_select[2];
+@@ -312,11 +319,15 @@ sound_cd_thread(UNUSED(void *param))
+     double   audio_vol_r;
+     double   cd_buffer_temp[2] = { 0.0, 0.0 };
+ 
++#ifdef CHIMERA_CORE
++    {
++#else
+     thread_set_event(sound_cd_start_event);
+ 
+     while (cdaudioon) {
+         thread_wait_event(sound_cd_event, -1);
+         thread_reset_event(sound_cd_event);
++#endif
+ 
+         if (!cdaudioon)
+             return;
+@@ -530,6 +541,9 @@ sound_init(void)
+             available_cdrom_drives++;
+     }
+ 
++#ifdef CHIMERA_CORE
++    cdaudioon = available_cdrom_drives ? 1 : 0;
++#else
+     if (available_cdrom_drives) {
+         cdaudioon = 1;
+ 
+@@ -544,6 +558,7 @@ sound_init(void)
+         sound_log("Done!\n");
+     } else
+         cdaudioon = 0;
++#endif
+ 
+     cd_thread_enable = available_cdrom_drives ? 1 : 0;
+ }
+@@ -644,7 +659,11 @@ sound_poll(UNUSED(void *priv))
+             cd_buf_update--;
+             if (!cd_buf_update) {
+                 cd_buf_update = (SOUND_FREQ / SOUNDBUFLEN) / (CD_FREQ / CD_BUFLEN);
++#ifdef CHIMERA_CORE
++                sound_cd_fill();
++#else
+                 thread_set_event(sound_cd_event);
++#endif
+             }
+         }
+ 
+@@ -793,6 +812,9 @@ sound_card_reset(void)
+ void
+ sound_cd_thread_end(void)
+ {
++#ifdef CHIMERA_CORE
++    cdaudioon = 0;
++#else
+     if (cdaudioon) {
+         cdaudioon = 0;
+ 
+@@ -813,6 +835,7 @@ sound_cd_thread_end(void)
+             sound_cd_event = NULL;
+         }
+     }
++#endif
+ }
+ 
+ void
+@@ -827,6 +850,9 @@ sound_cd_thread_reset(void)
+             available_cdrom_drives++;
+     }
+ 
++#ifdef CHIMERA_CORE
++    cdaudioon = available_cdrom_drives ? 1 : 0;
++#else
+     if (available_cdrom_drives && !cd_thread_enable) {
+         cdaudioon = 1;
+ 
+@@ -839,6 +865,7 @@ sound_cd_thread_reset(void)
+         thread_reset_event(sound_cd_start_event);
+     } else if (!available_cdrom_drives && cd_thread_enable)
+         sound_cd_thread_end();
++#endif
+ 
+     cd_thread_enable = available_cdrom_drives ? 1 : 0;
+ }

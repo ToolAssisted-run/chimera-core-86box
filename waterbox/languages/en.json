@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "This machine has no BIOS called %1. It has: %2",
+		"error.cdrom_needs_controller": "The project has a CD (%1), but the machine has no hard disk controller for the CD-ROM drive: choose one in the settings.",
 		"error.cpu_not_taken": "This machine does not take the processor %1. It takes: %2",
 		"error.device_needs_thread": "A part of this machine (%1) needs a thread of its own, and this core does not have that part yet.",
 		"error.hdc_not_taken": "This machine does not take the hard disk controller %1. It takes: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "The sound card, beside the PC speaker every machine has. It is part of the machine, so a movie needs the same value.",
 		"setting.video": "Video card",
 		"setting.video.about": "The graphics card. CGA, MDA and Hercules draw text with the IBM character ROM; EGA and VGA have a BIOS of their own. Each needs its ROM file. It is part of the machine, so a movie needs the same value.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "A CD image: an ISO, or a cue sheet with its tracks (data and audio). The drive is the second drive on the hard disk controller, so a controller must be chosen in the Hard disk controller setting. Your file is never changed.",
 		"slot.floppy_a": "Floppy disks (drive A:)",
 		"slot.floppy_a.help": "Disk images for drive A:. The first is in the drive when the machine starts. Your files are never changed: what the machine writes stays in its memory and in its states.",
 		"slot.floppy_b": "Floppy disks (drive B:)",

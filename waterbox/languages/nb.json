@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Denne maskinen har ingen BIOS som heter %1. Den har: %2",
+		"error.cdrom_needs_controller": "Prosjektet har en CD (%1), men maskinen har ingen harddiskkontroller til CD-ROM-stasjonen: velg en i innstillingene.",
 		"error.cpu_not_taken": "Denne maskinen tar ikke prosessoren %1. Den tar: %2",
 		"error.device_needs_thread": "En del av denne maskinen (%1) trenger en egen tråd, og denne kjernen har ikke den delen ennå.",
 		"error.hdc_not_taken": "Denne maskinen tar ikke harddiskkontrolleren %1. Den tar: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "Lydkortet, i tillegg til PC-høyttaleren som alle maskiner har. Den er en del av maskinen, så en film trenger den samme verdien.",
 		"setting.video": "Skjermkort",
 		"setting.video.about": "Skjermkortet. CGA, MDA og Hercules tegner tekst med tegn-ROM fra IBM; EGA og VGA har sin egen BIOS. Hvert kort trenger sin ROM-fil. Den er en del av maskinen, så en film trenger den samme verdien.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "Et CD-bilde: en ISO-fil eller et cue-ark med sporene sine (data og lyd). Stasjonen er den andre stasjonen på harddiskkontrolleren, så en kontroller må velges i innstillingen Harddiskkontroller. Filen din endres aldri.",
 		"slot.floppy_a": "Disketter (stasjon A:)",
 		"slot.floppy_a.help": "Diskettbilder for stasjon A:. Det første står i stasjonen når maskinen starter. Filene dine endres aldri: det maskinen skriver, blir i minnet dens og i tilstandene dens.",
 		"slot.floppy_b": "Disketter (stasjon B:)",

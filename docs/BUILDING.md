@@ -7,7 +7,7 @@ Placeholders: `<chimera>` is a checkout of Chimera, built (its engine,
 ## Requirements
 
 - Linux on x86-64, gcc and g++, meson and ninja, python3. nasm and cmake for
-  the free test BIOS and the boot probe. Nothing else: 86Box's optional
+  the free test BIOS and the boot probe, xorriso for the test CD. Nothing else: 86Box's optional
   libraries (Qt, SDL, OpenAL, libslirp, libsndfile, FreeType, libpng, zlib)
   are not used.
 - miniBox built twice, the host library and the C++ guest toolchain:
@@ -80,7 +80,8 @@ determinism and its negative control, input (keyboard, serial mouse,
 joystick buttons, lag frames), FM sound, virtual time and its negative
 control, the sandbox against the native reference, states (save and load
 before every frame, a stale state noticed, a state carried to another
-process), FreeDOS from its floppy and from a hard disk (optional), a
+process), the CD-ROM drive (a disc it makes: data read, audio heard, the
+sandbox and states), FreeDOS from its floppy and from a hard disk (optional), a
 project through `chimera-run`, and the project in Chimera's window
 (`waterbox/tests/run-frontend.sh`, headless). Before the machines: the
 texts, Chimera's text check and the name check (`tools/check-names.py`).

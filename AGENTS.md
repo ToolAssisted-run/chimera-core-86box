@@ -30,6 +30,7 @@ is the design log and ends with where the work stands.
 - `tests/free-bios/` - builds the free Xi 8088 BIOS. `tests/boot-probe/` -
   the gate's boot floppy. `tests/xtide-bios/` - builds the XTIDE Universal
   BIOS for 86Box's XT-IDE card. `tests/hdd-dos/` - makes a FreeDOS hard disk.
+  `tests/cd/` - makes the test CD (a data track and an audio track).
 
 ## Commands, in order
 

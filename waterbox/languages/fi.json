@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Tällä koneella ei ole BIOSia nimeltä %1. Sillä on: %2",
+		"error.cdrom_needs_controller": "Projektissa on CD-levy (%1), mutta koneessa ei ole kiintolevyohjainta CD-ROM-asemalle: valitse sellainen asetuksista.",
 		"error.cpu_not_taken": "Tämä kone ei ota suoritinta %1. Se ottaa: %2",
 		"error.device_needs_thread": "Osa tästä koneesta (%1) tarvitsee oman säikeen, eikä tässä ytimessä ole sitä osaa vielä.",
 		"error.hdc_not_taken": "Tämä kone ei ota kiintolevyohjainta %1. Se ottaa: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "Äänikortti PC-kaiuttimen lisäksi, joka jokaisessa koneessa on. Se on osa konetta, joten elokuva tarvitsee saman arvon.",
 		"setting.video": "Näytönohjain",
 		"setting.video.about": "Näytönohjain. CGA, MDA ja Hercules piirtävät tekstin IBM-yhtiön merkki-ROMilla; EGA- ja VGA-korteilla on oma BIOS. Jokainen tarvitsee ROM-tiedostonsa. Se on osa konetta, joten elokuva tarvitsee saman arvon.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "CD-levykuva: ISO-tiedosto tai cue-tiedosto raitoineen (data ja ääni). Asema on kiintolevyohjaimen toinen asema, joten ohjain on valittava asetuksessa Kiintolevyohjain. Tiedostoasi ei koskaan muuteta.",
 		"slot.floppy_a": "Levykkeet (asema A:)",
 		"slot.floppy_a.help": "Levykevedokset asemalle A:. Ensimmäinen on asemassa, kun kone käynnistyy. Tiedostojasi ei koskaan muuteta: mitä kone kirjoittaa, jää sen muistiin ja sen tiloihin.",
 		"slot.floppy_b": "Levykkeet (asema B:)",

@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Această mașină nu are niciun BIOS numit %1. Are: %2",
+		"error.cdrom_needs_controller": "Proiectul are un CD (%1), dar mașina nu are controler de hard disk pentru unitatea CD-ROM: alegeți unul în setări.",
 		"error.cpu_not_taken": "Această mașină nu acceptă procesorul %1. Acceptă: %2",
 		"error.device_needs_thread": "O parte a acestei mașini (%1) are nevoie de un fir de execuție propriu, iar acest nucleu nu are încă acea parte.",
 		"error.hdc_not_taken": "Această mașină nu acceptă controlerul de hard disk %1. Acceptă: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "Placa de sunet, pe lângă difuzorul PC pe care îl are orice mașină. Face parte din mașină, deci un film are nevoie de aceeași valoare.",
 		"setting.video": "Placă video",
 		"setting.video.about": "Placa grafică. CGA, MDA și Hercules desenează textul cu ROM-ul de caractere IBM; EGA și VGA au propriul BIOS. Fiecare are nevoie de fișierul ei ROM. Face parte din mașină, deci un film are nevoie de aceeași valoare.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "O imagine de CD: un ISO sau o foaie cue cu pistele ei (date și audio). Unitatea este a doua unitate de pe controlerul de hard disk, deci trebuie ales un controler în setarea Controler de hard disk. Fișierul dvs. nu este schimbat niciodată.",
 		"slot.floppy_a": "Dischete (unitatea A:)",
 		"slot.floppy_a.help": "Imagini de dischete pentru unitatea A:. Prima este în unitate când pornește mașina. Fișierele dvs. nu sunt schimbate niciodată: ce scrie mașina rămâne în memoria ei și în stările ei.",
 		"slot.floppy_b": "Dischete (unitatea B:)",

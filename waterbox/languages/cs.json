@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Tento stroj nemá žádný BIOS jménem %1. Má: %2",
+		"error.cdrom_needs_controller": "Projekt má CD (%1), ale stroj nemá řadič pevného disku pro mechaniku CD-ROM: zvolte jeden v nastavení.",
 		"error.cpu_not_taken": "Tento stroj nepřijímá procesor %1. Přijímá: %2",
 		"error.device_needs_thread": "Část tohoto stroje (%1) potřebuje vlastní vlákno a toto jádro tuto část zatím nemá.",
 		"error.hdc_not_taken": "Tento stroj nepřijímá řadič pevného disku %1. Přijímá: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "Zvuková karta, vedle reproduktoru PC, který má každý stroj. Je to součást stroje, takže film potřebuje stejnou hodnotu.",
 		"setting.video": "Grafická karta",
 		"setting.video.about": "Grafická karta. CGA, MDA a Hercules kreslí text pomocí znakové ROM od IBM; EGA a VGA mají vlastní BIOS. Každá potřebuje svůj soubor ROM. Je to součást stroje, takže film potřebuje stejnou hodnotu.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "Obraz CD: ISO nebo soubor cue s jeho stopami (data a zvuk). Mechanika je druhé zařízení na řadiči pevného disku, takže je třeba zvolit řadič v nastavení Řadič pevného disku. Váš soubor se nikdy nemění.",
 		"slot.floppy_a": "Diskety (mechanika A:)",
 		"slot.floppy_a.help": "Obrazy disket pro mechaniku A:. První je v mechanice, když stroj startuje. Vaše soubory se nikdy nemění: co stroj zapíše, zůstává v jeho paměti a v jeho stavech.",
 		"slot.floppy_b": "Diskety (mechanika B:)",

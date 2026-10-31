@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Ennek a gépnek nincs %1 nevű BIOS-a. Ezek vannak: %2",
+		"error.cdrom_needs_controller": "A projektben van CD (%1), de a gépnek nincs merevlemez-vezérlője a CD-ROM meghajtóhoz: válassz egyet a beállításokban.",
 		"error.cpu_not_taken": "Ez a gép nem fogadja a(z) %1 processzort. Ezeket fogadja: %2",
 		"error.device_needs_thread": "A gép egyik részének (%1) saját szál kell, és ebben a magban ez a rész még nincs meg.",
 		"error.hdc_not_taken": "Ez a gép nem fogadja a(z) %1 merevlemez-vezérlőt. Ezeket fogadja: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "A hangkártya, a PC-hangszórón kívül, amely minden gépben van. A gép része, ezért egy filmnek ugyanez az érték kell.",
 		"setting.video": "Videokártya",
 		"setting.video.about": "A grafikus kártya. A CGA, az MDA és a Hercules az IBM karakter-ROM-jával rajzolja a szöveget; az EGA és a VGA kártyának saját BIOS-a van. Mindegyiknek kell a ROM-fájlja. A gép része, ezért egy filmnek ugyanez az érték kell.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "CD-kép: egy ISO vagy egy cue fájl a sávjaival (adat és hang). A meghajtó a merevlemez-vezérlő második meghajtója, ezért a Merevlemez-vezérlő beállításban vezérlőt kell választani. A fájlod sosem változik.",
 		"slot.floppy_a": "Hajlékonylemezek (A: meghajtó)",
 		"slot.floppy_a.help": "Lemezképek az A: meghajtóhoz. Az első van a meghajtóban, amikor a gép elindul. A fájljaid sosem változnak: amit a gép ír, a memóriájában és az állapotaiban marad.",
 		"slot.floppy_b": "Hajlékonylemezek (B: meghajtó)",

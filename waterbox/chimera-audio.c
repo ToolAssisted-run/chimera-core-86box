@@ -7,12 +7,17 @@
  *
  * The main stream is the frame's sound as it arrives. Each other stream is
  * converted to 48000 Hz (linear interpolation, in integers) and added to the
- * main stream DELAY samples later than the moment it stands for: a block of
- * the other stream always arrives before the main samples it is added to
- * (its blocks are at most 28 ms long, DELAY is 43 ms), so nothing is added
- * late and nothing is dropped, whatever the order the timers fire in. The
- * cost is that FM music is 43 ms behind the cards' own sound - inaudible,
- * and the same in every run.
+ * main stream a fixed number of samples later than the moment it stands
+ * for, its delay: a block of the other stream always arrives before the main
+ * samples it is added to, so nothing is added late and nothing is dropped,
+ * whatever the order the timers fire in. FM music and wavetables come in
+ * blocks of at most 28 ms and are 43 ms behind the cards' own sound. CD
+ * audio comes in blocks of 100 ms, made every fifth 20 ms block of the main
+ * stream (sound.c), so its delay is 120 ms: 100 ms for the block and one
+ * main block to spare. (With 43 ms, most of each CD block landed in ring
+ * slots the main stream had already passed and came out 170 ms later, mixed
+ * into the wrong place: a 1 kHz tone had a gap every 100 ms.) The delays are
+ * inaudible and the same in every run.
  *
  * Everything here is ordinary memory, so a state carries it: a run that
  * loads a state mixes on exactly as one that did not.
@@ -23,8 +28,7 @@
 #include "chimera.h"
 
 #define OUT_RATE 48000
-#define RING     8192            /* a power of two, more than DELAY + a block */
-#define DELAY    2048
+#define RING     16384           /* a power of two, more than a delay + a block */
 
 /* the frame's sound, handed to the frontend */
 #define AUDIO_CAP 48000
@@ -37,16 +41,17 @@ static uint64_t g_mainIndex;     /* main stream samples handed over so far */
 
 typedef struct {
 	int rate, block;             /* Hz, pairs a block */
+	int delay;                   /* 48 kHz samples between its time and the main stream's */
 	uint64_t in;                 /* input samples taken so far */
 	uint64_t out;                /* 48 kHz samples made so far */
 	int16_t prev[2];             /* the input sample before this block */
 } stream_t;
 
 static stream_t g_stream[CHIMERA_STREAMS] = {
-	[CHIMERA_STREAM_SOUND] = { 48000, 960 },
-	[CHIMERA_STREAM_MUSIC] = { 49716, 49716 / 36 },
-	[CHIMERA_STREAM_WAVETABLE] = { 44100, 44100 / 45 },
-	[CHIMERA_STREAM_CD] = { 44100, 44100 / 10 },
+	[CHIMERA_STREAM_SOUND] = { 48000, 960, 0 },
+	[CHIMERA_STREAM_MUSIC] = { 49716, 49716 / 36, 2048 },
+	[CHIMERA_STREAM_WAVETABLE] = { 44100, 44100 / 45, 2048 },
+	[CHIMERA_STREAM_CD] = { 44100, 44100 / 10, 4800 + 960 },
 };
 
 int16_t *chimera_audio_buffer(void) { return g_out; }
@@ -86,7 +91,7 @@ void chimera_audio_take(int stream, const int16_t *buf)
 			a[c] = (j + 1 == first || j < first) ? s->prev[c] : buf[(j - first) * 2 + c];
 			b[c] = buf[(j + 1 - first) * 2 + c];
 		}
-		int32_t *r = &g_ring[((s->out + DELAY) % RING) * 2];
+		int32_t *r = &g_ring[((s->out + (uint64_t)s->delay) % RING) * 2];
 		for (int c = 0; c < 2; c++)
 			r[c] += (int32_t)(((int64_t)a[c] * (int64_t)(OUT_RATE - frac) + (int64_t)b[c] * (int64_t)frac) / OUT_RATE);
 		s->out++;

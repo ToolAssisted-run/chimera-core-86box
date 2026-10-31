@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Esta máquina no tiene ninguna BIOS llamada %1. Tiene: %2",
+		"error.cdrom_needs_controller": "El proyecto tiene un CD (%1), pero la máquina no tiene controlador de disco duro para la unidad de CD-ROM: elija uno en los ajustes.",
 		"error.cpu_not_taken": "Esta máquina no admite el procesador %1. Admite: %2",
 		"error.device_needs_thread": "Una parte de esta máquina (%1) necesita un hilo propio, y este núcleo aún no tiene esa parte.",
 		"error.hdc_not_taken": "Esta máquina no admite el controlador de disco duro %1. Admite: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "La tarjeta de sonido, además del altavoz del PC que tiene toda máquina. Forma parte de la máquina, así que una película necesita el mismo valor.",
 		"setting.video": "Tarjeta de vídeo",
 		"setting.video.about": "La tarjeta gráfica. CGA, MDA y Hercules dibujan el texto con la ROM de caracteres de IBM; EGA y VGA tienen su propia BIOS. Cada una necesita su archivo ROM. Forma parte de la máquina, así que una película necesita el mismo valor.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "Una imagen de CD: una ISO, o una hoja cue con sus pistas (datos y audio). La unidad es la segunda unidad del controlador de disco duro, así que hay que elegir un controlador en el ajuste Controlador de disco duro. Su archivo nunca se modifica.",
 		"slot.floppy_a": "Disquetes (unidad A:)",
 		"slot.floppy_a.help": "Imágenes de disco para la unidad A:. La primera está en la unidad cuando arranca la máquina. Sus archivos nunca se modifican: lo que la máquina escribe se queda en su memoria y en sus estados.",
 		"slot.floppy_b": "Disquetes (unidad B:)",

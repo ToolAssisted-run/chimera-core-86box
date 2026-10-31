@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Den här maskinen har inget BIOS som heter %1. Den har: %2",
+		"error.cdrom_needs_controller": "Projektet har en cd (%1), men maskinen har ingen hårddiskstyrenhet för cd-rom-enheten: välj en i inställningarna.",
 		"error.cpu_not_taken": "Den här maskinen tar inte processorn %1. Den tar: %2",
 		"error.device_needs_thread": "En del av maskinen (%1) behöver en egen tråd, och den här kärnan har inte den delen ännu.",
 		"error.hdc_not_taken": "Den här maskinen tar inte hårddiskstyrenheten %1. Den tar: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "Ljudkortet, utöver PC-högtalaren som varje maskin har. Den är en del av maskinen, så en film behöver samma värde.",
 		"setting.video": "Grafikkort",
 		"setting.video.about": "Grafikkortet. CGA, MDA och Hercules ritar text med tecken-ROM från IBM; EGA och VGA har ett eget BIOS. Varje kort behöver sin ROM-fil. Den är en del av maskinen, så en film behöver samma värde.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "En cd-avbild: en ISO-fil eller ett cue-blad med dess spår (data och ljud). Enheten är den andra enheten på hårddiskstyrenheten, så en styrenhet måste väljas i inställningen Hårddiskstyrenhet. Din fil ändras aldrig.",
 		"slot.floppy_a": "Disketter (enhet A:)",
 		"slot.floppy_a.help": "Diskettavbilder för enhet A:. Den första sitter i enheten när maskinen startar. Dina filer ändras aldrig: det maskinen skriver stannar i dess minne och i dess tillstånd.",
 		"slot.floppy_b": "Disketter (enhet B:)",

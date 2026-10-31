@@ -334,6 +334,52 @@ else
 fi
 
 
+# ------------------------------------------------ 6a. the CD-ROM drive
+# A disc made here (tests/cd: an ISO 9660 track and 5 s of a 1 kHz tone as
+# an audio track, one cue), in an ATAPI drive on the XT-IDE card. The probe
+# reads the table of contents and sector 16 and plays track 2; the machine
+# has no sound card, so what is heard is the CD audio, which a thread of
+# 86Box's used to make and patch 0007 makes in place. The tone's left
+# channel peaks at 8000; at 44100 Hz it lasts 500 frames whatever the
+# machine's own rate.
+if ! command -v xorriso > /dev/null 2>&1; then
+	report SKIP "CD-ROM: the disc is read and its audio heard" "needs xorriso to make the test disc"
+elif ! sh "$root/tests/cd/make-cd.sh" "$work/cd" > "$work/cd.log" 2>&1; then
+	report FAIL "CD-ROM: the disc is read and its audio heard" "$(tail -1 "$work/cd.log")"
+else
+	cdrun="$xi_base --set sound=none $probe --file cdrom=$work/cd/probe-cd.cue --file support=$work/cd/probe-cd.iso"
+	cdrun="$cdrun --file support=$work/cd/probe-cd-tone.bin --frames 2200"
+	native_run $cdrun --dump-ram "$work/cd-native.ram" --digests "$work/cd-native.dig" > "$work/cd-native.txt"
+	native_run $xi_base --set sound=none $probe --file "cdrom=$work/cd/probe-cd.iso" --frames 1500 --dump-ram "$work/cd-iso.ram" > /dev/null
+	cd_block() { python3 -c "import sys; d=open(sys.argv[1],'rb').read()[0x7e1c:0x7e2a]; print(d.hex())" "$1" 2>/dev/null; }
+	blk=$(cd_block "$work/cd-native.ram"); blk_iso=$(cd_block "$work/cd-iso.ram")
+	# the tone: its peak, how many of the main stream's 20 ms blocks hold it
+	# (5 s: 250, every one of them, with no gap) and from the first to the last
+	tone=$(awk '$5 > 7000 { if (!f) f = $1; l = $1; n++; if ($5 > m) m = $5 } END { print m + 0, n + 0, l - f }' "$work/cd-native.dig")
+	quiet=$(awk '$1 > 600 && $1 < 1000 && $5 > m { m = $5 } END { print m + 0 }' "$work/cd-native.dig")
+	set -- $tone
+	# status 50h, 01h "CD001", play 50h, TOC 50h, track 2 at sector 184 (the
+	# ISO's length); the ISO alone: read, but no track 2 to play (51h, error)
+	if [ "$blk" = 50000143443030315050000000b8 ] && [ "$blk_iso" = 50000143443030315150000000b8 ] \
+	   && [ "$1" -ge 7900 ] && [ "$1" -le 8000 ] && [ "$2" -ge 249 ] && [ "$2" -le 251 ] \
+	   && [ "$3" -ge $(($2 * 2 - 4)) ] && [ "$3" -le $(($2 * 2)) ] && [ "$quiet" = 0 ]; then
+		report PASS "CD-ROM: the disc is read and its audio heard" "sector 16 reads CD001 (ISO and cue); track 2 at sector 184; the tone peaks at $1 in $2 blocks of 20 ms, no gap; silence before it"
+	else
+		report FAIL "CD-ROM: the disc is read and its audio heard" "block $blk, ISO $blk_iso, tone (peak, blocks, frames) $tone, before it $quiet"
+	fi
+	"$rw" "$wbx" "$cfg" $cdrun --digests "$work/cd-wbx.dig" > "$work/cd-wbx.txt" 2> "$work/cd-wbx.err"
+	"$rw" "$wbx" "$cfg" $cdrun --rerecord > "$work/cd-rerecord.txt" 2> "$work/cd-rerecord.err"
+	"$rw" "$wbx" "$cfg" $cdrun --save-state "$work/cd1300.state" --at 1300 > /dev/null 2>&1
+	"$rw" "$wbx" "$cfg" $cdrun --state "$work/cd1300.state" > "$work/cd-session.txt" 2> "$work/cd-session.err"
+	if [ -s "$work/cd-wbx.dig" ] && cmp -s "$work/cd-native.dig" "$work/cd-wbx.dig" \
+	   && [ "$(tail -1 "$work/cd-rerecord.txt")" = "$(tail -1 "$work/cd-wbx.txt")" ] \
+	   && [ "$(tail -1 "$work/cd-session.txt")" = "$(tail -1 "$work/cd-wbx.txt")" ]; then
+		report PASS "CD-ROM: sandbox == native, and states" "2200 frames with the tone playing from about 1040: every frame the same; a state before every frame; a state at 1300 in another process"
+	else
+		report FAIL "CD-ROM: sandbox == native, and states" "see build/gate/cd-*"
+	fi
+fi
+
 # ------------------------------------------------- 6b. a real system: FreeDOS
 # FreeDOS 1.3's boot floppy (GPL; "FD13-FloppyEdition.zip", 144m/x86BOOT.img,
 # from freedos.org), named by its SHA-1, on the free Xi 8088 at 4.77 MHz: it

@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "这台机器没有名为 %1 的 BIOS。它有：%2",
+		"error.cdrom_needs_controller": "项目里有 CD（%1），但机器没有给 CD-ROM 光驱用的硬盘控制器：请在设置中选一个。",
 		"error.cpu_not_taken": "这台机器不能装处理器 %1。它能装：%2",
 		"error.device_needs_thread": "这台机器的一个部件（%1）需要自己的线程，而此核心还没有这个部件。",
 		"error.hdc_not_taken": "这台机器不能装硬盘控制器 %1。它能装：%2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "声卡，在每台机器都有的 PC 扬声器之外。它是机器的一部分，所以录像需要相同的值。",
 		"setting.video": "显卡",
 		"setting.video.about": "图形卡。CGA、MDA 和 Hercules 用 IBM 字符 ROM 绘制文字；EGA 和 VGA 有自己的 BIOS。每种都需要它的 ROM 文件。它是机器的一部分，所以录像需要相同的值。",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "CD 映像：一个 ISO，或带有其轨道（数据和音频）的 cue 文件。光驱是硬盘控制器上的第二个驱动器，所以必须在“硬盘控制器”设置中选一个控制器。你的文件永远不会被改动。",
 		"slot.floppy_a": "软盘（驱动器 A:）",
 		"slot.floppy_a.help": "用于驱动器 A: 的磁盘映像。机器启动时第一个在驱动器中。你的文件永远不会被改动：机器写入的内容留在它的内存和它的状态中。",
 		"slot.floppy_b": "软盘（驱动器 B:）",

@@ -267,7 +267,7 @@ static int compose_cfg(void)
 {
 	char machineName[64], bios[64], cpu[64], fpu[32], video[64], sound[64];
 	char fddA[32], fddB[32], mouseName[32], joystickName[64], hdc[64];
-	char slotA[256], slotB[256], slotHdd[256], choices[1024];
+	char slotA[256], slotB[256], slotHdd[256], slotCd[256], choices[1024];
 	long mem;
 	int m;
 
@@ -362,6 +362,17 @@ static int compose_cfg(void)
 
 	cfg_add("\n[Floppy and CD-ROM drives]\n");
 	cfg_add("fdd_01_type = %s\nfdd_02_type = %s\n", fddA, fddB);
+	/* the CD-ROM drive: an ATAPI drive, the second drive of the hard disk
+	 * controller (an XT-IDE card's first channel, slave), 86Box's own "86BOX
+	 * CD-ROM" at 8x. Its audio is made in place (patch 0007). */
+	if (wbx_slot_first("cdrom", slotCd, sizeof slotCd) && slotCd[0]) {
+		if (!strcmp(hdc, "none")) {
+			snprintf(g_loadError, sizeof g_loadError, "error.cdrom_needs_controller" TEXT_ARG "%s", slotCd);
+			return 0;
+		}
+		cfg_add("cdrom_01_parameters = 1, atapi\ncdrom_01_ide_channel = 0:1\ncdrom_01_speed = 8\n"
+		        "cdrom_01_image_path = %s\n", slotCd);
+	}
 	if (wbx_slot_first("floppy_a", slotA, sizeof slotA) && slotA[0])
 		cfg_add("fdd_01_fn = %s\n", slotA);
 	if (wbx_slot_first("floppy_b", slotB, sizeof slotB) && slotB[0])

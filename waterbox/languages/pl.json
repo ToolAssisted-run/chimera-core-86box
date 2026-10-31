@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Ta maszyna nie ma BIOS-u o nazwie %1. Ma: %2",
+		"error.cdrom_needs_controller": "Projekt ma płytę CD (%1), ale maszyna nie ma kontrolera dysku twardego dla napędu CD-ROM: wybierz go w ustawieniach.",
 		"error.cpu_not_taken": "Ta maszyna nie przyjmuje procesora %1. Przyjmuje: %2",
 		"error.device_needs_thread": "Część tej maszyny (%1) potrzebuje własnego wątku, a ten rdzeń jeszcze nie ma tej części.",
 		"error.hdc_not_taken": "Ta maszyna nie przyjmuje kontrolera dysku twardego %1. Przyjmuje: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "Karta dźwiękowa, obok głośnika PC, który ma każda maszyna. To część maszyny, więc film potrzebuje tej samej wartości.",
 		"setting.video": "Karta graficzna",
 		"setting.video.about": "Karta graficzna. CGA, MDA i Hercules rysują tekst za pomocą ROM-u znaków IBM; EGA i VGA mają własny BIOS. Każda potrzebuje swojego pliku ROM. To część maszyny, więc film potrzebuje tej samej wartości.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "Obraz płyty CD: ISO albo arkusz cue z jego ścieżkami (dane i dźwięk). Napęd jest drugim urządzeniem na kontrolerze dysku twardego, więc w ustawieniu Kontroler dysku twardego trzeba wybrać kontroler. Twój plik nigdy nie jest zmieniany.",
 		"slot.floppy_a": "Dyskietki (stacja A:)",
 		"slot.floppy_a.help": "Obrazy dyskietek dla stacji A:. Pierwszy jest w stacji, gdy maszyna startuje. Twoje pliki nigdy nie są zmieniane: to, co maszyna zapisuje, zostaje w jej pamięci i w jej stanach.",
 		"slot.floppy_b": "Dyskietki (stacja B:)",

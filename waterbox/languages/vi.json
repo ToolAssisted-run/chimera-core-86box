@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Máy này không có BIOS nào tên %1. Máy có: %2",
+		"error.cdrom_needs_controller": "Dự án có một CD (%1), nhưng máy không có bộ điều khiển đĩa cứng cho ổ CD-ROM: hãy chọn một trong thiết lập.",
 		"error.cpu_not_taken": "Máy này không nhận bộ xử lý %1. Máy nhận: %2",
 		"error.device_needs_thread": "Một phần của máy này (%1) cần một luồng riêng, và lõi này chưa có phần đó.",
 		"error.hdc_not_taken": "Máy này không nhận bộ điều khiển đĩa cứng %1. Máy nhận: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "Card âm thanh, bên cạnh loa PC mà máy nào cũng có. Đây là một phần của máy, vì vậy một phim cần cùng giá trị.",
 		"setting.video": "Card màn hình",
 		"setting.video.about": "Card đồ họa. CGA, MDA và Hercules vẽ chữ bằng ROM ký tự của IBM; EGA và VGA có BIOS riêng. Mỗi card cần tệp ROM của nó. Đây là một phần của máy, vì vậy một phim cần cùng giá trị.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "Một ảnh CD: một tệp ISO, hoặc một tệp cue cùng các rãnh của nó (dữ liệu và âm thanh). Ổ đĩa là ổ thứ hai trên bộ điều khiển đĩa cứng, nên phải chọn một bộ điều khiển trong thiết lập Bộ điều khiển đĩa cứng. Tệp của bạn không bao giờ bị thay đổi.",
 		"slot.floppy_a": "Đĩa mềm (ổ A:)",
 		"slot.floppy_a.help": "Ảnh đĩa cho ổ A:. Ảnh đầu tiên nằm trong ổ khi máy khởi động. Tệp của bạn không bao giờ bị thay đổi: những gì máy ghi nằm lại trong bộ nhớ của nó và trong các trạng thái của nó.",
 		"slot.floppy_b": "Đĩa mềm (ổ B:)",

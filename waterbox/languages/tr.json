@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Bu makinede %1 adlı bir BIOS yok. Şunlar var: %2",
+		"error.cdrom_needs_controller": "Projede bir CD (%1) var, ama makinenin CD-ROM sürücüsü için sabit disk denetleyicisi yok: ayarlardan birini seçin.",
 		"error.cpu_not_taken": "Bu makine %1 işlemcisini almıyor. Şunları alıyor: %2",
 		"error.device_needs_thread": "Bu makinenin bir parçası (%1) kendine ait bir iş parçacığı istiyor ve bu çekirdekte o parça henüz yok.",
 		"error.hdc_not_taken": "Bu makine %1 sabit disk denetleyicisini almıyor. Şunları alıyor: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "Her makinede bulunan PC hoparlörünün yanında ses kartı. Makinenin bir parçasıdır, bu yüzden bir film aynı değere ihtiyaç duyar.",
 		"setting.video": "Ekran kartı",
 		"setting.video.about": "Grafik kartı. CGA, MDA ve Hercules metni IBM karakter ROM'u ile çizer; EGA ve VGA kartlarının kendi BIOS'u vardır. Her biri kendi ROM dosyasına ihtiyaç duyar. Makinenin bir parçasıdır, bu yüzden bir film aynı değere ihtiyaç duyar.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "Bir CD görüntüsü: bir ISO ya da izleriyle (veri ve ses) bir cue dosyası. Sürücü, sabit disk denetleyicisindeki ikinci sürücüdür; bu yüzden Sabit disk denetleyicisi ayarında bir denetleyici seçilmelidir. Dosyanız asla değiştirilmez.",
 		"slot.floppy_a": "Disketler (A: sürücüsü)",
 		"slot.floppy_a.help": "A: sürücüsü için disket görüntüleri. Makine başladığında ilki sürücüdedir. Dosyalarınız asla değiştirilmez: makinenin yazdıkları onun belleğinde ve durumlarında kalır.",
 		"slot.floppy_b": "Disketler (B: sürücüsü)",

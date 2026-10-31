@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Questa macchina non ha un BIOS chiamato %1. Ha: %2",
+		"error.cdrom_needs_controller": "Il progetto ha un CD (%1), ma la macchina non ha un controller del disco fisso per l'unità CD-ROM: scegline uno nelle impostazioni.",
 		"error.cpu_not_taken": "Questa macchina non accetta il processore %1. Accetta: %2",
 		"error.device_needs_thread": "Una parte di questa macchina (%1) ha bisogno di un thread tutto suo, e questo core non ha ancora quella parte.",
 		"error.hdc_not_taken": "Questa macchina non accetta il controller del disco fisso %1. Accetta: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "La scheda audio, oltre all'altoparlante del PC che ogni macchina ha. Fa parte della macchina, quindi un filmato ha bisogno dello stesso valore.",
 		"setting.video": "Scheda video",
 		"setting.video.about": "La scheda grafica. CGA, MDA e Hercules disegnano il testo con la ROM dei caratteri IBM; EGA e VGA hanno un BIOS proprio. Ognuna ha bisogno del suo file ROM. Fa parte della macchina, quindi un filmato ha bisogno dello stesso valore.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "Un'immagine di CD: una ISO, o un file cue con le sue tracce (dati e audio). L'unità è la seconda unità del controller del disco fisso, quindi va scelto un controller nell'impostazione Controller del disco fisso. Il tuo file non viene mai modificato.",
 		"slot.floppy_a": "Dischi floppy (unità A:)",
 		"slot.floppy_a.help": "Immagini di dischi per l'unità A:. La prima è nell'unità quando la macchina si avvia. I tuoi file non vengono mai modificati: ciò che la macchina scrive resta nella sua memoria e nei suoi stati.",
 		"slot.floppy_b": "Dischi floppy (unità B:)",

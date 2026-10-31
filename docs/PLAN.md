@@ -457,6 +457,50 @@ a mouse, by name). Seen to fail with the last bent text still in place
 - **Not tested**: the AT card (`xtide_at`), which needs an AT, whose BIOS
   is not free; a larger disk with EBIOS or translation.
 
+### 2026-10-31: a CD-ROM drive, its audio made in place
+
+- **Patch 0007**: 86Box makes CD audio on a thread of its own, woken by
+  `sound_poll` every fifth 20 ms block of the main stream to make the next
+  100 ms. Under `CHIMERA_CORE` the same code is a function, `sound_cd_fill`,
+  that `sound_poll` calls in place at that moment; no thread and no event is
+  created. The thread version is upstream's, untouched, in the `#else`.
+- **The drive**: a `cdrom` slot (an ISO, or a cue with its tracks), an ATAPI
+  drive at 8x as the second drive of the hard disk controller (the XT-IDE
+  card's first channel, slave). A disc with no hard disk controller is
+  refused by name (`error.cdrom_needs_controller`). Three new texts, in the
+  26 tables.
+- **The mixer was wrong for CD audio, found by the test.** The other streams
+  were added to the cards' stream 2048 samples (43 ms) late, on the
+  assumption, written in the sound entry above, that no block is longer
+  than 28 ms. A CD block is 100 ms, so most of each landed in ring slots
+  the main stream had already passed and came out 170 ms later in the wrong
+  place: the gate's 1 kHz tone was in 203 of its 250 blocks. Each stream now
+  has its own delay; CD audio's is 120 ms (100 ms for its block and one main
+  block to spare), FM and wavetables keep 43 ms, and the ring is 16384
+  samples. The earlier claim that CD audio was mixed had never been run: no
+  CD drive could be configured.
+- **The test disc** (`tests/cd/make-cd.sh`): an ISO 9660 track made with
+  xorriso (one file; the same bytes every time) and 5 s of a 1 kHz tone as an
+  audio track (left peak 8000, right 4000), one cue. The probe asks the
+  drive for its table of contents, reads sector 16 and plays track 2 with
+  PLAY AUDIO(10), each command up to four times (the first after a disc goes
+  in answers "unit attention").
+- **Measured.** Gate, 33 passed, 0 failed, 0 skipped: with the cue, sector
+  16 reads 01h "CD001" (status 50h), track 2 starts at sector 184 (the ISO's
+  length), and with no sound card the tone peaks at 7998 in all 250 of the
+  20 ms blocks of its 5 s, from frame 1045 to 1543, with silence before it;
+  the ISO alone reads the same sector and refuses PLAY (status 51h, no track
+  2). The sandbox gives the native stream for 2200 frames, sound included;
+  a state saved and loaded before every frame, and one saved at frame 1300
+  (mid-tone) and loaded in another process, end as the straight run. Broken
+  on purpose: the old mixer (203 blocks, the leg failed), a stale state in
+  the CD run (the end differs).
+- **Not tested**: a CD read by DOS (no free ATAPI driver for an XT-IDE card
+  is used here; on an AT the card is a plain IDE port, for which FreeDOS has
+  drivers - not run, for want of a free AT BIOS); CD audio through a sound
+  card's CD input and mixer volume (the run has no sound card); disc
+  swapping (only the slot's first file is in the drive, as for floppies).
+
 ## 4. Where this stands (2026-10-31)
 
 Local repository `~/chimera-cores/86box`, no remote. Upstream 86Box v6.0

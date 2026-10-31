@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Denne maskine har intet BIOS, der hedder %1. Den har: %2",
+		"error.cdrom_needs_controller": "Projektet har en cd (%1), men maskinen har ingen harddiskcontroller til cd-rom-drevet: vælg en i indstillingerne.",
 		"error.cpu_not_taken": "Denne maskine tager ikke processoren %1. Den tager: %2",
 		"error.device_needs_thread": "En del af denne maskine (%1) skal have sin egen tråd, og denne kerne har ikke den del endnu.",
 		"error.hdc_not_taken": "Denne maskine tager ikke harddiskcontrolleren %1. Den tager: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "Lydkortet, ud over pc-højttaleren, som alle maskiner har. Den er en del af maskinen, så en film skal have den samme værdi.",
 		"setting.video": "Grafikkort",
 		"setting.video.about": "Grafikkortet. CGA, MDA og Hercules tegner tekst med tegn-ROM fra IBM; EGA og VGA har deres eget BIOS. Hvert kort skal have sin ROM-fil. Den er en del af maskinen, så en film skal have den samme værdi.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "Et cd-aftryk: en ISO-fil eller et cue-ark med dets spor (data og lyd). Drevet er det andet drev på harddiskcontrolleren, så der skal vælges en controller i indstillingen Harddiskcontroller. Din fil ændres aldrig.",
 		"slot.floppy_a": "Disketter (drev A:)",
 		"slot.floppy_a.help": "Disketteaftryk til drev A:. Det første sidder i drevet, når maskinen starter. Dine filer ændres aldrig: det, maskinen skriver, bliver i dens hukommelse og i dens tilstande.",
 		"slot.floppy_b": "Disketter (drev B:)",

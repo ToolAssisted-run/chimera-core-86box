@@ -19,6 +19,18 @@
 ;                     its sector 2 (50h when all went well, FFh with no card)
 ;   0000:7E18  word   the first word of that sector as read
 ;   0000:7E1A  byte   the drive's status after "HD" was written there at start
+;   0000:7E1C  byte   the CD-ROM drive (ATAPI, the card's second drive): its
+;                     status after READ(10) of sector 16 (00h or FFh: no drive)
+;   0000:7E1E  6 byte the start of that sector: 01h "CD001" on an ISO 9660 disc
+;   0000:7E24  byte   the drive's status after PLAY AUDIO of track 2
+;   0000:7E25  byte   the drive's status after READ TOC
+;   0000:7E26  4 byte track 2's first sector, from the table of contents
+;                     (big-endian, as the drive gives it)
+;
+; At start, after the hard disk, it asks the CD-ROM drive for its table of
+; contents, reads sector 16 and plays 5 seconds of track 2 (an audio track
+; on the gate's disc). Each command is tried up to four times: a drive
+; answers the first command after a disc goes in with "unit attention".
 ;
 ; At start it writes "WR" and the timer's count to sector 2 of the floppy
 ; (head 0, track 0) and reads the sector back; it reads it again after every
@@ -120,6 +132,7 @@ start:
         mov dx, 0x307
         in al, dx
         mov [0x7e1a], al
+        call cd_test
         call readback
 
 main:
@@ -252,6 +265,146 @@ ide_command:
         stc
         ret
 
+; The CD-ROM drive: the table of contents, sector 16, then 5 s of track 2.
+cd_test:
+        cld
+        xor ax, ax
+        mov di, 0x7e1c          ; the block's CD part, 7E1C to 7E29
+        mov cx, 7
+        rep stosw
+        mov di, 0x8400          ; the buffer: 0000:8400 to 8C00
+        mov cx, 1024
+        rep stosw
+        mov byte [0x7e1c], 0xff
+        mov byte [0x7e24], 0xff
+        mov byte [0x7e25], 0xff
+        mov si, pk_toc
+        call atapi_retry
+        mov [0x7e25], al
+        mov ax, [0x8400 + 16]   ; track 2's descriptor: 4 + 8, its address at +4
+        mov [0x7e26], ax
+        mov [pk_play + 2], ax
+        mov ax, [0x8400 + 18]
+        mov [0x7e28], ax
+        mov [pk_play + 4], ax
+        mov si, pk_read
+        call atapi_retry
+        mov [0x7e1c], al
+        mov si, 0x8400
+        mov di, 0x7e1e
+        mov cx, 3
+        rep movsw
+        mov si, pk_play
+        call atapi_retry
+        mov [0x7e24], al
+        ret
+
+; The packet at si, up to four times while the drive answers with an error.
+; al: the drive's status at the end (FFh when it never answered).
+atapi_retry:
+        mov bp, 4
+.again: push bp
+        mov di, 0x8400
+        call atapi_packet
+        pop bp
+        jc .out
+        test al, 0x01
+        jz .out
+        dec bp
+        jnz .again
+.out:   ret
+
+; One ATAPI command: PACKET (A0h) to the slave at 300h, the 12 bytes at si,
+; then whatever data the drive sends, into es:di. al: the status at the end.
+atapi_packet:
+        push si
+        call ide_wait
+        jc .fail
+        mov dx, 0x306           ; the slave
+        mov al, 0xb0
+        out dx, al
+        call ide_wait
+        jc .fail
+        mov dx, 0x301           ; no DMA
+        xor al, al
+        out dx, al
+        mov dx, 0x304           ; at most 2048 bytes at a time
+        out dx, al
+        inc dx
+        mov al, 0x08
+        out dx, al
+        mov dx, 0x307
+        mov al, 0xa0
+        out dx, al
+        call atapi_wait
+        jc .fail
+        test al, 0x01
+        jnz .done
+        test al, 0x08
+        jz .done
+        pop si
+        push si
+        mov cx, 6               ; the packet, a word at a time
+.pk:    lodsw
+        mov dx, 0x308
+        xchg al, ah
+        out dx, al
+        xchg al, ah
+        mov dx, 0x300
+        out dx, al
+        loop .pk
+.data:  call atapi_wait
+        jc .fail
+        test al, 0x01
+        jnz .done
+        test al, 0x08
+        jz .done                ; no more data: the command is over
+        mov dx, 0x304           ; how many bytes this time
+        in al, dx
+        mov cl, al
+        inc dx
+        in al, dx
+        mov ch, al
+        inc cx
+        shr cx, 1
+        cmp di, 0x8c00          ; never past the buffer
+        jae .done
+.rd:    mov dx, 0x300
+        in al, dx
+        mov dx, 0x308
+        mov ah, al
+        in al, dx
+        xchg al, ah
+        stosw
+        loop .rd
+        jmp .data
+.done:  pop si
+        clc
+        ret
+.fail:  pop si
+        mov al, 0xff
+        stc
+        ret
+
+; until the drive is not busy, a longer wait than ide_wait's (a CD drive
+; seeks); al: its status; carry set if it never answered
+atapi_wait:
+        mov bx, 32
+.o:     mov dx, 0x307
+        mov cx, 0xffff
+.w:     in al, dx
+        cmp al, 0xff
+        je .gone
+        test al, 0x80
+        jz .ok
+        loop .w
+        dec bx
+        jnz .o
+.gone:  stc
+        ret
+.ok:    clc
+        ret
+
 ; until the drive is not busy; carry set if it stays busy (or is not there)
 ide_wait:
         mov dx, 0x307
@@ -309,5 +462,8 @@ lastk:  db ' L=', 0
 mouse:  db ' M=', 0
 msum:   db ' S=', 0
 last:   dw 0
+pk_toc:  db 0x43, 0, 0, 0, 0, 0, 1, 0x01, 0x00, 0, 0, 0      ; READ TOC, sectors, from track 1
+pk_read: db 0x28, 0, 0, 0, 0, 16, 0, 0, 1, 0, 0, 0          ; READ(10), sector 16
+pk_play: db 0x45, 0, 0, 0, 0, 0, 0, 0x01, 0x77, 0, 0, 0     ; PLAY AUDIO(10), 375 sectors (5 s)
 
         times 3584 - ($ - $$) db 0

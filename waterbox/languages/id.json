@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Mesin ini tidak punya BIOS bernama %1. Mesin ini punya: %2",
+		"error.cdrom_needs_controller": "Proyek ini punya CD (%1), tetapi mesin tidak punya pengendali cakram keras untuk drive CD-ROM: pilih satu di pengaturan.",
 		"error.cpu_not_taken": "Mesin ini tidak menerima prosesor %1. Mesin ini menerima: %2",
 		"error.device_needs_thread": "Sebagian dari mesin ini (%1) memerlukan thread sendiri, dan inti ini belum punya bagian itu.",
 		"error.hdc_not_taken": "Mesin ini tidak menerima pengendali cakram keras %1. Mesin ini menerima: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "Kartu suara, selain pengeras suara PC yang dimiliki setiap mesin. Ini bagian dari mesin, jadi sebuah film memerlukan nilai yang sama.",
 		"setting.video": "Kartu video",
 		"setting.video.about": "Kartu grafis. CGA, MDA, dan Hercules menggambar teks dengan ROM karakter IBM; EGA dan VGA punya BIOS sendiri. Masing-masing memerlukan berkas ROM-nya. Ini bagian dari mesin, jadi sebuah film memerlukan nilai yang sama.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "Image CD: sebuah ISO, atau cue sheet beserta treknya (data dan audio). Drive-nya adalah drive kedua pada pengendali cakram keras, jadi sebuah pengendali harus dipilih di pengaturan Pengendali cakram keras. Berkas Anda tidak pernah diubah.",
 		"slot.floppy_a": "Disket (penggerak A:)",
 		"slot.floppy_a.help": "Image disket untuk penggerak A:. Yang pertama ada di penggerak saat mesin mulai. Berkas Anda tidak pernah diubah: apa yang ditulis mesin tetap di memorinya dan di state-nya.",
 		"slot.floppy_b": "Disket (penggerak B:)",

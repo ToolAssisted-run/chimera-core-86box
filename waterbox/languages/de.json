@@ -1,6 +1,7 @@
 {
 	"texts": {
 		"error.bios_not_taken": "Diese Maschine hat kein BIOS namens %1. Sie hat: %2",
+		"error.cdrom_needs_controller": "Das Projekt hat eine CD (%1), aber die Maschine hat keinen Festplattencontroller für das CD-ROM-Laufwerk: Wählen Sie einen in den Einstellungen.",
 		"error.cpu_not_taken": "Diese Maschine nimmt den Prozessor %1 nicht auf. Sie nimmt: %2",
 		"error.device_needs_thread": "Ein Teil dieser Maschine (%1) braucht einen eigenen Thread, und dieser Core hat diesen Teil noch nicht.",
 		"error.hdc_not_taken": "Diese Maschine nimmt den Festplattencontroller %1 nicht auf. Sie nimmt: %2",
@@ -49,6 +50,8 @@
 		"setting.sound.about": "Die Soundkarte, neben dem PC-Lautsprecher, den jede Maschine hat. Es gehört zur Maschine, also braucht ein Film denselben Wert.",
 		"setting.video": "Grafikkarte",
 		"setting.video.about": "Die Grafikkarte. CGA, MDA und Hercules zeichnen Text mit dem IBM-Zeichen-ROM; EGA und VGA haben ein eigenes BIOS. Jede braucht ihre ROM-Datei. Es gehört zur Maschine, also braucht ein Film denselben Wert.",
+		"slot.cdrom": "CD-ROM",
+		"slot.cdrom.help": "Ein CD-Abbild: eine ISO-Datei oder ein Cue-Sheet mit seinen Spuren (Daten und Audio). Das Laufwerk ist das zweite Laufwerk am Festplattencontroller, daher muss in der Einstellung Festplattencontroller einer gewählt sein. Ihre Datei wird nie verändert.",
 		"slot.floppy_a": "Disketten (Laufwerk A:)",
 		"slot.floppy_a.help": "Disketten-Abbilder für Laufwerk A:. Das erste liegt im Laufwerk, wenn die Maschine startet. Ihre Dateien werden nie verändert: Was die Maschine schreibt, bleibt in ihrem Speicher und in ihren Spielständen.",
 		"slot.floppy_b": "Disketten (Laufwerk B:)",

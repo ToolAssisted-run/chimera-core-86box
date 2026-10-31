@@ -1,10 +1,12 @@
 {
   "_comment": [
-    "Two floppy drives, each with a swap list, and a hard disk. The frontend",
+    "Two floppy drives and a hard disk, and a CD-ROM drive. The frontend",
     "mounts every file read-only: what the machine writes to a disk is kept in",
     "the machine's memory (waterbox/chimera-overlay.c), so states carry it and",
-    "your file is never changed. CD-ROMs come later: a CD drive's audio is a",
-    "thread of 86Box's that is not yet made to run in place."
+    "your file is never changed. Only the first file of a slot is in the drive:",
+    "swapping disks is not there yet. The CD-ROM drive is an ATAPI drive, the",
+    "second drive of the hard disk controller; its audio is made in place",
+    "(patch 0007)."
   ],
   "slots": [
     {
@@ -42,6 +44,17 @@
         "mfm"
       ],
       "help": "slot.floppy_b.help"
+    },
+    {
+      "id": "cdrom",
+      "title": "slot.cdrom",
+      "min": 0,
+      "max": 1,
+      "formats": [
+        "iso",
+        "cue"
+      ],
+      "help": "slot.cdrom.help"
     },
     {
       "id": "hdd",
