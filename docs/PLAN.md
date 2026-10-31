@@ -391,7 +391,7 @@ rather than all 500.
 ## 4. Where this stands (2026-10-31)
 
 Local repository `~/chimera-cores/86box`, no remote. Upstream 86Box v6.0
-(`4fef696a`), seven patches. The gate (`waterbox/run-gate.sh`): 27 passed,
+(`4fef696a`), six patches. The gate (`waterbox/run-gate.sh`): 27 passed,
 0 failed, 1 skipped without `FREEDOS_FLOPPY`; 28 with it (the FreeDOS leg
 passed in the run of 2026-10-31 that added it, 26 legs then).
 
