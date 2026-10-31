@@ -1,0 +1,31 @@
+# Kingdom of Kroz II (Apogee, 1990; freeware): installed from its own
+# archive with its DEICE inside DOS, then played. tests/keys.py turns this
+# into the runners' --key options. The machine: an IBM XT with IBM's BIOS,
+# 640 KB (256 on the motherboard and a memory card), CGA, the XT-IDE card
+# with the XTIDE Universal BIOS the core carries, and a 10 MB hard disk the
+# gate makes: FreeDOS, and the game's archive in C:\KRZINST. FreeDOS's
+# prompt is there by frame 7000.
+7000 type cd krzinst\n
+7200 type install\n
+# DEICE: "Which drive to install to?" C; "Enter directory name to copy
+# into:" \KROZ as offered; "That directory does not exist! Create it?" Y.
+# Then PKSFX unpacks KINGDOM.EXE and the batch file deletes the archive:
+# C:\KROZ> by frame 13000.
+8100 type c
+8500 key Enter 4
+8700 type y
+13000 type kingdom\n
+# "Is your screen Color or Monochrome (C/M)?" C; "Slow or Fast PC (S/F)?"
+# S (an XT); the title, a key; "Novice, Experienced or Advanced?" N; the
+# instructions, a key; the registration notice, a key; the menu, B (begin
+# your descent).
+14000 type c
+14400 type s
+15000 key Space 4
+15500 type n
+15900 key Space 4
+16600 key Space 4
+17200 type b
+# level 1: "Press any key to begin this level", then four steps right and
+# two up (the player moves; some steps meet a wall)
+18200 key Space 4

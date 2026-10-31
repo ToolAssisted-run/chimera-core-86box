@@ -74,8 +74,8 @@ CHIMERA_ROOT=<chimera> XUB_SRC=<xub> FREE_BIOS_SRC=<src> [FREEDOS_FLOPPY=<x86BOO
     LD_LIBRARY_PATH=<the window's Qt lib folder> sh waterbox/run-gate.sh
 ```
 
-One more input adds legs, saying SKIP with the reason when it is
-absent. It is for local tests: never on a public runner, never in the
+Two more inputs add legs, each saying SKIP with the reason when it is
+absent. They are for local tests: never on a public runner, never in the
 repository, never named beyond what the legs need:
 
 - `PCBOX_ROMS`: a folder holding the ROM set of 86Box at tag v6.0. The gate
@@ -83,6 +83,11 @@ repository, never named beyond what the legs need:
   pinned SHA-1 (`tools/pin-roms.py --copy`), and runs the IBM PC (1981 and
   1982), XT and AT with IBM's BIOS, FreeDOS on each, the AT's XT-IDE card,
   and the MDA, Hercules, CGA, EGA and VGA cards with IBM's ROMs.
+- `PCBOX_KROZ`: Kingdom of Kroz II's archive, `1kroz.zip`. With
+  `PCBOX_ROMS` and `FREEDOS_FLOPPY`, the gate makes a FreeDOS hard disk with
+  the archive on it, installs the game inside DOS on the IBM XT with its own
+  installer, plays the first level, and replays the same input as a movie
+  through `chimera-run` in two processes.
 
 `XUB_SRC` is the XTIDE Universal BIOS's source, as for the builds. With
 `FREEDOS_FLOPPY` the gate also makes a FreeDOS hard disk and starts FreeDOS

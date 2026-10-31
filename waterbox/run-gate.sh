@@ -16,6 +16,7 @@
 #   FREEDOS_FLOPPY   FreeDOS 1.3's boot floppy (FD13-FloppyEdition, 144m/x86BOOT.img)
 #   PCBOX_ROMS       the ROM set of 86Box, tag v6.0 (the owner's, for local
 #                    tests only: never on a public runner)
+#   PCBOX_KROZ       Kingdom of Kroz II's archive, 1kroz.zip
 #
 # Without FREE_BIOS_SRC (and nasm and cmake) no machine runs: the legs that
 # need one say SKIP, with that reason. A gate that skipped everything is not
@@ -606,6 +607,90 @@ KEYS
 		report PASS "IBM video cards draw with IBM's ROMs" "$ok, each lit (EGA and VGA with no character ROM); the EGA with a BIOS of zeros: 0 lit pixels"
 	else
 		report FAIL "IBM video cards draw with IBM's ROMs" "${bad:-} EGA with zeros: $l0 lit"
+	fi
+fi
+
+# ------------------------------------------- 9. a real game: Kingdom of Kroz II
+# Kingdom of Kroz II (Apogee, 1990, freeware since 2009), from its own
+# archive, 1kroz.zip (its INSTALL.BAT, DEICE.EXE, KROZ.DAT, KROZ.1):
+#   PCBOX_KROZ   the path of that zip (SHA-1 below)
+# On an IBM XT with IBM's BIOS (PCBOX_ROMS), 640 KB, CGA, and the XT-IDE
+# card with the XTIDE Universal BIOS the core carries: a 10 MB hard disk made
+# here holds FreeDOS (FREEDOS_FLOPPY) and the archive in C:\KRZINST. The
+# movie (tests/games/kroz.keys, then kroz-play.keys) types INSTALL at
+# FreeDOS's prompt, answers DEICE (drive C, folder \KROZ, create it), lets
+# PKSFX unpack the game, starts KINGDOM, answers its questions, and plays
+# the first level: four steps right and two up, and the player moves.
+kz="${PCBOX_KROZ:-}"
+kz_sha1=6f9fcb068feb9160261741b15f1df0f163fbf2a9
+if [ -z "$kz" ] || [ -z "$pr" ] || [ -z "$fd" ] || [ ! -d "${ir:-/nonexistent}" ] || [ ! -f "$work/mbr.bin" ]; then
+	report SKIP "Kroz: installed in DOS and played" "needs PCBOX_KROZ (1kroz.zip), PCBOX_ROMS and FREEDOS_FLOPPY"
+	report SKIP "Kroz: the movie through chimera-run" "needs PCBOX_KROZ, PCBOX_ROMS and FREEDOS_FLOPPY"
+elif [ "$(sha1sum "$kz" | cut -c1-40)" != "$kz_sha1" ]; then
+	report FAIL "Kroz: installed in DOS and played" "PCBOX_KROZ is not 1kroz.zip (sha1 $kz_sha1)"
+else
+	kd="$work/kroz"; mkdir -p "$kd"
+	python3 "$root/tests/dos-disk/make-dos-disk.py" --freedos "$fd" --out "$kd/kroz-hd.img" --hdd 306:4:17 \
+		--mbr "$work/mbr.bin" --autoexec '@echo off\n' --put-zip "KRZINST=$kz" > "$kd/disk.log" 2>&1
+	setup=$(python3 "$root/tests/keys.py" "$here/chimera-input.c" "$root/tests/games/kroz.keys")
+	play=$(python3 "$root/tests/keys.py" "$here/chimera-input.c" "$root/tests/games/kroz-play.keys")
+	krun="--roms $ir --set machine=ibmxt --set video=cga --set memoryKB=640 --set floppyA=525_2dd"
+	krun="$krun --set hardDiskController=xtide --file hdd=$kd/kroz-hd.img --frames 18900"
+	native_run $krun $setup $play --ppm "$kd/level.ppm" --ppm-at 18250 --digests "$kd/native.dig" --dump-ram "$kd/native.ram" > /dev/null
+	cp "$work/n$n.err" "$kd/native.err"
+	native_run $krun $setup --ppm "$kd/still.ppm" > /dev/null
+	native_run $krun $setup $play --ppm "$kd/played.ppm" > /dev/null
+	"$rw" "$wbx" "$cfg" $krun $setup $play --digests "$kd/wbx.dig" --dump-ram "$kd/wbx.ram" > "$kd/wbx.txt" 2> "$kd/wbx.err"
+	# where the player is: the centre of the play field's pixels of its
+	# yellow (CGA's bright yellow as 86Box draws it), with the six steps and
+	# in the run that stood still
+	player() { python3 - "$1" <<'PY'
+import sys
+d = open(sys.argv[1], 'rb').read().split(b'\n', 3)
+w = int(d[1].split()[0])
+pts = [(x, y) for y in range(8, 176) for x in range(520) if d[3][(y * w + x) * 3:(y * w + x) * 3 + 3] == b'\xf3\xf3\x4e']
+print(sum(x for x, y in pts) // len(pts), sum(y for x, y in pts) // len(pts))
+PY
+}
+	set -- $(player "$kd/still.ppm" 2>/dev/null) $(player "$kd/played.ppm" 2>/dev/null)
+	moved=""
+	[ $# -eq 4 ] && [ "$3" -ge $(($1 + 5)) ] && [ "$4" -le $(($2 - 5)) ] && moved="($1,$2) to ($3,$4)"
+	l_level=$(lit "$kd/level.ppm" 2>/dev/null || echo 0)
+	if [ "${l_level:-0}" -gt 20000 ] && [ -n "$moved" ] \
+	   && [ -s "$kd/wbx.dig" ] && cmp -s "$kd/native.dig" "$kd/wbx.dig" && cmp -s "$kd/native.ram" "$kd/wbx.ram"; then
+		report PASS "Kroz: installed in DOS and played" "level 1 at frame 18250 ($l_level lit pixels); the steps move the player right and up, $moved; 18900 frames, sandbox == native, memory and card memory"
+	else
+		report FAIL "Kroz: installed in DOS and played" "level $l_level lit, player [$*]; see build/gate/kroz"
+	fi
+	# The movie: the same input as a movie in a project, run by chimera-run,
+	# and replayed by a second chimera-run in a new process; both end with the
+	# sandbox runner's memory, and the disk Export Save Data gives back holds
+	# the game the installer wrote (C:\KROZ\KINGDOM.EXE).
+	crun="$chimera_root/build/dll/chimera-run"
+	if [ ! -x "$crun" ]; then
+		report SKIP "Kroz: the movie through chimera-run" "no chimera-run at $crun"
+	else
+		kp="$kd/project"; mkdir -p "$kp"; cp "$kd/kroz-hd.img" "$kp/"
+		python3 "$here/tests/make-movie.py" "$pkg" 18900 $setup $play > "$kp/movie.txt"
+		fw=""
+		for f in machines_ibmxt_BIOS_5160_08NOV82_U18_1501512.BIN machines_ibmxt_BIOS_5160_08NOV82_U19_5000027.BIN video_mda_mda.rom; do
+			fw="$fw --firmware $f=$ir/$f"
+		done
+		"$crun" --new-project "$kp/kroz.chimeraProject" "$pkg" --file "hdd=$kp/kroz-hd.img" --movie "$kp/movie.txt" \
+			--settings '{"machine": "ibmxt - [8088] IBM XT (1982)", "video": "cga - IBM CGA", "memoryKB": 640, "hardDiskController": "xtide - PC/XT XTIDE"}' \
+			$fw > "$kp/make.log" 2>&1
+		for run in 1 2; do
+			"$crun" --project "$kp/kroz.chimeraProject" "$pkg" $fw --frames 18900 --dump "System RAM=$kp/ram$run.bin" \
+				--dump "Memory Card RAM=$kp/card$run.bin" --export-savedata "$kp/export$run" > "$kp/run$run.log" 2>&1
+		done
+		cat "$kp/ram1.bin" "$kp/card1.bin" > "$kp/all1.bin" 2>/dev/null
+		kex=$(python3 "$root/tests/dos-disk/make-dos-disk.py" --read "$kp/export1/kroz-hd.img" 'KROZ\KINGDOM.EXE' 2>/dev/null | wc -c)
+		if [ -s "$kp/ram1.bin" ] && cmp -s "$kp/ram1.bin" "$kp/ram2.bin" && cmp -s "$kp/card1.bin" "$kp/card2.bin" \
+		   && cmp -s "$kp/all1.bin" "$kd/wbx.ram" && [ "${kex:-0}" -gt 10000 ] && cmp -s "$kp/kroz-hd.img" "$kd/kroz-hd.img"; then
+			report PASS "Kroz: the movie through chimera-run" "18900 frames twice, in two processes: the same memory, and the sandbox runner's; the exported disk holds C:\\KROZ\\KINGDOM.EXE ($kex bytes); the project's file unchanged"
+		else
+			report FAIL "Kroz: the movie through chimera-run" "see build/gate/kroz/project ($(tail -1 "$kp/run1.log" | cut -c1-100))"
+		fi
 	fi
 fi
 

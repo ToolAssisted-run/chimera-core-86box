@@ -33,7 +33,8 @@ is the design log and ends with where the work stands.
   those two ROMs (`embed.py` writes them into the build, SHA-1 checked). `tests/hdd-dos/` - makes a FreeDOS hard disk.
   `tests/cd/` - makes the test CD (a data track and an audio track).
   `tests/dos-disk/` - makes FreeDOS floppies and hard disks with a test's
-  files. `tests/keys.py` - typed text and keys as the runners' options.
+  files. `tests/keys.py` - typed text and keys as the runners' options;
+  `tests/games/` - the input of the game tests.
 - `tools/pin-roms.py` - the SHA-1 of each declared ROM file, from 86Box's
   ROM set, into `tools/rom-sha1.json` (which `gen-config.py` reads).
 
@@ -55,7 +56,7 @@ The gate must end with `0 failed`. Read the skipped count: without
 `FREE_BIOS_SRC` no machine runs. `FREEDOS_FLOPPY` adds the FreeDOS legs
 (from its floppy, and from a hard disk through the carried XTIDE Universal
 BIOS); `PCBOX_ROMS` (the ROM set of 86Box, v6.0) adds IBM's machines with
-IBM's ROMs (docs/BUILDING.md); the window leg
+IBM's ROMs, and `PCBOX_KROZ` a real game (docs/BUILDING.md); the window leg
 needs the window's Qt on `LD_LIBRARY_PATH`.
 
 ## Rules of this repository

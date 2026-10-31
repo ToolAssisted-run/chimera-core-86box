@@ -633,13 +633,56 @@ The owner supplied 86Box's ROM set at tag v6.0 for local tests
   want of the character ROM, the bug above); FreeDOS on the 1981 PC with
   64 KB, no memory card: no marker by frame 12000; the AT's hard disk with
   the carried ROM off: no marker (the leg's own control).
-- **Gate**, with `PCBOX_ROMS` and `FREEDOS_FLOPPY` (and the Kroz legs of
-  the next entry, committed after this): 39 passed, 0 failed, 0 skipped, in
-  10 minutes.
+- **Gate**, with `PCBOX_ROMS`, `FREEDOS_FLOPPY` and Kroz (next entry): 39
+  passed, 0 failed, 0 skipped, in 10 minutes.
 - **Typing.** `tests/keys.py` turns a script of typed text and keys into the
   runners' `--key` options (a shifted character holds Shift from the frame
   before: keys of one frame are pressed in the table's order); the runners
   now take 4096 input events instead of 128.
+
+### 2026-10-31 (third round): a real game, Kingdom of Kroz II
+
+- **The game.** Kingdom of Kroz II (Scott Miller, Apogee, 1990; freeware
+  since 2009), from the owner's copy of its archive, `1kroz.zip` (SHA-1
+  `6f9fcb06...`): INSTALL.BAT, DEICE.EXE (id Software's installer), KROZ.DAT
+  and KROZ.1. It calls itself "Kingdom of Kroz Version 1.0" in its installer
+  and "Kingdom of Kroz II ... Version 2.0" in the game. A CGA text game for
+  an XT: it suits the IBM XT.
+- **The machine.** An IBM XT with IBM's BIOS, 640 KB (256 on the
+  motherboard, 384 on the memory card), CGA, and the XT-IDE card with the
+  XTIDE Universal BIOS the core carries. The disk is made by the gate: 10 MB,
+  FreeDOS (kernel and shell, from its boot floppy) and the archive in
+  `C:\KRZINST` (`make-dos-disk.py --put-zip`). Nothing of the game is in the
+  repository; `PCBOX_KROZ` names the zip.
+- **Installed inside DOS** by its own installer, typed by the movie
+  (`tests/games/kroz.keys`): at FreeDOS's prompt (frame 7000) `cd krzinst`,
+  `install`; DEICE asks the drive (C), the folder (`\KROZ`, as offered) and
+  whether to create it (Y), joins KROZ.1 into KROZ.EXE, and the batch file
+  runs it: PKSFX 2.04g unpacks KINGDOM.EXE, CATALOG.EXE and ORDER.FRM and
+  the archive is deleted (`C:\KROZ>` by frame 13000). Then `kingdom`, and
+  its questions: colour (C), slow PC (S), a key at the title, novice (N), a
+  key at the instructions, a key at the registration notice, B to begin.
+  Level 1 is on screen at frame 18250; a key starts it, and the movie walks
+  four steps right and two up (`kroz-play.keys`).
+- **Measured.** Gate legs, which SKIP without `PCBOX_KROZ`, `PCBOX_ROMS`
+  and `FREEDOS_FLOPPY`: the level's picture is lit (53,692 pixels at frame
+  18250); the player, found by its yellow in the play field, moves from
+  (259,67) to (270,56) against the run that stood still; 18900 frames,
+  sandbox == native, the motherboard's and the card's memory. The same
+  input as a movie in a project: `chimera-run` runs it, and a second
+  `chimera-run` in a new process replays it; both end with the same memory
+  as each other and as the sandbox runner, and Export Save Data gives the
+  disk back with `C:\KROZ\KINGDOM.EXE` (53,707 bytes) in it, the project's
+  file unchanged.
+- **Broken on purpose:** the movie with the six steps taken out ends with
+  memory that is not the sandbox runner's (the movie leg fails); without the
+  steps the player stays at (259,67) (the play leg fails).
+- **A wrong first check.** The first version of the leg looked for the score
+  to change; it does not (the six steps pick nothing up, and the panel says
+  the same with and without them), and the leg failed. It now compares the
+  player's place.
+- **Not tested**: playing past the first steps; Kroz's sound (the PC
+  speaker, which the frame's sound carries, was not looked at).
 
 ## 4. Where this stands (2026-10-31, second round)
 
