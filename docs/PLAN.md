@@ -416,6 +416,47 @@ a mouse, by name). Seen to fail with the last bent text still in place
   given back into a new project (the probe writes the sector again at
   start, so it could not tell).
 
+### 2026-10-31: FreeDOS from a hard disk, through the XTIDE Universal BIOS
+
+- **Why the free XTIDE BIOS did not find the drive.** 86Box's "PC/XT
+  XTIDE" card (`hdc_xtide.c`) is an XT-IDE revision 1: the drive's
+  registers at 300h to 307h, the data's high byte at 308h, the alternate
+  status at 30Eh, no interrupt. Upstream's XT build of the XTIDE Universal
+  BIOS is made with `MODULE_8BIT_IDE_ADVANCED`, and with that module its
+  first controller is an XT-CF card at 300h (`DEVICE_8BIT_XTCF_PIO8`,
+  `Src/Main.asm`), whose registers are elsewhere: "Master at 300h: not
+  found". Without the module (it serves only XT-CF and JR-IDE cards, which
+  86Box's card is not) the default is `DEVICE_8BIT_XTIDE_REV1` at 300h,
+  which is the card. Not the port, not the card variant: the build's
+  default device.
+- **The build** (`tests/xtide-bios/build.sh`): revision 638 from the
+  project's Subversion repository (fetched over HTTP, its tree pinned by
+  hash in `xub.ref`), upstream's XT set of modules less that one, nasm,
+  padded to 8 KB with its checksum. `__DATE__` is set to r638's date, so
+  the image is the same whatever day it is built (sha1 1d1fc68f...). A
+  second image with the module, as upstream builds it, is the negative
+  control.
+- **The disk** (`tests/hdd-dos/make-hdd.py`): 10 MB, 306/4/17, one active
+  FAT12 partition from cylinder 0, head 1; our boot record (`mbr.asm`, 8088
+  code); the partition's boot sector is FreeDOS's FAT12 boot code from the
+  floppy with the partition's own BPB (drive 80h, 17 hidden sectors), which
+  reads all it needs from the BPB; KERNEL.SYS and COMMAND.COM from the
+  floppy; our AUTOEXEC.BAT sets `HDBOOT=%COMSPEC%` and writes C:\WROTE.TXT.
+  The image is made by the gate from FREEDOS_FLOPPY; no FreeDOS file is in
+  the repository.
+- **Measured.** On the Xi 8088 at 4.77 MHz with no floppy: the XTIDE BIOS
+  reports "Master at 300h: 86B_HD00", FreeDOS's kernel and FreeCOM start
+  from C:, and by frame 3000 the machine's memory holds
+  `HDBOOT=C:\COMMAND.COM` (the batch file holds `%COMSPEC%`, so only the
+  running shell writes that). With upstream's build: "not found", no
+  marker. The sandbox gives the native stream for all 3000 frames. Through
+  a project, Export Save Data gives the disk back with C:\WROTE.TXT holding
+  FreeDOS's line, and the project's file is unchanged. Gate, 31 passed, 0
+  failed, 0 skipped. Broken on purpose (the XTIDE BIOS built the upstream
+  way): both new legs failed.
+- **Not tested**: the AT card (`xtide_at`), which needs an AT, whose BIOS
+  is not free; a larger disk with EBIOS or translation.
+
 ## 4. Where this stands (2026-10-31)
 
 Local repository `~/chimera-cores/86box`, no remote. Upstream 86Box v6.0

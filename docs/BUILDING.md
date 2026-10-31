@@ -62,9 +62,15 @@ To use it, put the file in Chimera's `cores` folder (or point
 
 ```sh
 git clone https://github.com/skiselev/8088_bios.git <src>   # check out the commit tests/free-bios/8088_bios.ref names
-CHIMERA_ROOT=<chimera> FREE_BIOS_SRC=<src> [FREEDOS_FLOPPY=<x86BOOT.img>] \
+CHIMERA_ROOT=<chimera> FREE_BIOS_SRC=<src> [FREEDOS_FLOPPY=<x86BOOT.img>] [XUB_SRC=<xub>] \
     LD_LIBRARY_PATH=<the window's Qt lib folder> sh waterbox/run-gate.sh
 ```
+
+`XUB_SRC` is a folder holding revision 638 of the XTIDE Universal BIOS
+(GPL), fetched from its Subversion repository as `tests/xtide-bios/xub.ref`
+says (no svn needed: wget over HTTP). With it and `FREEDOS_FLOPPY`, the
+gate builds the BIOS for 86Box's XT-IDE card, makes a FreeDOS hard disk and
+starts FreeDOS from it.
 
 What it does, in order: both builds, `check-wbx`, the package, Chimera's
 contract tests on the package alone, the code's text keys; then, with the
@@ -74,8 +80,10 @@ determinism and its negative control, input (keyboard, serial mouse,
 joystick buttons, lag frames), FM sound, virtual time and its negative
 control, the sandbox against the native reference, states (save and load
 before every frame, a stale state noticed, a state carried to another
-process), FreeDOS (optional), a project through `chimera-run`, and the
-project in Chimera's window (`waterbox/tests/run-frontend.sh`, headless).
+process), FreeDOS from its floppy and from a hard disk (optional), a
+project through `chimera-run`, and the project in Chimera's window
+(`waterbox/tests/run-frontend.sh`, headless). Before the machines: the
+texts, Chimera's text check and the name check (`tools/check-names.py`).
 
 Without `FREE_BIOS_SRC` only the build and package legs run; that is what a
 runner without the BIOS source can prove. No leg needs a commercial ROM.

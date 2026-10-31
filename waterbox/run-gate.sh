@@ -362,6 +362,63 @@ else
 	fi
 fi
 
+# --------------------------- 6c. FreeDOS from a hard disk, through the XTIDE BIOS
+# The XTIDE Universal BIOS (GPL), built from source for 86Box's XT-IDE card
+# (tests/xtide-bios: upstream's XT build starts with an XT-CF card at 300h
+# and does not find the drive; without MODULE_8BIT_IDE_ADVANCED it starts
+# with the XT-IDE revision 1 that 86Box emulates). A 10 MB disk made here
+# (tests/hdd-dos: our boot record, the floppy's FreeDOS boot code, kernel
+# and shell, our AUTOEXEC.BAT). No floppy in the drive: the machine boots
+# from the hard disk, and the shell sets HDBOOT to its own path.
+#   XUB_SRC   a folder holding XUB revision 638 (tests/xtide-bios/xub.ref)
+xub="${XUB_SRC:-}"
+if [ -z "$fd" ] || [ -z "$xub" ] || [ "$(sha1sum "$fd" | cut -c1-40)" != "$fd_sha1" ]; then
+	report SKIP "FreeDOS starts from a hard disk" "needs FREEDOS_FLOPPY (as above) and XUB_SRC (tests/xtide-bios/xub.ref)"
+elif ! sh "$root/tests/xtide-bios/build.sh" "$xub" "$work/xub" > "$work/xub.log" 2>&1 \
+     || ! nasm -f bin "$root/tests/hdd-dos/mbr.asm" -o "$work/mbr.bin" > "$work/hdd-dos.log" 2>&1 \
+     || ! python3 "$root/tests/hdd-dos/make-hdd.py" "$fd" "$work/mbr.bin" "$work/hdd-dos.img" >> "$work/hdd-dos.log" 2>&1; then
+	report FAIL "FreeDOS starts from a hard disk" "$(tail -1 "$work/xub.log" "$work/hdd-dos.log" | tr '\n' ' ')"
+else
+	xroms="$work/xub-roms"; croms="$work/xub-control-roms"; mkdir -p "$xroms" "$croms"
+	cp "$roms/machines_xi8088_bios-xi8088-128k.bin" "$roms/video_mda_mda.rom" "$xroms/"
+	cp "$roms/machines_xi8088_bios-xi8088-128k.bin" "$roms/video_mda_mda.rom" "$croms/"
+	cp "$work/xub/hdd_xtide_ide_xt.bin" "$xroms/"
+	cp "$work/xub/ide_xt_upstream_default.bin" "$croms/hdd_xtide_ide_xt.bin"
+	hdos="--set machine=xi8088 --set video=cga --set memoryKB=640 --set floppyA=525_2dd --set hardDiskController=xtide"
+	hdos="$hdos --file hdd=$work/hdd-dos.img --frames 3000"
+	native_run --roms "$xroms" $hdos --digests "$work/hdos-native.dig" --dump-ram "$work/hdos-native.ram" --ppm "$work/hdos-native.ppm" > /dev/null
+	native_run --roms "$croms" $hdos --dump-ram "$work/hdos-control.ram" --ppm "$work/hdos-control.ppm" > /dev/null
+	"$rw" "$wbx" "$cfg" --roms "$xroms" $hdos --digests "$work/hdos-wbx.dig" > /dev/null 2>&1
+	booted=$(grep -a -c 'HDBOOT=C:\\COMMAND.COM' "$work/hdos-native.ram" 2>/dev/null)
+	control=$(grep -a -c 'HDBOOT=C:\\COMMAND.COM' "$work/hdos-control.ram" 2>/dev/null)
+	if [ "${booted:-0}" -ge 1 ] && [ "${control:-1}" = 0 ] && [ "$(wc -l < "$work/hdos-native.dig")" -eq 3000 ] \
+	   && cmp -s "$work/hdos-native.dig" "$work/hdos-wbx.dig"; then
+		report PASS "FreeDOS starts from a hard disk" "XUB r638 finds the drive at 300h, the shell runs from C: (HDBOOT=C:\\COMMAND.COM); upstream's XT build: not found; 3000 frames, sandbox == native"
+	else
+		report FAIL "FreeDOS starts from a hard disk" "marker ${booted:-0}, control ${control:-?}; see build/gate/hdos-*"
+	fi
+	# What FreeDOS writes to C: is kept: through a project, Export Save Data
+	# gives the disk back with C:\WROTE.TXT in it, and the project's file is
+	# unchanged.
+	crun="$chimera_root/build/dll/chimera-run"
+	hp="$work/hdd-project"; mkdir -p "$hp"; cp "$work/hdd-dos.img" "$hp/"
+	python3 "$here/tests/make-movie.py" "$pkg" 3000 > "$hp/movie.txt"
+	fwb=machines_xi8088_bios-xi8088-128k.bin; fwf=video_mda_mda.rom; fwh=hdd_xtide_ide_xt.bin
+	if [ ! -x "$crun" ]; then
+		report SKIP "FreeDOS's writes to C: are kept" "no chimera-run at $crun"
+	elif "$crun" --new-project "$hp/p.chimeraProject" "$pkg" --file "hdd=$hp/hdd-dos.img" --movie "$hp/movie.txt" \
+		--settings '{"machine": "xi8088 - [8088] Xi8088", "video": "cga - IBM CGA", "memoryKB": 640, "hardDiskController": "xtide - PC/XT XTIDE"}' \
+		--firmware "$fwb=$xroms/$fwb" --firmware "$fwf=$xroms/$fwf" --firmware "$fwh=$xroms/$fwh" > "$hp/make.log" 2>&1 \
+	   && "$crun" --project "$hp/p.chimeraProject" "$pkg" --firmware "$fwb=$xroms/$fwb" --firmware "$fwf=$xroms/$fwf" \
+		--firmware "$fwh=$xroms/$fwh" --frames 3000 --export-savedata "$hp/export" > "$hp/run.log" 2>&1 \
+	   && [ "$(python3 "$root/tests/hdd-dos/make-hdd.py" --read "$hp/export/hdd-dos.img" WROTE.TXT 2>/dev/null | tr -d "\r")" = "written by FreeDOS on the hard disk" ] \
+	   && cmp -s "$hp/hdd-dos.img" "$work/hdd-dos.img"; then
+		report PASS "FreeDOS's writes to C: are kept" "chimera-run --export-savedata: C:\\WROTE.TXT in the exported disk; the project's file unchanged"
+	else
+		report FAIL "FreeDOS's writes to C: are kept" "no C:\\WROTE.TXT in the exported disk, or the project's file changed; see build/gate/hdd-project"
+	fi
+fi
+
 # ------------------------------------------- 7. through the engine, and the window
 # A project, as a person makes one: the probe floppy in its slot, the
 # settings, the firmware, a movie that holds A at frame 1200. chimera-run runs

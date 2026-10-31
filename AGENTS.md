@@ -28,7 +28,8 @@ is the design log and ends with where the work stands.
   86Box's tables (`list-machines`). Do not edit it by hand.
 - `waterbox/languages/` - the texts a person reads, 26 languages.
 - `tests/free-bios/` - builds the free Xi 8088 BIOS. `tests/boot-probe/` -
-  the gate's boot floppy.
+  the gate's boot floppy. `tests/xtide-bios/` - builds the XTIDE Universal
+  BIOS for 86Box's XT-IDE card. `tests/hdd-dos/` - makes a FreeDOS hard disk.
 
 ## Commands, in order
 
@@ -44,7 +45,8 @@ CHIMERA_ROOT=$CHIMERA FREE_BIOS_SRC=build/src/8088_bios sh waterbox/run-gate.sh
 ```
 
 The gate must end with `0 failed`. Read the skipped count: without
-`FREE_BIOS_SRC` no machine runs. `FREEDOS_FLOPPY` adds the FreeDOS leg; the
+`FREE_BIOS_SRC` no machine runs. `FREEDOS_FLOPPY` adds the FreeDOS legs (with
+`XUB_SRC`, see `tests/xtide-bios/xub.ref`, FreeDOS from a hard disk); the
 window leg needs the window's Qt on `LD_LIBRARY_PATH`.
 
 ## Rules of this repository

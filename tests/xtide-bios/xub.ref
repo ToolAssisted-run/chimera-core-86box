@@ -1,0 +1,11 @@
+# The XTIDE Universal BIOS the test scripts build (tests/xtide-bios/build.sh).
+# It is GPL-2.0-or-later (its license.txt), from the project's own Subversion
+# repository. Fetch that revision with:
+#   url='https://www.xtideuniversalbios.org/svn/xtideuniversalbios/!svn/bc/638/trunk'
+#   for d in XTIDE_Universal_BIOS Assembly_Library; do
+#     wget -r -np -nH --cut-dirs=5 -R 'index.html*' -e robots=off "$url/$d/"; done
+# in an empty folder. build.sh checks the tree against the hash below
+# (sha256 of `sha256sum` over the sorted files of XTIDE_Universal_BIOS/Inc,
+# XTIDE_Universal_BIOS/Src, Assembly_Library/Inc and Assembly_Library/Src).
+revision 638
+tree d23d621f60ba869ba2a70323e1ced54aa2603e2005da4ad48cdd9c717829947a
