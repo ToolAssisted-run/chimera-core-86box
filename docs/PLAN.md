@@ -178,6 +178,22 @@ word of four letters or more is a compound and is allowed, as is "PS/2-mus",
 a mouse, by name). Seen to fail with the last bent text still in place
 (Turkish "VGA'nin": "VGA is not there as itself"), and to pass after it.
 
+### Free ROMs: the XTIDE Universal BIOS in the package, GLaBIOS in the tests (user-decided, 2026-10-31)
+
+The owner accepted the second round's two recommendations:
+
+- **The XTIDE Universal BIOS is carried in the package** as the ROM of
+  86Box's XT-IDE cards, built from its pinned source (revision 638, GPL-2.0-
+  or-later, as built and proved in the second round), the way the Fuse and
+  ZEsarUX cores carry their machines' ROMs: the core answers for the file
+  from memory, so the user is never asked for it. No change to Chimera: the
+  package simply stops declaring that file as firmware. Done: the log entry
+  "the XTIDE Universal BIOS is carried" below.
+- **GLaBIOS (GPL-3.0) is built from source in the gate**, so the IBM PC and
+  XT machine definitions are tested without IBM's ROMs. This does not
+  replace running those machines with IBM's own BIOS, which the owner's ROM
+  set now allows. Not done yet: see the log entry "GLaBIOS" below.
+
 ## 3. Log
 
 ### 2026-10-31: the native reference, virtual time, the guest, states
@@ -500,6 +516,48 @@ a mouse, by name). Seen to fail with the last bent text still in place
   drivers - not run, for want of a free AT BIOS); CD audio through a sound
   card's CD input and mixer volume (the run has no sound card); disc
   swapping (only the slot's first file is in the drive, as for floppies).
+
+### 2026-10-31 (third round): the XTIDE Universal BIOS is carried
+
+- **What changed.** The core now holds the ROMs of both of 86Box's XT-IDE
+  cards and answers for them from memory (`chimera_builtin_rom` in
+  `chimera-plat.c`); the package no longer declares them as firmware, so
+  Chimera never asks for them. The build makes them from the XTIDE
+  Universal BIOS's source, revision 638 (`waterbox/xtide-bios`, moved from
+  `tests/`): `build.sh` assembles them with nasm, and `embed.py` writes them
+  into the build as C arrays after checking each image's SHA-1 against the
+  one proved here, so another assembler that writes other bytes stops the
+  build. `XUB_SRC` (meson option `xub_src`) is now needed by every build,
+  not only by the tests. A carried ROM wins over a mounted file of the same
+  name; only the native build's `CHIMERA_86BOX_NO_BUILTIN_ROMS` turns that
+  off, for the test scripts' negative control.
+- **The two images.** The XT card's is the second round's (upstream's XT
+  set less `MODULE_8BIT_IDE_ADVANCED`, SHA-1 `1d1fc68f`). The AT card's is
+  upstream's AT set as it is (`DEFINES_AT`, SHA-1 `28c3090c`); it is proved
+  on the IBM AT in the entry "IBM's machines" below.
+- **The licence.** XUB is GPL-2.0-or-later; `waterbox/xtide-bios/COPYING`
+  (its copyright line and licence text) travels in the package's licence
+  list, with the source revision's address.
+- **What it changed in the tests.** Every probe run has an XT-IDE card, so
+  it now runs the real XUB instead of 8 KB of zeros: XUB finds the drive,
+  then waits for a second one that is not there, and the probe starts at
+  about frame 1540 instead of 800. Every frame number of the probe's runs
+  moved 1000 later (2500 frames a run), and the CD runs' 490 (the tone now
+  plays from frame 1535). The lag-frame leg asked that the run with input
+  read controls in at least as many frames as the idle run; with XUB the
+  run with input reads fewer (159 against 179: a key makes the probe read
+  both disks again, and it reads no control while it waits). That order
+  never meant anything, so the leg now asks for lag frames in both runs and
+  different counts.
+- **Texts.** The two firmware texts of the hard disk ROM are gone from the
+  26 tables, and the controller setting's text says the core brings that
+  BIOS ("Each needs its ROM file" was the sentence before).
+- **Measured.** Gate, 33 passed, 0 failed, 0 skipped (FreeDOS, the CD, the
+  engine and the window included). Broken on purpose: with the carried ROM
+  turned off and no file of that name, FreeDOS's hard disk run left no
+  `HDBOOT=C:\COMMAND.COM` in memory (0 against 1), so the hard disk leg
+  fails. (86Box does not refuse an XT-IDE card without its ROM; it runs
+  without one. The core no longer depends on that.)
 
 ## 4. Where this stands (2026-10-31, second round)
 

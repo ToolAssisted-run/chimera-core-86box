@@ -28,17 +28,19 @@ is the design log and ends with where the work stands.
   86Box's tables (`list-machines`). Do not edit it by hand.
 - `waterbox/languages/` - the texts a person reads, 26 languages.
 - `tests/free-bios/` - builds the free Xi 8088 BIOS. `tests/boot-probe/` -
-  the gate's boot floppy. `tests/xtide-bios/` - builds the XTIDE Universal
-  BIOS for 86Box's XT-IDE card. `tests/hdd-dos/` - makes a FreeDOS hard disk.
+  the gate's boot floppy. `waterbox/xtide-bios/` - builds the XTIDE Universal
+  BIOS (GPL) for 86Box's two XT-IDE cards from source; the core carries
+  those two ROMs (`embed.py` writes them into the build, SHA-1 checked). `tests/hdd-dos/` - makes a FreeDOS hard disk.
   `tests/cd/` - makes the test CD (a data track and an audio track).
 
 ## Commands, in order
 
 ```sh
 git submodule update --init
+export XUB_SRC=$PWD/build/src/xub-r638  # fetched as waterbox/xtide-bios/xub.ref says; the builds need it
 CHIMERA=/path/to/chimera          # built: chimera-run, the window, test-packages
 MB=$CHIMERA/extern/chimera-common-minibox
-meson setup build/meson-native -Dminibox_dir=$MB && ninja -C build/meson-native -j4
+meson setup build/meson-native -Dminibox_dir=$MB -Dxub_src=$XUB_SRC && ninja -C build/meson-native -j4
 sh waterbox/setup-guest.sh -m $MB && ninja -C build/meson-guest -j4 core.wbx
 sh waterbox/build-package.sh -m $MB                     # -> build/Cores/86box.chimeraCore
 git clone https://github.com/skiselev/8088_bios.git build/src/8088_bios   # then check out tests/free-bios/8088_bios.ref
@@ -46,9 +48,9 @@ CHIMERA_ROOT=$CHIMERA FREE_BIOS_SRC=build/src/8088_bios sh waterbox/run-gate.sh
 ```
 
 The gate must end with `0 failed`. Read the skipped count: without
-`FREE_BIOS_SRC` no machine runs. `FREEDOS_FLOPPY` adds the FreeDOS legs (with
-`XUB_SRC`, see `tests/xtide-bios/xub.ref`, FreeDOS from a hard disk); the
-window leg needs the window's Qt on `LD_LIBRARY_PATH`.
+`FREE_BIOS_SRC` no machine runs. `FREEDOS_FLOPPY` adds the FreeDOS legs
+(from its floppy, and from a hard disk through the carried XTIDE Universal
+BIOS); the window leg needs the window's Qt on `LD_LIBRARY_PATH`.
 
 ## Rules of this repository
 
@@ -71,7 +73,9 @@ window leg needs the window's Qt on `LD_LIBRARY_PATH`.
   say it with a common noun beside the name. A new name goes into
   `tools/check-names.py`'s list; the gate runs it on all 26 tables.
 - Never commit a ROM, BIOS, disk image or game; never look for them on the
-  machine. The owner supplies them.
+  machine. The owner supplies them. The one ROM the core carries, the XTIDE
+  Universal BIOS (the owner, 2026-10-31), is built from its pinned source,
+  never committed as a binary.
 - Scripts under `waterbox/` and `tests/` are POSIX `sh` (the window test is
   bash). Prose is plain ASCII. Commits: `type(86box): what is now true`, the
   body says what ran, with the numbers.

@@ -202,7 +202,9 @@ JOYSTICKS = ['none', '2axis_2button', '2axis_4button', '4axis_4button', '2button
 # and a 16-bit machine. (86Box's tables of controllers are not exported by
 # list-machines; the names are src/disk/hdc_xtide.c's.)
 HDC = [('none', 'None'), ('xtide', 'PC/XT XTIDE'), ('xtide_at_1ch', 'PC/AT XTIDE (Primary Only)')]
-HDC_FILES = {'xtide': ['roms/hdd/xtide/ide_xt.bin'], 'xtide_at_1ch': ['roms/hdd/xtide/ide_at.bin']}
+# The XT-IDE cards' ROMs, the XTIDE Universal BIOS, are carried by the core
+# (waterbox/xtide-bios): they are not firmware the user brings.
+HDC_FILES = {}
 FLOPPY_DRIVES = ['none', '525_1dd', '525_2dd', '525_2qd', '525_2hd', '35_1dd', '35_2dd', '35_2hd', '35_2ed']
 
 # The files a video card reads, by 86Box's paths (src/video): the character

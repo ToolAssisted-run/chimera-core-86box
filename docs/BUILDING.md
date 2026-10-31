@@ -24,6 +24,14 @@ git clone <this repository> && cd chimera-core-86box
 git submodule update --init          # extern/86box at the v6.0 release
 ```
 
+The XTIDE Universal BIOS (GPL-2.0-or-later), the ROM of 86Box's XT-IDE
+hard disk cards, is built into the core from its source, revision 638. Fetch
+it once into a folder of its own (no svn needed, wget over HTTP; the exact
+command is in `waterbox/xtide-bios/xub.ref`) and say where it is with
+`XUB_SRC`. The build checks the source tree's hash and the SHA-1 of each
+image it makes (`waterbox/xtide-bios/embed.py`): another nasm that writes
+other bytes stops the build rather than put an untested ROM in the package.
+
 The patches are applied by the build itself (`meson.build` runs
 `waterbox/apply-patches.sh`), which judges the series as a whole: a pristine
 tree gets all of it, a tree that has all of it is left alone, anything else
@@ -32,9 +40,9 @@ is an error naming the files.
 ## The two builds
 
 ```sh
-meson setup build/meson-native -Dminibox_dir=<minibox>
+meson setup build/meson-native -Dminibox_dir=<minibox> -Dxub_src=<xub>
 ninja -C build/meson-native -j4                 # run-native, run-wbx, list-machines
-sh waterbox/setup-guest.sh -m <minibox>         # writes the cross file, sets up build/meson-guest
+XUB_SRC=<xub> sh waterbox/setup-guest.sh -m <minibox>   # writes the cross file, sets up build/meson-guest
 ninja -C build/meson-guest -j4 core.wbx
 sh <minibox>/source/guest/check-wbx.sh build/meson-guest/core.wbx
 ```
@@ -46,7 +54,7 @@ build is the reference the gate compares the sandbox with.
 ## The package
 
 ```sh
-sh waterbox/build-package.sh -m <minibox> [-o <folder>]
+XUB_SRC=<xub> sh waterbox/build-package.sh -m <minibox> [-o <folder>]
 ```
 
 It regenerates the declaration from 86Box's tables and refuses a committed
@@ -62,15 +70,15 @@ To use it, put the file in Chimera's `cores` folder (or point
 
 ```sh
 git clone https://github.com/skiselev/8088_bios.git <src>   # check out the commit tests/free-bios/8088_bios.ref names
-CHIMERA_ROOT=<chimera> FREE_BIOS_SRC=<src> [FREEDOS_FLOPPY=<x86BOOT.img>] [XUB_SRC=<xub>] \
+CHIMERA_ROOT=<chimera> XUB_SRC=<xub> FREE_BIOS_SRC=<src> [FREEDOS_FLOPPY=<x86BOOT.img>] \
     LD_LIBRARY_PATH=<the window's Qt lib folder> sh waterbox/run-gate.sh
 ```
 
-`XUB_SRC` is a folder holding revision 638 of the XTIDE Universal BIOS
-(GPL), fetched from its Subversion repository as `tests/xtide-bios/xub.ref`
-says (no svn needed: wget over HTTP). With it and `FREEDOS_FLOPPY`, the
-gate builds the BIOS for 86Box's XT-IDE card, makes a FreeDOS hard disk and
-starts FreeDOS from it.
+`XUB_SRC` is the XTIDE Universal BIOS's source, as for the builds. With
+`FREEDOS_FLOPPY` the gate also makes a FreeDOS hard disk and starts FreeDOS
+from it through the ROM the core carries; its negative control hands the
+card upstream's own XT build instead (native build only,
+`CHIMERA_86BOX_NO_BUILTIN_ROMS`).
 
 What it does, in order: both builds, `check-wbx`, the package, Chimera's
 contract tests on the package alone, the code's text keys; then, with the

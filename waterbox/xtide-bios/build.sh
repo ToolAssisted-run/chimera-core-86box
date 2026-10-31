@@ -1,6 +1,8 @@
 #!/bin/sh
-# build.sh <XUB source> <out dir>: the XTIDE Universal BIOS for 86Box's
-# 8-bit XT-IDE card, built from source.
+# build.sh <XUB source> <out dir>: the XTIDE Universal BIOS images the core
+# carries for 86Box's two XT-IDE cards, built from source (revision 638,
+# xub.ref). The package holds them (the owner, 2026-10-31): a hard disk on
+# an XT-IDE card needs no ROM file from the user.
 #
 # 86Box's "PC/XT XTIDE" card (hdc_xtide.c) is an XT-IDE revision 1: the
 # drive's registers at 300h to 307h, the data's high byte at 308h, the
@@ -14,11 +16,18 @@
 # 300h, which is the card 86Box emulates. Nothing else is changed: the
 # other modules are upstream's XT set (makefile, DEFINES_XT).
 #
-# Writes hdd_xtide_ide_xt.bin, the firmware id the package declares for the
-# card's ROM: 8 KB, its checksum byte set as upstream's Tools/checksum.pl
-# does; and ide_xt_upstream_default.bin, the same with upstream's
-# MODULE_8BIT_IDE_ADVANCED, for the test scripts' negative control. For the
-# tests only: neither is in the package.
+# 86Box's "PC/AT XTIDE" card is an ordinary 16-bit IDE port at 1F0h with
+# interrupt 14; upstream's AT build (makefile, DEFINES_AT) is taken as it
+# is.
+#
+# Writes, each 8 KB with its checksum byte set as upstream's
+# Tools/checksum.pl does:
+#   hdd_xtide_ide_xt.bin   the XT card's ROM (the name is the path in 86Box's
+#                          ROM set, '/' as '_', as the core names files)
+#   hdd_xtide_ide_at.bin   the AT card's ROM
+#   ide_xt_upstream_default.bin   the XT build with upstream's
+#                          MODULE_8BIT_IDE_ADVANCED, for the test scripts'
+#                          negative control only
 set -eu
 src="$(cd "$1" && pwd)"
 mkdir -p "$2"
@@ -32,8 +41,10 @@ if [ "$have" != "$want" ]; then
 	exit 1
 fi
 command -v nasm >/dev/null 2>&1 || { echo "no nasm: install nasm"; exit 1; }
-defs="MODULE_STRINGS_COMPRESSED MODULE_HOTKEYS MODULE_8BIT_IDE MODULE_EBIOS MODULE_SERIAL MODULE_SERIAL_FLOPPY
-MODULE_POWER_MANAGEMENT NO_ATAID_VALIDATION CLD_NEEDED EXTRA_LOOP_UNROLLING_SMALL ELIMINATE_CGA_SNOW"
+common="MODULE_STRINGS_COMPRESSED MODULE_HOTKEYS MODULE_8BIT_IDE MODULE_EBIOS MODULE_SERIAL MODULE_SERIAL_FLOPPY
+MODULE_POWER_MANAGEMENT NO_ATAID_VALIDATION CLD_NEEDED EXTRA_LOOP_UNROLLING_SMALL"
+defs="$common ELIMINATE_CGA_SNOW"
+at_defs="$common USE_AT USE_286 MODULE_IRQ MODULE_COMPATIBLE_TABLES"
 incs=""
 for d in Inc/ Inc/Controllers/ Src/ Src/Handlers/ Src/Handlers/Int13h/ Src/Handlers/Int13h/EBIOS/ Src/Handlers/Int13h/Tools/ \
 	Src/Handlers/Int19h/ Src/Device/ Src/Device/IDE/ Src/Device/MemoryMappedIDE/ Src/Device/Serial/ Src/Initialization/ \
@@ -70,4 +81,8 @@ build hdd_xtide_ide_xt.bin $defs
 # XT-CF card at 300h and does not find the drive on 86Box's card
 # shellcheck disable=SC2086
 build ide_xt_upstream_default.bin $defs MODULE_8BIT_IDE_ADVANCED
-echo "hdd_xtide_ide_xt.bin: $(wc -c < "$out/hdd_xtide_ide_xt.bin") bytes, sha1 $(sha1sum "$out/hdd_xtide_ide_xt.bin" | cut -c1-40), XUB r$(sed -n 's/^revision //p' "$here/xub.ref"), $(nasm -v)"
+# shellcheck disable=SC2086
+build hdd_xtide_ide_at.bin $at_defs
+for f in hdd_xtide_ide_xt.bin hdd_xtide_ide_at.bin; do
+	echo "$f: $(wc -c < "$out/$f") bytes, sha1 $(sha1sum "$out/$f" | cut -c1-40), XUB r$(sed -n 's/^revision //p' "$here/xub.ref"), $(nasm -v)"
+done

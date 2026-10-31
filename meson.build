@@ -67,7 +67,19 @@ endif
 emu = static_library('emu86', upstream_sources, include_directories: inc,
   pic: not meson.is_cross_build())
 
-plat_sources = files('waterbox/chimera-plat.c', 'waterbox/cinterface.c', 'waterbox/chimera-input.c',
+# The XTIDE Universal BIOS (GPL), the ROM of 86Box's XT-IDE cards, which
+# the core carries: built from the source revision waterbox/xtide-bios/xub.ref
+# pins and written as C arrays, the image's SHA-1 checked (embed.py).
+xub = get_option('xub_src')
+if xub == ''
+  error('pass -Dxub_src=<XTIDE Universal BIOS revision 638> (waterbox/xtide-bios/xub.ref says how to fetch it)')
+endif
+xtide_roms = custom_target('xtide-roms',
+  output: 'chimera-xtide-roms.c',
+  input: files('waterbox/xtide-bios/embed.py', 'waterbox/xtide-bios/build.sh', 'waterbox/xtide-bios/xub.ref'),
+  command: [py, '@INPUT0@', '@INPUT1@', xub, '@OUTPUT@'])
+
+plat_sources = [xtide_roms] + files('waterbox/chimera-plat.c', 'waterbox/cinterface.c', 'waterbox/chimera-input.c',
   'waterbox/chimera-audio.c', 'waterbox/chimera-overlay.c',
   up / 'unix/dummy_cdrom_ioctl.c', up / 'unix/dummy_floppy_ioctl.c')
 

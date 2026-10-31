@@ -101,6 +101,19 @@ const char *chimera_flat_name_ex(const char *path, char *out, size_t outsz, int 
 	return out;
 }
 
+/* The test scripts' negative control may hand a card another ROM (the
+ * upstream build that does not find the drive): in the native build only,
+ * through CHIMERA_86BOX_NO_BUILTIN_ROMS; the sandbox has no environment. */
+const struct chimera_rom *chimera_builtin_rom(const char *name)
+{
+	if (getenv("CHIMERA_86BOX_NO_BUILTIN_ROMS"))
+		return NULL;
+	for (const struct chimera_rom *r = chimera_builtin_roms; r->name; r++)
+		if (!strcmp(r->name, name))
+			return r;
+	return NULL;
+}
+
 static int writes(const char *mode)
 {
 	return strchr(mode, 'w') || strchr(mode, 'a') || strchr(mode, '+');
@@ -131,7 +144,8 @@ FILE *plat_fopen(const char *path, const char *mode)
 	if (!name[0])
 		return NULL;
 	/* "rt, ccs=UTF-8" and the like are Windows' modes: read is read */
-	FILE *f = fopen(name, "rb");
+	const struct chimera_rom *b = rom ? chimera_builtin_rom(name) : NULL;
+	FILE *f = b ? fmemopen((void *)b->data, b->size, "rb") : fopen(name, "rb");
 	chimera_file_opened(name, rom, f != NULL);
 	return f;
 }
@@ -161,6 +175,8 @@ int plat_file_check(const char *path)
 	int rom = 0;
 	chimera_flat_name_ex(path, name, sizeof name, &rom);
 	if (!strcmp(name, CHIMERA_CFG_NAME))
+		return 1;
+	if (rom && chimera_builtin_rom(name))
 		return 1;
 	FILE *f = name[0] ? fopen(name, "rb") : NULL;
 	chimera_file_asked(name, rom, f != NULL);

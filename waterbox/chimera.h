@@ -21,6 +21,14 @@ const char *chimera_flat_name_ex(const char *path, char *out, size_t outsz, int 
 extern char chimera_thread_refused[128];
 extern char chimera_first_message[512];
 
+/* ROMs the core carries (waterbox/xtide-bios/embed.py writes the table):
+ * a file of 86Box's ROM set, by the name the core gives it, answered from
+ * memory. A carried ROM wins over a mounted file of the same name, so what
+ * a machine runs on does not depend on what is beside it. */
+struct chimera_rom { const char *name; const unsigned char *data; size_t size; const char *sha1; };
+extern const struct chimera_rom chimera_builtin_roms[];
+const struct chimera_rom *chimera_builtin_rom(const char *name);
+
 /* writable disks over read-only files (chimera-overlay.c) */
 FILE *chimera_overlay_open(const char *name);
 int chimera_overlay_count(void);

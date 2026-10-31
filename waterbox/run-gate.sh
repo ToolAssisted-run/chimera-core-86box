@@ -5,8 +5,12 @@
 # negative control the control runs as part of the gate.
 #
 #   CHIMERA_ROOT=<chimera checkout> [MINIBOX_DIR=<miniBox>] \
+#   XUB_SRC=<XTIDE Universal BIOS r638, waterbox/xtide-bios/xub.ref> \
 #   FREE_BIOS_SRC=<checkout of tests/free-bios/8088_bios.ref> \
 #       waterbox/run-gate.sh
+#
+# XUB_SRC is needed by the builds themselves: the core carries the XT-IDE
+# cards' ROM, built from that source.
 #
 # Without FREE_BIOS_SRC (and nasm and cmake) no machine runs: the legs that
 # need one say SKIP, with that reason. A gate that skipped everything is not
@@ -17,6 +21,9 @@ root="$(cd "$here/.." && pwd)"
 [ -n "${CHIMERA_ROOT:-}" ] || { echo "say where Chimera is: CHIMERA_ROOT=<chimera checkout>" >&2; exit 2; }
 chimera_root="$(cd "$CHIMERA_ROOT" && pwd)"
 mb="${MINIBOX_DIR:-$chimera_root/extern/chimera-common-minibox}"
+[ -n "${XUB_SRC:-}" ] || { echo "say where the XTIDE Universal BIOS r638 is: XUB_SRC=<folder> (waterbox/xtide-bios/xub.ref)" >&2; exit 2; }
+XUB_SRC="$(cd "$XUB_SRC" && pwd)"
+export XUB_SRC
 work="$root/build/gate"
 rm -rf "$work"
 mkdir -p "$work"
@@ -40,13 +47,21 @@ finish() {
 # ------------------------------------------------------------ the builds
 native="$root/build/meson-native"
 guest="$root/build/meson-guest"
-[ -f "$native/build.ninja" ] || meson setup "$native" "$root" "-Dminibox_dir=$mb" > "$work/setup-native.log" 2>&1
+if [ -f "$native/build.ninja" ]; then
+	meson configure "$native" "-Dxub_src=$XUB_SRC" > "$work/setup-native.log" 2>&1
+else
+	meson setup "$native" "$root" "-Dminibox_dir=$mb" "-Dxub_src=$XUB_SRC" > "$work/setup-native.log" 2>&1
+fi
 if ninja -C "$native" -j4 > "$work/build-native.log" 2>&1; then
 	report PASS "the native reference builds" "run-native, run-wbx"
 else
 	report FAIL "the native reference builds" "see build/gate/build-native.log"
 fi
-[ -f "$guest/build.ninja" ] || sh "$here/setup-guest.sh" -m "$mb" > "$work/setup-guest.log" 2>&1
+if [ -f "$guest/build.ninja" ]; then
+	meson configure "$guest" "-Dxub_src=$XUB_SRC" > "$work/setup-guest.log" 2>&1
+else
+	sh "$here/setup-guest.sh" -m "$mb" > "$work/setup-guest.log" 2>&1
+fi
 if ninja -C "$guest" -j4 core.wbx > "$work/build-guest.log" 2>&1; then
 	report PASS "the guest builds" "core.wbx"
 else
@@ -120,23 +135,25 @@ if ! sh "$root/tests/boot-probe/build.sh" "$work/probe" > "$work/probe.log" 2>&1
 fi
 report PASS "free PC: the BIOS and the probe floppy build" "$(tail -1 "$work/free-bios.log" | cut -d, -f1-2)"
 # A hard disk for the probe: 10 MB of zeros (306 cylinders, 4 heads, 17
-# sectors), on an XT-IDE card. The probe drives the card's registers itself,
-# so the card's own BIOS is not needed: the gate gives it 8 KB of zeros,
-# which the machine's BIOS passes over (no 55AA). Both are the gate's own.
+# sectors), on an XT-IDE card. The probe drives the card's registers itself.
+# The card's ROM is the XTIDE Universal BIOS the core carries: it finds the
+# drive, looks for a second one (which takes it until about frame 1540) and
+# boots the floppy, so the probe starts about 750 frames later than on a
+# machine without the card. Every frame number of the probe's run below is
+# 1000 later than it was before the core carried that ROM.
 python3 -c "import sys; open(sys.argv[1], 'wb').write(bytes(306 * 4 * 17 * 512))" "$work/hdd10.img"
-head -c 8192 /dev/zero > "$roms/hdd_xtide_ide_xt.bin"
 
 # (a setting given twice is read as the first: a leg that needs another value
 # starts from $xi_base)
 xi_base="--roms $roms --set machine=xi8088 --set video=cga --set memoryKB=640 --set floppyA=525_2dd --set mouse=msserial --set joystick=2axis_2button --set hardDiskController=xtide"
 xi="$xi_base --set sound=adlib"
 probe="--file floppy_a=$work/probe/probe.img --file hdd=$work/hdd10.img"
-# the probe's run: the key A (button 29) held at frame 1200, the mouse moved
-# 30 to the right at 1300 and its position moved at 1350 - so every leg that
+# the probe's run: the key A (button 29) held at frame 2200, the mouse moved
+# 30 to the right at 2300 and its position moved at 2350 - so every leg that
 # compares the probe's run compares a machine that was given input
 # and the first stick's first button and the second's second (buttons 106
-# and 109) held from 1200 to the end
-input="--key 1200:5:29 --axis 1300:1:0:30 --axis 1350:100:3:50000 --key 1200:301:106 --key 1200:301:109"
+# and 109) held from 2200 to the end
+input="--key 2200:5:29 --axis 2300:1:0:30 --axis 2350:100:3:50000 --key 2200:301:106 --key 2200:301:109"
 n=0
 native_run() { n=$((n + 1)); rm -rf "$work/n$n"; "$rn" "$work/n$n" "$@" 2> "$work/n$n.err"; }
 lit() { python3 - "$1" <<'PY'
@@ -178,24 +195,24 @@ else
 fi
 # The probe: it booted, it found the BIOS timer running, and its block is
 # in the machine's memory where the gate reads it.
-native_run $xi $probe $input --frames 1500 --dump-ram "$work/probe-native.ram" --digests "$work/probe-native.dig" > "$work/probe-native.txt"
+native_run $xi $probe $input --frames 2500 --dump-ram "$work/probe-native.ram" --digests "$work/probe-native.dig" > "$work/probe-native.txt"
 probe_dir="$work/n$n"
 ticks=$(word_at "$work/probe-native.ram" 7e00 2>/dev/null || echo 0)
 if [ "$(dd if="$work/probe-native.ram" bs=1 skip=$((0x7e06)) count=4 2>/dev/null)" = "PRB1" ] && [ "${ticks:-0}" -gt 50 ]; then
-	report PASS "native: the probe floppy boots and runs" "$ticks timer ticks counted by frame 1500"
+	report PASS "native: the probe floppy boots and runs" "$ticks timer ticks counted by frame 2500"
 else
 	report FAIL "native: the probe floppy boots and runs" "ticks=${ticks:-?}; see build/gate/n$n.err"
 fi
 
 # ---------------------------------------- 2. one machine, every time
-native_run $xi $probe $input --frames 1500 --digests "$work/probe-native2.dig" > /dev/null
-if cmp -s "$work/probe-native.dig" "$work/probe-native2.dig" && [ "$(wc -l < "$work/probe-native.dig")" -eq 1500 ]; then
-	report PASS "native: two runs give the same stream" "1500 frames: machine clock, cycles and picture of each"
+native_run $xi $probe $input --frames 2500 --digests "$work/probe-native2.dig" > /dev/null
+if cmp -s "$work/probe-native.dig" "$work/probe-native2.dig" && [ "$(wc -l < "$work/probe-native.dig")" -eq 2500 ]; then
+	report PASS "native: two runs give the same stream" "2500 frames: machine clock, cycles and picture of each"
 else
 	report FAIL "native: two runs give the same stream" "see build/gate/probe-native*.dig"
 fi
 # negative control: the stream sees another machine (a faster CPU)
-native_run $xi $probe $input --set cpu=8088/7159092 --frames 1500 --digests "$work/probe-fast.dig" > /dev/null
+native_run $xi $probe $input --set cpu=8088/7159092 --frames 2500 --digests "$work/probe-fast.dig" > /dev/null
 if [ -s "$work/probe-fast.dig" ] && ! cmp -s "$work/probe-native.dig" "$work/probe-fast.dig"; then
 	report PASS "native: the stream notices a faster CPU" "negative control"
 else
@@ -210,7 +227,7 @@ fi
 # The probe polls the serial port once a timer tick, so bytes that come
 # faster are lost to the UART's overrun; the counts are what it read, the
 # same in every run, and more movement reads more.
-native_run $xi $probe --frames 1500 --dump-ram "$work/idle.ram" > "$work/idle.txt"
+native_run $xi $probe --frames 2500 --dump-ram "$work/idle.ram" > "$work/idle.txt"
 k_idle=$(word_at "$work/idle.ram" 7e02); k=$(word_at "$work/probe-native.ram" 7e02); last=$(word_at "$work/probe-native.ram" 7e04)
 if [ "$k_idle" = 0 ] && [ "$k" = 1 ] && [ "$last" = $((0x1e61)) ]; then
 	report PASS "input: a key held reaches the program" "A held 5 frames: one key, scan code 1E, 'a' (idle run: none)"
@@ -218,7 +235,7 @@ else
 	report FAIL "input: a key held reaches the program" "keys idle=$k_idle pressed=$k last=$last"
 fi
 m_idle=$(word_at "$work/idle.ram" 7e0a); m=$(word_at "$work/probe-native.ram" 7e0a)
-native_run $xi $probe --key 1200:5:29 --axis 1300:1:0:30 --frames 1500 --dump-ram "$work/rel.ram" > /dev/null
+native_run $xi $probe --key 2200:5:29 --axis 2300:1:0:30 --frames 2500 --dump-ram "$work/rel.ram" > /dev/null
 m_rel=$(word_at "$work/rel.ram" 7e0a)
 if [ "$m_idle" = 1 ] && [ "$m_rel" -gt "$m_idle" ] && [ "$m" -gt "$m_rel" ]; then
 	report PASS "input: the mouse moves the machine" "serial mouse bytes: idle $m_idle (its 'M'), a move $m_rel, a move and a position $m"
@@ -233,11 +250,13 @@ else
 fi
 lag_idle=$(sed -n 's/.*inputFrames=\([0-9]*\).*/\1/p' "$work/idle.txt"); lag=$(sed -n 's/.*inputFrames=\([0-9]*\).*/\1/p' "$work/probe-native.txt")
 # The probe reads the game port once a timer tick (and wakes for each key),
-# so most of its 1500 frames read no control: those are lag frames. (A key
-# wakes the probe, which reads the game port in that same frame, so the run
-# with input need not have more frames read than the idle one.)
-if [ -n "$lag_idle" ] && [ "$lag_idle" -gt 0 ] && [ "$lag_idle" -lt 300 ] && [ "$lag" -ge "$lag_idle" ] && [ "$lag" -lt 300 ]; then
-	report PASS "input: frames nobody read are lag frames" "frames that read a control: idle $lag_idle, with input $lag, of 1500"
+# so most of its 2500 frames read no control: those are lag frames. The two
+# runs need not read the same number: a key makes the probe read both disks
+# again, and while it waits for them it reads no control (with the carried
+# XTIDE BIOS the run with input reads fewer frames than the idle one).
+if [ -n "$lag_idle" ] && [ "$lag_idle" -gt 0 ] && [ "$lag_idle" -lt 400 ] && [ "$lag" -gt 0 ] && [ "$lag" -lt 400 ] \
+   && [ "$lag" != "$lag_idle" ]; then
+	report PASS "input: frames nobody read are lag frames" "frames that read a control: idle $lag_idle, with input $lag, of 2500"
 else
 	report FAIL "input: frames nobody read are lag frames" "idle ${lag_idle:-?}, with input ${lag:-?}"
 fi
@@ -249,8 +268,8 @@ fi
 # machine writes in the machine's memory (waterbox/chimera-overlay.c), so
 # the writes succeed, read back, and the files are the same files
 # afterwards. That the written blocks are in a state is the session leg's to
-# show: the state of frame 1150, after the writes, is loaded in another
-# process, and the key at 1200 reads the hard disk's sector again.
+# show: the state of frame 2150, after the writes, is loaded in another
+# process, and the key at 2200 reads the hard disk's sector again.
 before=$(sha1sum < "$work/probe/probe.img"); hd_before=$(sha1sum < "$work/hdd10.img")
 hd_status=$(od -An -tu1 -j $((0x7e16)) -N1 "$work/probe-native.ram" | tr -d ' '); hd_word=$(word_at "$work/probe-native.ram" 7e18)
 w_status=$(word_at "$work/probe-native.ram" 7e14); w_word=$(word_at "$work/probe-native.ram" 7e10); r_status=$(word_at "$work/probe-native.ram" 7e12)
@@ -268,16 +287,16 @@ fi
 # a stream of its own at 49716 Hz, which the core converts and adds to the
 # cards' 48000 Hz (waterbox/chimera-audio.c): the note must be in the
 # frame's sound with an AdLib, and nothing without one (the BIOS's beep is
-# over by frame 1000). And the count: 48000 a second, less the block of 20
+# over by frame 2000). And the count: 48000 a second, less the block of 20
 # ms the cards have not finished by the last frame.
-native_run $xi_base $probe --set sound=none --frames 1500 --digests "$work/nosound.dig" > /dev/null
-peak=$(awk '$1 > 1000 && $5 > m { m = $5 } END { print m + 0 }' "$work/probe-native.dig")
-peak_none=$(awk '$1 > 1000 && $5 > m { m = $5 } END { print m + 0 }' "$work/nosound.dig")
+native_run $xi_base $probe --set sound=none --frames 2500 --digests "$work/nosound.dig" > /dev/null
+peak=$(awk '$1 > 2000 && $5 > m { m = $5 } END { print m + 0 }' "$work/probe-native.dig")
+peak_none=$(awk '$1 > 2000 && $5 > m { m = $5 } END { print m + 0 }' "$work/nosound.dig")
 pairs=$(sed -n 's/.*audioPairs=\([0-9]*\).*/\1/p' "$work/probe-native.txt")
-if [ "$peak" -gt 500 ] && [ "$peak_none" = 0 ] && [ "${pairs:-0}" -le 720000 ] && [ "${pairs:-0}" -ge 719040 ]; then
-	report PASS "sound: an AdLib's FM note is in the frame's sound" "loudest after frame 1000: $peak (no card: 0); $pairs samples in 15 s"
+if [ "$peak" -gt 500 ] && [ "$peak_none" = 0 ] && [ "${pairs:-0}" -le 1200000 ] && [ "${pairs:-0}" -ge 1199040 ]; then
+	report PASS "sound: an AdLib's FM note is in the frame's sound" "loudest after frame 2000: $peak (no card: 0); $pairs samples in 25 s"
 else
-	report FAIL "sound: an AdLib's FM note is in the frame's sound" "loudest $peak (no card: $peak_none); ${pairs:-?} samples in 15 s"
+	report FAIL "sound: an AdLib's FM note is in the frame's sound" "loudest $peak (no card: $peak_none); ${pairs:-?} samples in 25 s"
 fi
 
 # ----------------------------------------------------- 4. virtual time
@@ -303,32 +322,32 @@ else
 fi
 
 # ------------------------------------------- 5. the sandbox is the same machine
-"$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --dump-ram "$work/probe-wbx.ram" --digests "$work/probe-wbx.dig" > "$work/probe-wbx.txt" 2> "$work/probe-wbx.err"
+"$rw" "$wbx" "$cfg" $xi $probe $input --frames 2500 --dump-ram "$work/probe-wbx.ram" --digests "$work/probe-wbx.dig" > "$work/probe-wbx.txt" 2> "$work/probe-wbx.err"
 if [ -s "$work/probe-wbx.dig" ] && cmp -s "$work/probe-native.dig" "$work/probe-wbx.dig" \
    && cmp -s "$work/probe-native.ram" "$work/probe-wbx.ram" \
    && [ "$(sed 's/^end //' "$work/probe-native.txt" | tail -1)" = "$(sed 's/^end //' "$work/probe-wbx.txt" | tail -1)" ]; then
-	report PASS "sandbox == native" "1500 frames: every frame's clock, cycles and picture; memory, sound at the end"
+	report PASS "sandbox == native" "2500 frames: every frame's clock, cycles and picture; memory, sound at the end"
 else
 	report FAIL "sandbox == native" "see build/gate/probe-wbx.* and probe-native.*"
 fi
 
 # ---------------------------------------------------------- 6. states
-"$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --rerecord > "$work/rerecord.txt" 2> "$work/rerecord.err"
+"$rw" "$wbx" "$cfg" $xi $probe $input --frames 2500 --rerecord > "$work/rerecord.txt" 2> "$work/rerecord.err"
 if [ "$(tail -1 "$work/rerecord.txt")" = "$(tail -1 "$work/probe-wbx.txt")" ]; then
-	report PASS "states: save and load before every frame" "1500 frames end as the straight run"
+	report PASS "states: save and load before every frame" "2500 frames end as the straight run"
 else
 	report FAIL "states: save and load before every frame" "see build/gate/rerecord.*"
 fi
-HARNESS_BREAK_STALE_STATE=1 "$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --rerecord > "$work/stale.txt" 2> "$work/stale.err"
+HARNESS_BREAK_STALE_STATE=1 "$rw" "$wbx" "$cfg" $xi $probe $input --frames 2500 --rerecord > "$work/stale.txt" 2> "$work/stale.err"
 if grep -q '^end ' "$work/stale.txt" && [ "$(tail -1 "$work/stale.txt")" != "$(tail -1 "$work/probe-wbx.txt")" ]; then
 	report PASS "states: a stale state is noticed" "negative control: frame 749's state loaded at frame 750"
 else
 	report FAIL "states: a stale state is noticed" "it was not: the leg above is blind"
 fi
-"$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --save-state "$work/s1150.state" --at 1150 > "$work/session1.txt" 2>&1
-"$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --state "$work/s1150.state" > "$work/session2.txt" 2> "$work/session2.err"
+"$rw" "$wbx" "$cfg" $xi $probe $input --frames 2500 --save-state "$work/s2150.state" --at 2150 > "$work/session1.txt" 2>&1
+"$rw" "$wbx" "$cfg" $xi $probe $input --frames 2500 --state "$work/s2150.state" > "$work/session2.txt" 2> "$work/session2.err"
 if [ "$(tail -1 "$work/session2.txt")" = "$(tail -1 "$work/probe-wbx.txt")" ]; then
-	report PASS "states: another process carries on from a state" "saved at frame 1150, ends as the straight run at 1500"
+	report PASS "states: another process carries on from a state" "saved at frame 2150, ends as the straight run at 2500"
 else
 	report FAIL "states: another process carries on from a state" "see build/gate/session*"
 fi
@@ -348,15 +367,15 @@ elif ! sh "$root/tests/cd/make-cd.sh" "$work/cd" > "$work/cd.log" 2>&1; then
 	report FAIL "CD-ROM: the disc is read and its audio heard" "$(tail -1 "$work/cd.log")"
 else
 	cdrun="$xi_base --set sound=none $probe --file cdrom=$work/cd/probe-cd.cue --file support=$work/cd/probe-cd.iso"
-	cdrun="$cdrun --file support=$work/cd/probe-cd-tone.bin --frames 2200"
+	cdrun="$cdrun --file support=$work/cd/probe-cd-tone.bin --frames 3000"
 	native_run $cdrun --dump-ram "$work/cd-native.ram" --digests "$work/cd-native.dig" > "$work/cd-native.txt"
-	native_run $xi_base --set sound=none $probe --file "cdrom=$work/cd/probe-cd.iso" --frames 1500 --dump-ram "$work/cd-iso.ram" > /dev/null
+	native_run $xi_base --set sound=none $probe --file "cdrom=$work/cd/probe-cd.iso" --frames 2500 --dump-ram "$work/cd-iso.ram" > /dev/null
 	cd_block() { python3 -c "import sys; d=open(sys.argv[1],'rb').read()[0x7e1c:0x7e2a]; print(d.hex())" "$1" 2>/dev/null; }
 	blk=$(cd_block "$work/cd-native.ram"); blk_iso=$(cd_block "$work/cd-iso.ram")
 	# the tone: its peak, how many of the main stream's 20 ms blocks hold it
 	# (5 s: 250, every one of them, with no gap) and from the first to the last
 	tone=$(awk '$5 > 7000 { if (!f) f = $1; l = $1; n++; if ($5 > m) m = $5 } END { print m + 0, n + 0, l - f }' "$work/cd-native.dig")
-	quiet=$(awk '$1 > 600 && $1 < 1000 && $5 > m { m = $5 } END { print m + 0 }' "$work/cd-native.dig")
+	quiet=$(awk '$1 > 1100 && $1 < 1500 && $5 > m { m = $5 } END { print m + 0 }' "$work/cd-native.dig")
 	set -- $tone
 	# status 50h, 01h "CD001", play 50h, TOC 50h, track 2 at sector 184 (the
 	# ISO's length); the ISO alone: read, but no track 2 to play (51h, error)
@@ -369,12 +388,12 @@ else
 	fi
 	"$rw" "$wbx" "$cfg" $cdrun --digests "$work/cd-wbx.dig" > "$work/cd-wbx.txt" 2> "$work/cd-wbx.err"
 	"$rw" "$wbx" "$cfg" $cdrun --rerecord > "$work/cd-rerecord.txt" 2> "$work/cd-rerecord.err"
-	"$rw" "$wbx" "$cfg" $cdrun --save-state "$work/cd1300.state" --at 1300 > /dev/null 2>&1
-	"$rw" "$wbx" "$cfg" $cdrun --state "$work/cd1300.state" > "$work/cd-session.txt" 2> "$work/cd-session.err"
+	"$rw" "$wbx" "$cfg" $cdrun --save-state "$work/cd1800.state" --at 1800 > /dev/null 2>&1
+	"$rw" "$wbx" "$cfg" $cdrun --state "$work/cd1800.state" > "$work/cd-session.txt" 2> "$work/cd-session.err"
 	if [ -s "$work/cd-wbx.dig" ] && cmp -s "$work/cd-native.dig" "$work/cd-wbx.dig" \
 	   && [ "$(tail -1 "$work/cd-rerecord.txt")" = "$(tail -1 "$work/cd-wbx.txt")" ] \
 	   && [ "$(tail -1 "$work/cd-session.txt")" = "$(tail -1 "$work/cd-wbx.txt")" ]; then
-		report PASS "CD-ROM: sandbox == native, and states" "2200 frames with the tone playing from about 1040: every frame the same; a state before every frame; a state at 1300 in another process"
+		report PASS "CD-ROM: sandbox == native, and states" "3000 frames with the tone playing from about 1535: every frame the same; a state before every frame; a state at 1800 in another process"
 	else
 		report FAIL "CD-ROM: sandbox == native, and states" "see build/gate/cd-*"
 	fi
@@ -409,18 +428,18 @@ else
 fi
 
 # --------------------------- 6c. FreeDOS from a hard disk, through the XTIDE BIOS
-# The XTIDE Universal BIOS (GPL), built from source for 86Box's XT-IDE card
-# (tests/xtide-bios: upstream's XT build starts with an XT-CF card at 300h
-# and does not find the drive; without MODULE_8BIT_IDE_ADVANCED it starts
-# with the XT-IDE revision 1 that 86Box emulates). A 10 MB disk made here
-# (tests/hdd-dos: our boot record, the floppy's FreeDOS boot code, kernel
-# and shell, our AUTOEXEC.BAT). No floppy in the drive: the machine boots
-# from the hard disk, and the shell sets HDBOOT to its own path.
-#   XUB_SRC   a folder holding XUB revision 638 (tests/xtide-bios/xub.ref)
-xub="${XUB_SRC:-}"
-if [ -z "$fd" ] || [ -z "$xub" ] || [ "$(sha1sum "$fd" | cut -c1-40)" != "$fd_sha1" ]; then
-	report SKIP "FreeDOS starts from a hard disk" "needs FREEDOS_FLOPPY (as above) and XUB_SRC (tests/xtide-bios/xub.ref)"
-elif ! sh "$root/tests/xtide-bios/build.sh" "$xub" "$work/xub" > "$work/xub.log" 2>&1 \
+# The XTIDE Universal BIOS (GPL) the core carries, built from source for
+# 86Box's XT-IDE card (waterbox/xtide-bios: upstream's XT build starts with
+# an XT-CF card at 300h and does not find the drive; without
+# MODULE_8BIT_IDE_ADVANCED it starts with the XT-IDE revision 1 that 86Box
+# emulates). A 10 MB disk made here (tests/hdd-dos: our boot record, the
+# floppy's FreeDOS boot code, kernel and shell, our AUTOEXEC.BAT). No floppy
+# in the drive: the machine boots from the hard disk, and the shell sets
+# HDBOOT to its own path. The negative control hands the card upstream's
+# build instead, in the native build (CHIMERA_86BOX_NO_BUILTIN_ROMS).
+if [ -z "$fd" ] || [ "$(sha1sum "$fd" | cut -c1-40)" != "$fd_sha1" ]; then
+	report SKIP "FreeDOS starts from a hard disk" "needs FREEDOS_FLOPPY (as above)"
+elif ! sh "$root/waterbox/xtide-bios/build.sh" "$XUB_SRC" "$work/xub" > "$work/xub.log" 2>&1 \
      || ! nasm -f bin "$root/tests/hdd-dos/mbr.asm" -o "$work/mbr.bin" > "$work/hdd-dos.log" 2>&1 \
      || ! python3 "$root/tests/hdd-dos/make-hdd.py" "$fd" "$work/mbr.bin" "$work/hdd-dos.img" >> "$work/hdd-dos.log" 2>&1; then
 	report FAIL "FreeDOS starts from a hard disk" "$(tail -1 "$work/xub.log" "$work/hdd-dos.log" | tr '\n' ' ')"
@@ -428,18 +447,17 @@ else
 	xroms="$work/xub-roms"; croms="$work/xub-control-roms"; mkdir -p "$xroms" "$croms"
 	cp "$roms/machines_xi8088_bios-xi8088-128k.bin" "$roms/video_mda_mda.rom" "$xroms/"
 	cp "$roms/machines_xi8088_bios-xi8088-128k.bin" "$roms/video_mda_mda.rom" "$croms/"
-	cp "$work/xub/hdd_xtide_ide_xt.bin" "$xroms/"
 	cp "$work/xub/ide_xt_upstream_default.bin" "$croms/hdd_xtide_ide_xt.bin"
 	hdos="--set machine=xi8088 --set video=cga --set memoryKB=640 --set floppyA=525_2dd --set hardDiskController=xtide"
 	hdos="$hdos --file hdd=$work/hdd-dos.img --frames 3000"
 	native_run --roms "$xroms" $hdos --digests "$work/hdos-native.dig" --dump-ram "$work/hdos-native.ram" --ppm "$work/hdos-native.ppm" > /dev/null
-	native_run --roms "$croms" $hdos --dump-ram "$work/hdos-control.ram" --ppm "$work/hdos-control.ppm" > /dev/null
+	CHIMERA_86BOX_NO_BUILTIN_ROMS=1 native_run --roms "$croms" $hdos --dump-ram "$work/hdos-control.ram" --ppm "$work/hdos-control.ppm" > /dev/null
 	"$rw" "$wbx" "$cfg" --roms "$xroms" $hdos --digests "$work/hdos-wbx.dig" > /dev/null 2>&1
 	booted=$(grep -a -c 'HDBOOT=C:\\COMMAND.COM' "$work/hdos-native.ram" 2>/dev/null)
 	control=$(grep -a -c 'HDBOOT=C:\\COMMAND.COM' "$work/hdos-control.ram" 2>/dev/null)
 	if [ "${booted:-0}" -ge 1 ] && [ "${control:-1}" = 0 ] && [ "$(wc -l < "$work/hdos-native.dig")" -eq 3000 ] \
 	   && cmp -s "$work/hdos-native.dig" "$work/hdos-wbx.dig"; then
-		report PASS "FreeDOS starts from a hard disk" "XUB r638 finds the drive at 300h, the shell runs from C: (HDBOOT=C:\\COMMAND.COM); upstream's XT build: not found; 3000 frames, sandbox == native"
+		report PASS "FreeDOS starts from a hard disk" "the carried XUB r638 finds the drive at 300h, the shell runs from C: (HDBOOT=C:\\COMMAND.COM); upstream's XT build: not found; 3000 frames, sandbox == native"
 	else
 		report FAIL "FreeDOS starts from a hard disk" "marker ${booted:-0}, control ${control:-?}; see build/gate/hdos-*"
 	fi
@@ -449,14 +467,14 @@ else
 	crun="$chimera_root/build/dll/chimera-run"
 	hp="$work/hdd-project"; mkdir -p "$hp"; cp "$work/hdd-dos.img" "$hp/"
 	python3 "$here/tests/make-movie.py" "$pkg" 3000 > "$hp/movie.txt"
-	fwb=machines_xi8088_bios-xi8088-128k.bin; fwf=video_mda_mda.rom; fwh=hdd_xtide_ide_xt.bin
+	fwb=machines_xi8088_bios-xi8088-128k.bin; fwf=video_mda_mda.rom
 	if [ ! -x "$crun" ]; then
 		report SKIP "FreeDOS's writes to C: are kept" "no chimera-run at $crun"
 	elif "$crun" --new-project "$hp/p.chimeraProject" "$pkg" --file "hdd=$hp/hdd-dos.img" --movie "$hp/movie.txt" \
 		--settings '{"machine": "xi8088 - [8088] Xi8088", "video": "cga - IBM CGA", "memoryKB": 640, "hardDiskController": "xtide - PC/XT XTIDE"}' \
-		--firmware "$fwb=$xroms/$fwb" --firmware "$fwf=$xroms/$fwf" --firmware "$fwh=$xroms/$fwh" > "$hp/make.log" 2>&1 \
+		--firmware "$fwb=$xroms/$fwb" --firmware "$fwf=$xroms/$fwf" > "$hp/make.log" 2>&1 \
 	   && "$crun" --project "$hp/p.chimeraProject" "$pkg" --firmware "$fwb=$xroms/$fwb" --firmware "$fwf=$xroms/$fwf" \
-		--firmware "$fwh=$xroms/$fwh" --frames 3000 --export-savedata "$hp/export" > "$hp/run.log" 2>&1 \
+		--frames 3000 --export-savedata "$hp/export" > "$hp/run.log" 2>&1 \
 	   && [ "$(python3 "$root/tests/hdd-dos/make-hdd.py" --read "$hp/export/hdd-dos.img" WROTE.TXT 2>/dev/null | tr -d "\r")" = "written by FreeDOS on the hard disk" ] \
 	   && cmp -s "$hp/hdd-dos.img" "$work/hdd-dos.img"; then
 		report PASS "FreeDOS's writes to C: are kept" "chimera-run --export-savedata: C:\\WROTE.TXT in the exported disk; the project's file unchanged"
@@ -467,28 +485,28 @@ fi
 
 # ------------------------------------------- 7. through the engine, and the window
 # A project, as a person makes one: the probe floppy in its slot, the
-# settings, the firmware, a movie that holds A at frame 1200. chimera-run runs
+# settings, the firmware, a movie that holds A at frame 2200. chimera-run runs
 # it; the machine's memory at the end must be the sandbox runner's.
 crun="$chimera_root/build/dll/chimera-run"
 if [ ! -x "$crun" ]; then
 	report SKIP "a project runs through the engine" "no chimera-run at $crun"
 else
 	pj="$work/project"; mkdir -p "$pj"; cp "$work/probe/probe.img" "$work/hdd10.img" "$pj/"
-	python3 "$here/tests/make-movie.py" "$pkg" 1500 --key 1200:5:29 > "$pj/movie.txt"
-	fwb=machines_xi8088_bios-xi8088-128k.bin; fwf=video_mda_mda.rom; fwh=hdd_xtide_ide_xt.bin
+	python3 "$here/tests/make-movie.py" "$pkg" 2500 --key 2200:5:29 > "$pj/movie.txt"
+	fwb=machines_xi8088_bios-xi8088-128k.bin; fwf=video_mda_mda.rom
 	if "$crun" --new-project "$pj/p.chimeraProject" "$pkg" --file "floppy_a=$pj/probe.img" --file "hdd=$pj/hdd10.img" \
 		--movie "$pj/movie.txt" \
 		--settings '{"machine": "xi8088 - [8088] Xi8088", "video": "cga - IBM CGA", "memoryKB": 640, "sound": "adlib - AdLib", "hardDiskController": "xtide - PC/XT XTIDE"}' \
-		--firmware "$fwb=$roms/$fwb" --firmware "$fwf=$roms/$fwf" --firmware "$fwh=$roms/$fwh" > "$pj/make.log" 2>&1 \
+		--firmware "$fwb=$roms/$fwb" --firmware "$fwf=$roms/$fwf" > "$pj/make.log" 2>&1 \
 	   && "$crun" --project "$pj/p.chimeraProject" "$pkg" --firmware "$fwb=$roms/$fwb" --firmware "$fwf=$roms/$fwf" \
-		--firmware "$fwh=$roms/$fwh" --frames 1500 --dump "System RAM=$pj/engine.ram" \
+		--frames 2500 --dump "System RAM=$pj/engine.ram" \
 		--export-savedata "$pj/export" > "$pj/run.log" 2>&1; then
 		"$rw" "$wbx" "$cfg" --roms "$roms" --set machine=xi8088 --set video=cga --set memoryKB=640 --set sound=adlib \
 			--set hardDiskController=xtide --file "floppy_a=$pj/probe.img" --file "hdd=$pj/hdd10.img" \
-			--frames 1500 --key 1200:5:29 --dump-ram "$pj/wbx.ram" > /dev/null 2>&1
+			--frames 2500 --key 2200:5:29 --dump-ram "$pj/wbx.ram" > /dev/null 2>&1
 		if cmp -s "$pj/engine.ram" "$pj/wbx.ram" && [ "$(word_at "$pj/engine.ram" 7e02)" = 1 ] \
 		   && [ "$(word_at "$pj/engine.ram" 7e18)" = $((0x4448)) ]; then
-			report PASS "a project runs through the engine" "chimera-run --project: floppy and hard disk slots, 1500 frames, the memory is the sandbox runner's, A read, 'HD' read back"
+			report PASS "a project runs through the engine" "chimera-run --project: floppy and hard disk slots, 2500 frames, the memory is the sandbox runner's, A read, 'HD' read back"
 		else
 			report FAIL "a project runs through the engine" "the memory differs from the sandbox runner's (see build/gate/project)"
 		fi

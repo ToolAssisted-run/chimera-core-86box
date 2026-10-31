@@ -85,6 +85,18 @@ jobs:
           [ -f "$mb/build/meson-cpp/build.ninja" ] || meson setup "$mb/build/meson-cpp" "$mb" -Dguest_cpp=true
           meson compile -C "$mb/build/meson-cpp"
 
+      - name: Fetch the XTIDE Universal BIOS the core carries
+        # GPL-2.0-or-later, revision 638, from the project's Subversion
+        # repository over HTTP, as waterbox/xtide-bios/xub.ref says; the
+        # build checks the tree's hash and each image's SHA-1.
+        run: |
+          mkdir xub-src
+          cd xub-src
+          url='https://www.xtideuniversalbios.org/svn/xtideuniversalbios/!svn/bc/638/trunk'
+          for d in XTIDE_Universal_BIOS Assembly_Library; do
+            wget -q -r -np -nH --cut-dirs=5 -R 'index.html*' -e robots=off "$url/$d/"
+          done
+
       - name: Fetch the source of the free BIOS the gate boots
         # Sergey Kiselev's 8088 BIOS (GPL-3.0), at the commit
         # tests/free-bios/8088_bios.ref names. For the tests only.
@@ -102,6 +114,7 @@ jobs:
           CHIMERA_ROOT: ${{ github.workspace }}/chimera-checkout
           MINIBOX_DIR: ${{ github.workspace }}/chimera-checkout/extern/chimera-common-minibox
           FREE_BIOS_SRC: ${{ github.workspace }}/free-bios-src
+          XUB_SRC: ${{ github.workspace }}/xub-src
         run: |
           export LD_LIBRARY_PATH="$HOME/qt/6.12.0/gcc_64/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
           sh waterbox/run-gate.sh

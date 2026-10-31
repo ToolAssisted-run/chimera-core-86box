@@ -1,4 +1,4 @@
-# The XTIDE Universal BIOS the test scripts build (tests/xtide-bios/build.sh).
+# The XTIDE Universal BIOS the core carries (waterbox/xtide-bios/build.sh).
 # It is GPL-2.0-or-later (its license.txt), from the project's own Subversion
 # repository. Fetch that revision with:
 #   url='https://www.xtideuniversalbios.org/svn/xtideuniversalbios/!svn/bc/638/trunk'

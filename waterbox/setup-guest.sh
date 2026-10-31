@@ -6,7 +6,7 @@
 # Prereq: a built miniBox checkout:
 #   meson setup <miniBox>/build/meson-linux <miniBox> && ninja -C <miniBox>/build/meson-linux
 #
-# Usage: ./waterbox/setup-guest.sh [-m <miniBox dir>]
+# Usage: XUB_SRC=<XTIDE Universal BIOS r638> ./waterbox/setup-guest.sh [-m <miniBox dir>]
 set -eu
 here="$(cd "$(dirname "$0")" && pwd)"
 root="$(cd "$here/.." && pwd)"
@@ -69,6 +69,10 @@ EOF
 # -Dminibox_dir explicitly: meson.build's fallback is a path relative to the
 # checkout, which only resolves when this repo sits BESIDE a chimera checkout -
 # not when it is a submodule inside one (extern/cores/*)
-meson setup "$root/build/meson-guest" "$root" --cross-file "$cross" "-Dminibox_dir=$mb" "$@" 2>/dev/null \
-	|| meson setup --reconfigure "$root/build/meson-guest" "$root" --cross-file "$cross" "-Dminibox_dir=$mb" "$@"
+# The XTIDE Universal BIOS's source (XUB_SRC): the ROM the core carries is
+# built from it (meson.build, waterbox/xtide-bios).
+[ -n "${XUB_SRC:-}" ] || { echo "say where the XTIDE Universal BIOS r638 is: XUB_SRC=<folder> (waterbox/xtide-bios/xub.ref)" >&2; exit 2; }
+xub="$(cd "$XUB_SRC" && pwd)"
+meson setup "$root/build/meson-guest" "$root" --cross-file "$cross" "-Dminibox_dir=$mb" "-Dxub_src=$xub" "$@" 2>/dev/null \
+	|| meson setup --reconfigure "$root/build/meson-guest" "$root" --cross-file "$cross" "-Dminibox_dir=$mb" "-Dxub_src=$xub" "$@"
 echo "guest build configured: ninja -C build/meson-guest"

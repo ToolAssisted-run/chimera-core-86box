@@ -11,7 +11,8 @@ is a frontend for tool-assisted speedruns; this repository builds one file,
   XT and the IBM AT, with CGA, MDA, Hercules, EGA or VGA, an AdLib, Game
   Blaster, Tandy, SSI-2001 or Sound Blaster, two floppy drives, a mouse and
   joysticks.
-- Two floppy drives and a hard disk (on an XT-IDE card). What the machine
+- Two floppy drives and a hard disk (on an XT-IDE card, whose ROM, the free
+  XTIDE Universal BIOS, is built into the core). What the machine
   writes stays in its memory and its states, and Emulator > Export Save
   Data gives the disks back as files; your own files are never changed.
 - A CD-ROM drive (an ISO, or a cue with data and audio tracks), the second
@@ -27,6 +28,7 @@ Chimera checkout:
 
 ```sh
 git submodule update --init
+export XUB_SRC=<XTIDE Universal BIOS r638>       # waterbox/xtide-bios/xub.ref says how to fetch it
 sh waterbox/build-package.sh -m <chimera>/extern/chimera-common-minibox   # -> build/Cores/86box.chimeraCore
 CHIMERA_ROOT=<chimera> FREE_BIOS_SRC=<8088_bios checkout> sh waterbox/run-gate.sh
 ```
@@ -39,5 +41,6 @@ stands.
 
 This repository's files are GPL-2.0-or-later. The built package is
 GPL-3.0-or-later, because one part of 86Box it contains is LGPL-3.0-or-later
-([LICENSE](LICENSE) says which). No ROM, BIOS or game is in this repository
-or in the package.
+([LICENSE](LICENSE) says which). The package carries one ROM, the XTIDE
+Universal BIOS (GPL-2.0-or-later), built from its source; no other ROM, BIOS
+or game is in this repository or in the package.
