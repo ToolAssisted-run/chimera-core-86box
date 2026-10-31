@@ -195,3 +195,39 @@ rather than all 500.
   purpose and seen to fail: the sandbox leg (guest clock one second off),
   the BIOS-screen leg (no character ROM: 0 lit pixels), the probe leg (no
   floppy: no block).
+
+### 2026-10-31: input
+
+- **The controller** is the PCem core's, name for name and in the same
+  order (a PC movie's columns mean the same in both cores): the 101/102-key
+  keyboard, three mouse buttons, two buttons on each of two gameport sticks;
+  axes Mouse X/Y (relative, this frame's movement), Mouse Position X/Y
+  (0..65535 across the picture), Joystick 1 and 2 X/Y (0..65535, 32767 at
+  rest). `waterbox/chimera-input.c` holds the order and each key's scan
+  code. Keys are levels: a key whose state changed since the last frame is
+  pressed or released in 86Box's keyboard, in table order.
+- **The mouse.** 86Box's mice are relative and keep what a report could
+  not carry, so a long move arrives whole. A position becomes the movement
+  that reaches it from the last one, in pixels of the picture, open loop;
+  a relative axis that moved wins for its direction (the DOSBox-X and PCem
+  cores' rule). 86Box's mice report only while its window "holds the
+  pointer" (`mouse_capture`); the core sets it, since the movie is the
+  mouse. Found because the first mouse test moved nothing.
+- **Lag frames** (patch 0006): every port read goes past
+  `chimera_port_read`, which only looks; a frame in which the program read
+  the keyboard controller (0x60, a PS/2 mouse too), the game port, a serial
+  port's data or a bus mouse is not a lag frame.
+- **The probe** now also powers a serial mouse on COM1 (DTR and RTS) and
+  counts and sums the bytes it reads. It polls once a timer tick, so bytes
+  that come faster are lost to the UART's overrun: what it counts is less
+  than what the mouse sent, the same in every run.
+- **Measured.** The gate, 17 passed, 0 failed, 0 skipped. The probe's run
+  now carries input (A held at frame 1200, a move at 1300, a position from
+  1350), so every comparison - native twice, sandbox against native, a
+  state before every frame, a state in another process - compares a
+  machine that was given input. A held 5 frames reads as one key, scan code
+  1E, 'a' (none in the idle run); the serial mouse gives 1 byte idle (its
+  'M'), 3 with a move, 19 with a move and a position; 5 frames read a
+  control in the idle run and 25 with input, of 1500. Broken on purpose and
+  seen to fail: no key handed over, no movement handed over, every frame
+  counted as read.

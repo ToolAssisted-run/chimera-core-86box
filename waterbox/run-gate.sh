@@ -86,8 +86,12 @@ if ! sh "$root/tests/boot-probe/build.sh" "$work/probe" > "$work/probe.log" 2>&1
 fi
 report PASS "free PC: the BIOS and the probe floppy build" "$(tail -1 "$work/free-bios.log" | cut -d, -f1-2)"
 
-xi="--roms $roms --set machine=xi8088 --set video=cga --set memoryKB=640 --set floppyA=525_2dd"
+xi="--roms $roms --set machine=xi8088 --set video=cga --set memoryKB=640 --set floppyA=525_2dd --set mouse=msserial"
 probe="--file floppy_a=$work/probe/probe.img"
+# the probe's run: the key A (button 29) held at frame 1200, the mouse moved
+# 30 to the right at 1300 and its position moved at 1350 - so every leg that
+# compares the probe's run compares a machine that was given input
+input="--key 1200:5:29 --axis 1300:1:0:30 --axis 1350:100:3:50000"
 n=0
 native_run() { n=$((n + 1)); rm -rf "$work/n$n"; "$rn" "$work/n$n" "$@" 2> "$work/n$n.err"; }
 lit() { python3 - "$1" <<'PY'
@@ -111,7 +115,7 @@ else
 fi
 # The probe: it booted, it found the BIOS timer running, and its block is
 # in the machine's memory where the gate reads it.
-native_run $xi $probe --frames 1500 --dump-ram "$work/probe-native.ram" --digests "$work/probe-native.dig" > "$work/probe-native.txt"
+native_run $xi $probe $input --frames 1500 --dump-ram "$work/probe-native.ram" --digests "$work/probe-native.dig" > "$work/probe-native.txt"
 ticks=$(word_at "$work/probe-native.ram" 7e00 2>/dev/null || echo 0)
 if [ "$(dd if="$work/probe-native.ram" bs=1 skip=$((0x7e06)) count=4 2>/dev/null)" = "PRB1" ] && [ "${ticks:-0}" -gt 50 ]; then
 	report PASS "native: the probe floppy boots and runs" "$ticks timer ticks counted by frame 1500"
@@ -120,21 +124,51 @@ else
 fi
 
 # ---------------------------------------- 2. one machine, every time
-native_run $xi $probe --frames 1500 --digests "$work/probe-native2.dig" > /dev/null
+native_run $xi $probe $input --frames 1500 --digests "$work/probe-native2.dig" > /dev/null
 if cmp -s "$work/probe-native.dig" "$work/probe-native2.dig" && [ "$(wc -l < "$work/probe-native.dig")" -eq 1500 ]; then
 	report PASS "native: two runs give the same stream" "1500 frames: machine clock, cycles and picture of each"
 else
 	report FAIL "native: two runs give the same stream" "see build/gate/probe-native*.dig"
 fi
 # negative control: the stream sees another machine (a faster CPU)
-native_run $xi $probe --set cpuFamily=8088 --set cpuSpeed=7159092 --frames 1500 --digests "$work/probe-fast.dig" > /dev/null
+native_run $xi $probe $input --set cpuFamily=8088 --set cpuSpeed=7159092 --frames 1500 --digests "$work/probe-fast.dig" > /dev/null
 if [ -s "$work/probe-fast.dig" ] && ! cmp -s "$work/probe-native.dig" "$work/probe-fast.dig"; then
 	report PASS "native: the stream notices a faster CPU" "negative control"
 else
 	report FAIL "native: the stream notices a faster CPU" "it did not: the legs comparing streams are blind"
 fi
 
-# ----------------------------------------------------- 3. virtual time
+# ------------------------------------------------------------ 3. input
+# The probe keeps what it read: keys at 7E02 (how many) and 7E04 (the last
+# one's scan code and character), bytes from the serial mouse at 7E0A. The
+# idle run is the control: the press came when the probe was there to read
+# it (it boots at about frame 800), and nothing else made the numbers move.
+# The probe polls the serial port once a timer tick, so bytes that come
+# faster are lost to the UART's overrun; the counts are what it read, the
+# same in every run, and more movement reads more.
+native_run $xi $probe --frames 1500 --dump-ram "$work/idle.ram" > "$work/idle.txt"
+k_idle=$(word_at "$work/idle.ram" 7e02); k=$(word_at "$work/probe-native.ram" 7e02); last=$(word_at "$work/probe-native.ram" 7e04)
+if [ "$k_idle" = 0 ] && [ "$k" = 1 ] && [ "$last" = $((0x1e61)) ]; then
+	report PASS "input: a key held reaches the program" "A held 5 frames: one key, scan code 1E, 'a' (idle run: none)"
+else
+	report FAIL "input: a key held reaches the program" "keys idle=$k_idle pressed=$k last=$last"
+fi
+m_idle=$(word_at "$work/idle.ram" 7e0a); m=$(word_at "$work/probe-native.ram" 7e0a)
+native_run $xi $probe --key 1200:5:29 --axis 1300:1:0:30 --frames 1500 --dump-ram "$work/rel.ram" > /dev/null
+m_rel=$(word_at "$work/rel.ram" 7e0a)
+if [ "$m_idle" = 1 ] && [ "$m_rel" -gt "$m_idle" ] && [ "$m" -gt "$m_rel" ]; then
+	report PASS "input: the mouse moves the machine" "serial mouse bytes: idle $m_idle (its 'M'), a move $m_rel, a move and a position $m"
+else
+	report FAIL "input: the mouse moves the machine" "serial mouse bytes: idle $m_idle, a move $m_rel, both $m"
+fi
+lag_idle=$(sed -n 's/.*inputFrames=\([0-9]*\).*/\1/p' "$work/idle.txt"); lag=$(sed -n 's/.*inputFrames=\([0-9]*\).*/\1/p' "$work/probe-native.txt")
+if [ -n "$lag_idle" ] && [ "$lag_idle" -lt "$lag" ] && [ "$lag" -lt 200 ]; then
+	report PASS "input: frames nobody read are lag frames" "frames that read a control: idle $lag_idle, with input $lag, of 1500"
+else
+	report FAIL "input: frames nobody read are lag frames" "idle ${lag_idle:-?}, with input ${lag:-?}"
+fi
+
+# ----------------------------------------------------- 4. virtual time
 # A host that stalls (20 ms before every frame, 6 s in all) does not move
 # the machine: the clock the BIOS shows is the project's, not the host's.
 native_run $xi --frames 300 --stall-ms 20 --digests "$work/stall.dig" > /dev/null
@@ -156,8 +190,8 @@ else
 	report FAIL "virtual time: on the host's clock the runs differ" "they did not: the leg above is blind"
 fi
 
-# ------------------------------------------- 4. the sandbox is the same machine
-"$rw" "$wbx" "$cfg" $xi $probe --frames 1500 --dump-ram "$work/probe-wbx.ram" --digests "$work/probe-wbx.dig" > "$work/probe-wbx.txt" 2> "$work/probe-wbx.err"
+# ------------------------------------------- 5. the sandbox is the same machine
+"$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --dump-ram "$work/probe-wbx.ram" --digests "$work/probe-wbx.dig" > "$work/probe-wbx.txt" 2> "$work/probe-wbx.err"
 if [ -s "$work/probe-wbx.dig" ] && cmp -s "$work/probe-native.dig" "$work/probe-wbx.dig" \
    && cmp -s "$work/probe-native.ram" "$work/probe-wbx.ram" \
    && [ "$(sed 's/^end //' "$work/probe-native.txt" | tail -1)" = "$(sed 's/^end //' "$work/probe-wbx.txt" | tail -1)" ]; then
@@ -166,21 +200,21 @@ else
 	report FAIL "sandbox == native" "see build/gate/probe-wbx.* and probe-native.*"
 fi
 
-# ---------------------------------------------------------- 5. states
-"$rw" "$wbx" "$cfg" $xi $probe --frames 1500 --rerecord > "$work/rerecord.txt" 2> "$work/rerecord.err"
+# ---------------------------------------------------------- 6. states
+"$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --rerecord > "$work/rerecord.txt" 2> "$work/rerecord.err"
 if [ "$(tail -1 "$work/rerecord.txt")" = "$(tail -1 "$work/probe-wbx.txt")" ]; then
 	report PASS "states: save and load before every frame" "1500 frames end as the straight run"
 else
 	report FAIL "states: save and load before every frame" "see build/gate/rerecord.*"
 fi
-HARNESS_BREAK_STALE_STATE=1 "$rw" "$wbx" "$cfg" $xi $probe --frames 1500 --rerecord > "$work/stale.txt" 2> "$work/stale.err"
+HARNESS_BREAK_STALE_STATE=1 "$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --rerecord > "$work/stale.txt" 2> "$work/stale.err"
 if grep -q '^end ' "$work/stale.txt" && [ "$(tail -1 "$work/stale.txt")" != "$(tail -1 "$work/probe-wbx.txt")" ]; then
 	report PASS "states: a stale state is noticed" "negative control: frame 749's state loaded at frame 750"
 else
 	report FAIL "states: a stale state is noticed" "it was not: the leg above is blind"
 fi
-"$rw" "$wbx" "$cfg" $xi $probe --frames 1500 --save-state "$work/s900.state" --at 900 > "$work/session1.txt" 2>&1
-"$rw" "$wbx" "$cfg" $xi $probe --frames 1500 --state "$work/s900.state" > "$work/session2.txt" 2> "$work/session2.err"
+"$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --save-state "$work/s900.state" --at 900 > "$work/session1.txt" 2>&1
+"$rw" "$wbx" "$cfg" $xi $probe $input --frames 1500 --state "$work/s900.state" > "$work/session2.txt" 2> "$work/session2.err"
 if [ "$(tail -1 "$work/session2.txt")" = "$(tail -1 "$work/probe-wbx.txt")" ]; then
 	report PASS "states: another process carries on from a state" "saved at frame 900, ends as the straight run at 1500"
 else

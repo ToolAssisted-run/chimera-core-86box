@@ -51,7 +51,6 @@ uint64_t chimera_ms;
 int chimera_powered_off;
 
 static char g_loadError[1024];
-static int g_inputRead;
 static uint64_t g_frames;
 static int g_fpsNum = 100, g_fpsDen = 1;
 static uint64_t g_msAcc;
@@ -274,10 +273,9 @@ void chimera_audio_take(int stream, const int16_t *buf)
 	}
 }
 
-/* ------------------------------------------------------------ the input */
+/* ------------------------------------------------------------ drives */
 
 void chimera_drive_activity(int tag, int active) { (void)tag; (void)active; }
-void chimera_joystick_process(uint8_t gameport) { (void)gameport; }
 
 /* ----------------------------------------------------------- the ABI */
 
@@ -343,6 +341,9 @@ ECL_EXPORT int Init(void)
 	pc_init_modules();
 	pc_reset_hard_init();
 	plat_pause(0);
+	/* the mice report only while 86Box's window holds the pointer; the
+	 * core's machine always does: its mouse is the movie's */
+	mouse_capture = 1;
 
 	if (chimera_thread_refused[0]) {
 		snprintf(g_loadError, sizeof g_loadError, "error.device_needs_thread" TEXT_ARG "%s", chimera_thread_refused);
@@ -361,8 +362,9 @@ ECL_EXPORT int Init(void)
 
 ECL_EXPORT void FrameAdvance(uint64_t packed)
 {
-	(void)packed;
-	g_inputRead = 0;
+	chimera_set_packed(packed);
+	chimera_apply_input(g_width, g_height);
+	chimera_input_read = 0;
 	g_audioPairs = 0;
 	/* machine time in whole milliseconds, one pc_run each; a frame rate that
 	 * does not divide a second runs the rest in the frames after */
@@ -373,6 +375,9 @@ ECL_EXPORT void FrameAdvance(uint64_t packed)
 		chimera_ms++;
 	}
 	g_frames++;
+	/* the relative axes are this frame's movement: spent */
+	chimera_set_axis(CHIMERA_AXIS_MOUSE_X, 0);
+	chimera_set_axis(CHIMERA_AXIS_MOUSE_Y, 0);
 }
 
 ECL_EXPORT uint32_t *GetVideoBgra(void) { return g_frame; }
@@ -384,7 +389,7 @@ ECL_EXPORT int GetVsyncDenominator(void) { return g_fpsDen; }
 ECL_EXPORT int16_t *GetAudio(void) { return g_audio; }
 ECL_EXPORT int GetAudioSampleCount(void) { return g_audioPairs; }
 
-ECL_EXPORT int InputWasRead(void) { return g_inputRead; }
+ECL_EXPORT int InputWasRead(void) { return chimera_input_read; }
 
 /* for the tests: how much machine the run has been */
 ECL_EXPORT uint64_t GetMachineMs(void) { return chimera_ms; }
@@ -398,6 +403,6 @@ ECL_EXPORT uint8_t *GetMemoryDomainPtr(int i) { return i == 0 ? ram : NULL; }
 ECL_EXPORT int64_t GetMemoryDomainSize(int i) { return i == 0 ? (int64_t)mem_size * 1024 : 0; }
 ECL_EXPORT int GetMemoryDomainWritable(int i) { return i == 0; }
 
-/* The controls (none yet: they come with the input step). */
-ECL_EXPORT void SetButton(int32_t index, int32_t state) { (void)index; (void)state; }
-ECL_EXPORT void SetAxis(int32_t index, int32_t value) { (void)index; (void)value; }
+/* The controls: chimera-input.c. */
+ECL_EXPORT void SetButton(int32_t index, int32_t state) { chimera_set_button(index, state); }
+ECL_EXPORT void SetAxis(int32_t index, int32_t value) { chimera_set_axis(index, value); }

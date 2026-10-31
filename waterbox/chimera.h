@@ -26,7 +26,19 @@ extern int chimera_powered_off;
 FILE *chimera_cfg_open(void);
 void chimera_file_opened(const char *name, int found);
 void chimera_drive_activity(int tag, int active);
+
+/* the controller (chimera-input.c); the axes in the declaration's order */
+enum { CHIMERA_AXIS_MOUSE_X, CHIMERA_AXIS_MOUSE_Y, CHIMERA_AXIS_MOUSE_POS_X, CHIMERA_AXIS_MOUSE_POS_Y,
+       CHIMERA_AXIS_JOY1_X, CHIMERA_AXIS_JOY1_Y, CHIMERA_AXIS_JOY2_X, CHIMERA_AXIS_JOY2_Y, CHIMERA_AXES };
+void chimera_set_button(int index, int state);
+void chimera_set_packed(uint64_t packed);
+void chimera_set_axis(int index, int value);
+void chimera_apply_input(int screenW, int screenH);
 void chimera_joystick_process(uint8_t gameport);
+void chimera_port_read(uint16_t port);
+const char *chimera_button_name(int index);
+int chimera_button_count(void);
+extern int chimera_input_read;
 
 enum { CHIMERA_STREAM_SOUND, CHIMERA_STREAM_MUSIC, CHIMERA_STREAM_WAVETABLE, CHIMERA_STREAM_CD,
        CHIMERA_STREAMS };

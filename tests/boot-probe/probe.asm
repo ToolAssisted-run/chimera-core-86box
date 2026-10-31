@@ -7,8 +7,11 @@
 ;   0000:7E02  word   keys read (INT 16h)
 ;   0000:7E04  word   the last key read: scan code (high), character (low)
 ;   0000:7E06  4 byte "PRB1", so a test can find the block
+;   0000:7E0A  word   bytes read from COM1 (a serial mouse sends 3 a move)
+;   0000:7E0C  word   the sum of those bytes
 ;
-; Line 0 of the screen: "86BOX PROBE T=xxxx K=xxxx L=xxxx", in hex.
+; Line 0 of the screen: "86BOX PROBE T=xxxx K=xxxx L=xxxx M=xxxx S=xxxx",
+; in hex.
 ; 8088 code only. Written for these tests; free to distribute.
         cpu 8086
         bits 16
@@ -29,6 +32,11 @@ start:
         mov word [0x7e04], 0
         mov word [0x7e06], 'PR'  ; word moves: an 8088 has no 32-bit ones
         mov word [0x7e08], 'B1'
+        mov word [0x7e0a], 0
+        mov word [0x7e0c], 0
+        mov dx, 0x3fc           ; COM1: DTR, RTS and OUT2 on - a serial
+        mov al, 0x0b            ; mouse takes its power from DTR and RTS
+        out dx, al
         xor ah, ah              ; the timer now
         int 0x1a
         mov [last], dx
@@ -41,6 +49,17 @@ main:
         mov [last], dx
         inc word [0x7e00]
 .keys:
+        mov dx, 0x3fd           ; a byte from COM1 waiting?
+        in al, dx
+        test al, 1
+        jz .nomouse
+        mov dx, 0x3f8
+        in al, dx
+        inc word [0x7e0a]
+        xor ah, ah
+        add [0x7e0c], ax
+        jmp .keys
+.nomouse:
         mov ah, 0x01            ; a key waiting?
         int 0x16
         jz .show
@@ -64,6 +83,14 @@ main:
         mov si, lastk
         call puts
         mov ax, [0x7e04]
+        call puthex
+        mov si, mouse
+        call puts
+        mov ax, [0x7e0a]
+        call puthex
+        mov si, msum
+        call puts
+        mov ax, [0x7e0c]
         call puthex
         hlt                     ; until the next interrupt
         jmp main
@@ -104,6 +131,8 @@ puthex:                         ; ax as four hex digits (8088 code: a
 title:  db '86BOX PROBE T=', 0
 keys:   db ' K=', 0
 lastk:  db ' L=', 0
+mouse:  db ' M=', 0
+msum:   db ' S=', 0
 last:   dw 0
 
         times 510 - ($ - $$) db 0

@@ -1,0 +1,45 @@
+diff --git a/src/io.c b/src/io.c
+index dbb3530af..b828dc8ce 100644
+--- a/src/io.c
++++ b/src/io.c
+@@ -30,6 +30,16 @@
+ #include <86box/m_amstrad.h>
+ #include <86box/pci.h>
+ 
++#ifdef CHIMERA_CORE
++/* A Chimera core notes each port the machine reads, to tell a frame in
++ * which the program read its keyboard, mouse or joystick from one in which
++ * nobody looked (a lag frame). It only looks; it changes no answer. */
++extern void chimera_port_read(uint16_t port);
++#    define CHIMERA_PORT_READ(port) chimera_port_read(port)
++#else
++#    define CHIMERA_PORT_READ(port)
++#endif
++
+ #define NPORTS 65536 /* PC/AT supports 64K ports */
+ 
+ typedef struct _io_ {
+@@ -340,6 +350,7 @@ inb(uint16_t port)
+ #endif
+ 
+     io_port = port;
++    CHIMERA_PORT_READ(port);
+ 
+ #ifdef USE_DEBUG_REGS_486
+     io_debug_check_addr(port);
+@@ -465,6 +476,7 @@ inw(uint16_t port)
+     uint8_t  ret8[2];
+ 
+     io_port = port;
++    CHIMERA_PORT_READ(port);
+ 
+ #ifdef USE_DEBUG_REGS_486
+     io_debug_check_addr(port);
+@@ -618,6 +630,7 @@ inl(uint16_t port)
+ #endif
+ 
+     io_port = port;
++    CHIMERA_PORT_READ(port);
+ 
+ #ifdef USE_DEBUG_REGS_486
+     io_debug_check_addr(port);
