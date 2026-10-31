@@ -231,3 +231,12 @@ rather than all 500.
   control in the idle run and 25 with input, of 1500. Broken on purpose and
   seen to fail: no key handed over, no movement handed over, every frame
   counted as read.
+- **Joysticks**, a second commit: the probe reads the game port (0x201)
+  every timer tick and keeps the last value. With the setting
+  `joystick=2axis_2button` and stick 1 button 1 and stick 2 button 2 held to
+  the end it reads 0x60, idle 0xF0 (gate, 18 passed). The first try held
+  the buttons to the frame before the last and read 0xF0: a press must
+  still be held on the frame that is looked at (gates.md, F). The probe now
+  reads a control every tick, so about 120 of 1500 frames read one, idle or
+  not. The sticks' axes are not tested: the probe does not time the game
+  port's axis pulses.

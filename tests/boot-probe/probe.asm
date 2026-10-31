@@ -9,6 +9,8 @@
 ;   0000:7E06  4 byte "PRB1", so a test can find the block
 ;   0000:7E0A  word   bytes read from COM1 (a serial mouse sends 3 a move)
 ;   0000:7E0C  word   the sum of those bytes
+;   0000:7E0E  byte   the game port (0x201) as last read: the buttons are
+;                     bits 4-7, 0 while held
 ;
 ; Line 0 of the screen: "86BOX PROBE T=xxxx K=xxxx L=xxxx M=xxxx S=xxxx",
 ; in hex.
@@ -60,6 +62,9 @@ main:
         add [0x7e0c], ax
         jmp .keys
 .nomouse:
+        mov dx, 0x201           ; the game port's buttons
+        in al, dx
+        mov [0x7e0e], al
         mov ah, 0x01            ; a key waiting?
         int 0x16
         jz .show

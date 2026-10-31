@@ -86,12 +86,14 @@ if ! sh "$root/tests/boot-probe/build.sh" "$work/probe" > "$work/probe.log" 2>&1
 fi
 report PASS "free PC: the BIOS and the probe floppy build" "$(tail -1 "$work/free-bios.log" | cut -d, -f1-2)"
 
-xi="--roms $roms --set machine=xi8088 --set video=cga --set memoryKB=640 --set floppyA=525_2dd --set mouse=msserial"
+xi="--roms $roms --set machine=xi8088 --set video=cga --set memoryKB=640 --set floppyA=525_2dd --set mouse=msserial --set joystick=2axis_2button"
 probe="--file floppy_a=$work/probe/probe.img"
 # the probe's run: the key A (button 29) held at frame 1200, the mouse moved
 # 30 to the right at 1300 and its position moved at 1350 - so every leg that
 # compares the probe's run compares a machine that was given input
-input="--key 1200:5:29 --axis 1300:1:0:30 --axis 1350:100:3:50000"
+# and the first stick's first button and the second's second (buttons 106
+# and 109) held from 1200 to the end
+input="--key 1200:5:29 --axis 1300:1:0:30 --axis 1350:100:3:50000 --key 1200:301:106 --key 1200:301:109"
 n=0
 native_run() { n=$((n + 1)); rm -rf "$work/n$n"; "$rn" "$work/n$n" "$@" 2> "$work/n$n.err"; }
 lit() { python3 - "$1" <<'PY'
@@ -160,6 +162,12 @@ if [ "$m_idle" = 1 ] && [ "$m_rel" -gt "$m_idle" ] && [ "$m" -gt "$m_rel" ]; the
 	report PASS "input: the mouse moves the machine" "serial mouse bytes: idle $m_idle (its 'M'), a move $m_rel, a move and a position $m"
 else
 	report FAIL "input: the mouse moves the machine" "serial mouse bytes: idle $m_idle, a move $m_rel, both $m"
+fi
+j_idle=$(od -An -tu1 -j $((0x7e0e)) -N1 "$work/idle.ram" | tr -d ' '); j=$(od -An -tu1 -j $((0x7e0e)) -N1 "$work/probe-native.ram" | tr -d ' ')
+if [ "$j_idle" = $((0xf0)) ] && [ "$j" = $((0x60)) ]; then
+	report PASS "input: joystick buttons reach the game port" "port 0x201 reads F0 idle, 60 with stick 1 button 1 and stick 2 button 2 held"
+else
+	report FAIL "input: joystick buttons reach the game port" "port 0x201: idle $j_idle, held $j (wanted 240 and 96)"
 fi
 lag_idle=$(sed -n 's/.*inputFrames=\([0-9]*\).*/\1/p' "$work/idle.txt"); lag=$(sed -n 's/.*inputFrames=\([0-9]*\).*/\1/p' "$work/probe-native.txt")
 if [ -n "$lag_idle" ] && [ "$lag_idle" -lt "$lag" ] && [ "$lag" -lt 200 ]; then
