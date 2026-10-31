@@ -24,6 +24,7 @@
  * --ppm FILE [--ppm-at F]    the picture after frame F (the last one without
  *                   --ppm-at), as a file a person can look at
  * --dump-ram FILE   the machine's memory after the run
+ * --dump-cmos FILE  the CMOS after the run (empty on a machine without one)
  * --stall-ms MS     (native) sleep this long on the host before every frame:
  *                   the machine must not notice
  */
@@ -56,6 +57,8 @@ struct harness_core {
 	const char *(*DebugMachine)(void);
 	uint64_t (*GetMachineMs)(void);
 	uint64_t (*GetCpuCycles)(void);
+	const uint8_t *(*DebugCmos)(void);
+	int (*DebugCmosSize)(void);
 	/* the sandbox's; null natively */
 	int (*seal)(void);
 	int (*save)(uint8_t **buf, size_t *len);
@@ -69,7 +72,7 @@ struct harness_opts {
 	int rerecord;
 	char settings[4096];      /* as the options give them, the object still open */
 	char settings_json[4104]; /* the settings a runner hands the core, as the frontend would */
-	const char *save_state, *state, *ppm, *dump_ram, *digests;
+	const char *save_state, *state, *ppm, *dump_ram, *dump_cmos, *digests;
 	struct harness_event ev[HARNESS_MAX_EVENTS];
 	int events;
 };
@@ -111,6 +114,7 @@ static int harness_parse(int argc, char **argv, int first, struct harness_opts *
 		else if (!strcmp(a, "--ppm")) o->ppm = v;
 		else if (!strcmp(a, "--ppm-at")) o->ppm_at = strtoull(v, NULL, 10);
 		else if (!strcmp(a, "--dump-ram")) o->dump_ram = v;
+		else if (!strcmp(a, "--dump-cmos")) o->dump_cmos = v;
 		else if (!strcmp(a, "--digests")) o->digests = v;
 		else if (!strcmp(a, "--key") || !strcmp(a, "--axis")) {
 			unsigned long long from, count;
@@ -343,6 +347,17 @@ static int harness_run(const struct harness_core *c, const struct harness_opts *
 			     (size_t)c->GetMemoryDomainSize(d);
 		if (!ok || fclose(out) != 0) {
 			fprintf(stderr, "cannot write %s\n", o->dump_ram);
+			return 2;
+		}
+	}
+	if (o->dump_cmos) {
+		FILE *out = fopen(o->dump_cmos, "wb");
+		const int n = c->DebugCmosSize();
+		int ok = out != NULL;
+		if (ok && n > 0)
+			ok = fwrite(c->DebugCmos(), 1, (size_t)n, out) == (size_t)n;
+		if (!ok || fclose(out) != 0) {
+			fprintf(stderr, "cannot write %s\n", o->dump_cmos);
 			return 2;
 		}
 	}

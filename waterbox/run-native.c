@@ -41,6 +41,8 @@ int64_t GetMemoryDomainSize(int);
 const char *DebugMachine(void);
 uint64_t GetMachineMs(void);
 uint64_t GetCpuCycles(void);
+const uint8_t *DebugCmos(void);
+int DebugCmosSize(void);
 
 static int write_file(const char *name, const char *text)
 {
@@ -177,7 +179,8 @@ int main(int argc, char **argv)
 	const struct harness_core core = {
 		Init, GetLoadError, FrameAdvance, SetButton, SetAxis, InputWasRead, GetAudio, GetAudioSampleCount,
 		GetVideoBgra, GetVideoWidth, GetVideoHeight, GetVsyncNumerator, GetVsyncDenominator,
-		GetMemoryDomainPtr, GetMemoryDomainSize, DebugMachine, GetMachineMs, GetCpuCycles, NULL, NULL, NULL,
+		GetMemoryDomainPtr, GetMemoryDomainSize, DebugMachine, GetMachineMs, GetCpuCycles, DebugCmos, DebugCmosSize,
+		NULL, NULL, NULL,
 	};
 	const int result = harness_run(&core, &o);
 	fflush(stdout);

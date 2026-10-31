@@ -282,6 +282,8 @@ int main(int argc, char **argv)
 		(const char *(*)(void))proc("DebugMachine"),
 		(uint64_t (*)(void))proc("GetMachineMs"),
 		(uint64_t (*)(void))proc("GetCpuCycles"),
+		(const uint8_t *(*)(void))proc("DebugCmos"),
+		(int (*)(void))proc("DebugCmosSize"),
 		do_seal, do_save, do_load,
 	};
 	const int result = harness_run(&core, &o);

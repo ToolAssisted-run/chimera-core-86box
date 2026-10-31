@@ -31,7 +31,5 @@
     "roms/video/mda/mda.rom": "c2a8b10808bf51a3c123ba3eb1e9dd608231916f",
     "roms/video/vga/ibm_vga.bin": "7b8b0e22ecd002d43d5ed1bb9f9a63d9b9948032"
   },
-  "notInTheSet": [
-    "roms/machines/ibmxt/BIOS_5160_08NOV82_U19_6359116.BIN"
-  ]
+  "notInTheSet": []
 }

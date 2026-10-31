@@ -180,6 +180,14 @@ static void append(char *out, size_t outsz, const char *item)
 	strcat(out, item);
 }
 
+/* BIOS choices 86Box offers that the core does not (tools/gen-config.py,
+ * BIOS_LEFT_OUT): the IBM XT's "(Alt)" BIOS, whose second chip's file is not
+ * in the ROM set of 86Box, v6.0 */
+static int bios_left_out(const char *id)
+{
+	return !strcmp(id, "ibm5160_1501512_6359116");
+}
+
 /* the machine's BIOS choices (a device config of type CONFIG_BIOS) */
 static const device_config_t *bios_config(int m)
 {
@@ -423,6 +431,8 @@ static int compose_cfg(void)
 		int found = 0;
 		choices[0] = 0;
 		for (int b = 0; bc && b < 32 && bc->bios[b].files_no; b++) {
+			if (bios_left_out(bc->bios[b].internal_name))
+				continue;
 			append(choices, sizeof choices, bc->bios[b].internal_name);
 			if (!strcmp(bc->bios[b].internal_name, bios))
 				found = 1;
@@ -599,6 +609,112 @@ ECL_EXPORT int Init(void)
 	}
 	return 1;
 }
+
+/* ------------------------------------------------------------ the CMOS
+ *
+ * An AT keeps its setup in the CMOS memory of its clock chip. A real owner
+ * ran SETUP once; the core keeps no CMOS file, so 86Box starts every
+ * machine with an empty one, and the IBM AT then stops at "161-System
+ * Options Not Set" and the Award boards at "CMOS checksum error", each
+ * waiting for F1. Patch 0009 calls this when 86Box finds no CMOS file (at
+ * power-on and at a hard reset): the standard bytes every AT BIOS reads are
+ * written from the project's settings, the way the PCem core does
+ * (chimera-core-pcem, docs/CMOS.md). The rest stays as 86Box leaves it.
+ * That is enough for the IBM AT. It is not for the two Award boards: their
+ * BIOS also keeps a block of its own settings past these bytes, with its
+ * own checksums (on the 486 board, 0x34-0x38 summed into 0x3A and a block
+ * up to 0x55 summed into 0x56), so they still load their defaults and wait
+ * for F1 (docs/PLAN.md).
+ *
+ *   0x0E        diagnostic status: no errors
+ *   0x0F        shutdown status: a normal power-on
+ *   0x10        floppy drive types, A in the high half, B in the low
+ *   0x12, 0x19, 0x1A   fixed disk types: none (a disk is on an XT-IDE card,
+ *               whose own BIOS finds it, or on an IDE port the BIOS
+ *               detects; the AT's table of fourteen types is not used)
+ *   0x14        equipment: drives, display, coprocessor, floppy present
+ *   0x15-0x18   base and extended memory in KB
+ *   0x2E-0x2F   the checksum of 0x10-0x2D, high byte first
+ *   0x30-0x31   extended memory in KB again (outside the checksum)
+ *
+ * The XT-class machines have no CMOS, and other kinds of NVRAM are not
+ * touched (86Box's nvrmask below 63). The native build's
+ * CHIMERA_86BOX_EMPTY_CMOS leaves it empty: the test scripts' negative
+ * control (the sandbox has no environment). */
+static uint8_t *g_cmos;
+static int g_cmosSize;
+
+static int cmos_floppy_type(int drive)
+{
+	/* 86Box's drive -> the CMOS's: 0 none, 1 360K, 2 1.2M, 3 720K,
+	 * 4 1.44M, 5 2.88M. A 5.25" 80-track double density drive (720K) is
+	 * electrically a 3.5" 720K one; 3.5" 360K (one side) is 80 tracks too. */
+	const char *n = fdd_get_internal_name(fdd_get_type(drive));
+	if (!n || !strcmp(n, "none"))
+		return 0;
+	if (!strcmp(n, "525_1dd") || !strcmp(n, "525_2dd"))
+		return 1;
+	if (!strcmp(n, "525_2hd"))
+		return 2;
+	if (!strcmp(n, "525_2qd") || !strcmp(n, "35_1dd") || !strcmp(n, "35_2dd"))
+		return 3;
+	if (!strcmp(n, "35_2hd"))
+		return 4;
+	if (!strcmp(n, "35_2ed"))
+		return 5;
+	return 0;
+}
+
+void chimera_cmos_power_on(uint8_t *regs, int size)
+{
+	int a, b, n, video = 0, sum = 0;
+	uint32_t base, ext;
+	const char *card;
+
+	if (size < 64 || machines[machine].nvrmask < 63)
+		return;
+	g_cmos = regs;
+	g_cmosSize = size;
+	if (getenv("CHIMERA_86BOX_EMPTY_CMOS"))
+		return;
+
+	a = cmos_floppy_type(0);
+	b = cmos_floppy_type(1);
+	/* display: 00 EGA or VGA (their own BIOS), 01 CGA 40x25, 10 CGA 80x25,
+	 * 11 monochrome */
+	card = video_get_internal_name(gfxcard[0]);
+	if (card && (!strcmp(card, "mda") || !strcmp(card, "hercules")))
+		video = 3;
+	else if (card && !strcmp(card, "cga"))
+		video = 2;
+	n = (a ? 1 : 0) + (b ? 1 : 0);
+
+	base = mem_size < 640 ? mem_size : 640;
+	ext = mem_size > 1024 ? mem_size - 1024 : 0;
+	if (ext > 0xffff)
+		ext = 0xffff;
+
+	regs[0x0e] = 0x00;
+	regs[0x0f] = 0x00;
+	for (int i = 0x10; i <= 0x2d; i++)
+		regs[i] = 0x00;
+	regs[0x10] = (uint8_t)((a << 4) | b);
+	regs[0x14] = (uint8_t)((n ? (n - 1) << 6 : 0) | (video << 4) | (fpu_type != FPU_NONE ? 0x02 : 0) | (n ? 0x01 : 0));
+	regs[0x15] = (uint8_t)(base & 0xff);
+	regs[0x16] = (uint8_t)(base >> 8);
+	regs[0x17] = (uint8_t)(ext & 0xff);
+	regs[0x18] = (uint8_t)(ext >> 8);
+	for (int i = 0x10; i <= 0x2d; i++)
+		sum += regs[i];
+	regs[0x2e] = (uint8_t)(sum >> 8);
+	regs[0x2f] = (uint8_t)(sum & 0xff);
+	regs[0x30] = (uint8_t)(ext & 0xff);
+	regs[0x31] = (uint8_t)(ext >> 8);
+}
+
+/* for the tests: the CMOS as it is now (null on a machine without one) */
+ECL_EXPORT const uint8_t *DebugCmos(void) { return g_cmos; }
+ECL_EXPORT int DebugCmosSize(void) { return g_cmos ? g_cmosSize : 0; }
 
 ECL_EXPORT void FrameAdvance(uint64_t packed)
 {

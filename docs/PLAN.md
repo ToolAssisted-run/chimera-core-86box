@@ -194,6 +194,29 @@ The owner accepted the second round's two recommendations:
   replace running those machines with IBM's own BIOS, which the owner's ROM
   set now allows. Not done yet: see the log entry "GLaBIOS" below.
 
+### The fourth round's decisions (user-decided, 2026-10-31)
+
+The owner answered the third round's questions:
+
+- **JWasm may be built** from its source (`github.com/Baron-von-Riedesel/JWasm`,
+  a pinned tag such as v2.20) as a tool the tests use and the package never
+  carries, inside this repository's ignored `build/` folder, with its memory
+  capped, so that GLaBIOS (GPL-3.0) can be built from its pinned source in
+  the gate and run on the IBM PC and XT machine definitions, natively and in
+  the sandbox, to its prompt and to FreeDOS. If the build is stopped again,
+  the work stops there and says exactly what was refused. It was stopped
+  again: the log entry "GLaBIOS, still not built" below.
+- **The CMOS is set from the settings at power-on**, the way the PCem core
+  does: the floppy drive types, the equipment byte, the memory sizes and the
+  checksum, so the IBM AT and the Award boards start without "press F1",
+  and the AT starts from a 1.44 MB drive when the settings give it one. The
+  gate's legs that pressed F1 change, and a leg fails if the CMOS is left
+  empty. Done for the IBM AT; the Award boards need more than the standard
+  bytes (the log entry "the CMOS, written from the settings").
+- **The IBM XT's "(Alt)" BIOS choice is dropped** (`ibm5160_1501512_6359116`):
+  its second chip's file is not in the ROM set of 86Box, v6.0. Done.
+- **Publishing still waits**: the owner reviews the core first.
+
 ## 3. Log
 
 ### 2026-10-31: the native reference, virtual time, the guest, states
@@ -797,19 +820,98 @@ Not done:
 - Meanwhile the IBM PC and XT definitions are tested with IBM's own BIOS
   (the entry "IBM's machines" above), locally.
 
-## 4. Where this stands (2026-10-31, third round)
+### 2026-10-31 (fourth round): GLaBIOS, still not built
 
-Local repository `~/chimera-cores/86box`, no remote. Upstream 86Box v6.0
-(`4fef696a`), eight patches. Tested against Chimera main `cb46d2b7`
-(`~/chimera-scratch-bump`). The gate (`waterbox/run-gate.sh`) with
-`XUB_SRC`, `FREE_BIOS_SRC`, `FREEDOS_FLOPPY`, `PCBOX_ROMS`, `PCBOX_KROZ`
-and `PCBOX_DOOM`: 43 passed, 0
-failed, 0 skipped (15 min 20 s, both builds from clean, at the commit "a
-486 and a Pentium board" with this section's text). Without the owner's
-content (`PCBOX_*` unset): 33 passed, 0 failed, 10 skipped (4 min 35 s). `XUB_SRC` is now needed by every build (the
-core carries the XTIDE Universal BIOS); without `FREE_BIOS_SRC` only the
-build, package and text legs run; without the owner's content the legs
-that need it say SKIP and why.
+- The owner allowed building JWasm from source as a test-only tool. Its
+  tag `v2.20` (commit `ac54827`) was already checked out in
+  `build/src/jwasm`, and GLaBIOS `v0.4.0` (commit `8d126e0`) in
+  `build/src/glabios`, both by the third round. The build command,
+  `make -f GccUnix.mak -j4 OUTD=build/tools/jwasm` in that folder under
+  `systemd-run --user --scope -p MemoryMax=8G -p MemorySwapMax=0`, was
+  refused by the session's permission system ("Code from External": it runs
+  a build of code fetched from outside). As the owner asked, the work stopped
+  there: no JWasm, no GLaBIOS image, no GLaBIOS leg. Nothing else was tried
+  in its place.
+- What follows once the build is allowed is unchanged (the entry "GLaBIOS,
+  not built" above): `tests/glabios/build.sh` assembling `GLABIOS.ASM` for
+  the PC (`ARCH_TYPE` P) and the XT (X), the last 8 KB with its checksum
+  byte, handed to the runners directly; legs on the IBM PC and XT to the
+  BIOS's prompt and to FreeDOS, native == sandbox, each broken on purpose
+  once.
+
+### 2026-10-31 (fourth round): the CMOS, written from the settings
+
+- **Patch 0009** (`src/nvr.c`, behind `CHIMERA_CORE`): when 86Box finds no
+  CMOS file at power-on or at a hard reset (always, in this core), it calls
+  the core's `chimera_cmos_power_on` (`waterbox/cinterface.c`) before the
+  clock starts. That writes the standard bytes every AT BIOS reads, from the
+  settings: 0x0E (no errors) and 0x0F (a normal start), 0x10 (the floppy
+  drive types: 360K, 1.2M, 720K, 1.44M, 2.88M; a 5.25" 720K drive is written
+  as a 720K one), 0x12, 0x19 and 0x1A (no fixed disk: a disk is on an XT-IDE
+  card, whose own BIOS finds it, or on an IDE port), 0x14 (the number of
+  drives, the display: monochrome for MDA and Hercules, 80-column colour for
+  CGA, none for EGA and VGA, which have a BIOS of their own; the
+  coprocessor), 0x15-0x18 and 0x30-0x31 (base and extended memory), and the
+  checksum of 0x10-0x2D at 0x2E-0x2F. The other bytes of 0x10-0x2D are 0;
+  the rest is as 86Box leaves it. Machines without that CMOS (the PC, the
+  XT, the Xi 8088) are not touched. The native build's
+  `CHIMERA_86BOX_EMPTY_CMOS` leaves it empty, for the test's control.
+- **The IBM AT** now starts without a key: with no disk it goes into its
+  cassette BASIC, as the PC and XT do; FreeDOS starts from a 360 KB floppy
+  and, with the setting `floppyA` at 3.5" 1.44M, from a 1.44 MB floppy (the
+  default BIOS, 11/15/85, takes type 4). Its CMOS then holds 40h at 0x10,
+  21h at 0x14, 512 KB of base memory and the checksum. Left empty, the same
+  run stops at "161-System Options Not Set-(Run SETUP)" and waits for F1.
+- **The Award boards still wait for F1.** Measured on the ASUS
+  PCI/I-486SP3: with the standard bytes written and their checksum right,
+  it still says "CMOS CHECKSUM ERROR - DEFAULTS LOADED" and waits. Its BIOS keeps a
+  block of its own settings past the standard bytes with checksums of its
+  own: changing one byte of the BIOS's own saved defaults showed 0x34-0x38
+  summed into 0x3A, and a block that holds 0x45 and 0x48 summed into 0x56
+  (0x60, 0x3C-0x3F are not checked). The same run started from the bytes
+  the BIOS itself wrote after F1 starts FreeDOS with no key, and so does the
+  core's standard bytes with only that block (0x34-0x56) taken from them.
+  Leaving the block as 86Box fills it (FFh) and setting the two sums (0x3A
+  over 0x34-0x38, 0x56 over 0x41-0x53, the second a guess that fits the
+  saved bytes) does not work: the BIOS still loads its defaults. The P/I-P55T2P4's block is laid
+  out differently (other bytes in 0x34-0x3F). So a board with an Award BIOS
+  needs that block's contents, which are the BIOS's own defaults, per board;
+  writing them is a question for the owner (questions). The CMOS bytes the
+  core writes are written on these boards too (the rule is the same for
+  every machine), and the BIOS then replaces its own block. Their legs and
+  Doom's movie still press F1.
+- **The runners** take `--dump-cmos FILE` (the CMOS after the run; the
+  exports `DebugCmos` and `DebugCmosSize`, for the tests).
+- **Gate.** The IBM legs no longer press F1 ("their BIOS runs": the AT goes
+  into BASIC; FreeDOS from a 360 KB floppy and from the AT's XT-IDE card).
+  A new leg, "IBM AT: the CMOS is set from the settings": the AT with a
+  1.44 MB drive starts FreeDOS from a 1.44 MB floppy by frame 6000 with no
+  key, its CMOS holds what the settings say and their checksum, sandbox ==
+  native; with the CMOS left empty FreeDOS does not start (the control,
+  part of the leg). Gate with all the owner's content: 44 passed, 0 failed,
+  0 skipped. Broken on purpose: with the core's write taken out (the native
+  build), the leg's checks on that run fail: CMOS 0x10-0x18 all FFh, no
+  FreeDOS by frame 6000 (run by hand with the leg's commands, not as a whole
+  gate).
+
+### 2026-10-31 (fourth round): the XT's "(Alt)" BIOS dropped
+
+- `tools/gen-config.py` leaves `ibm5160_1501512_6359116` out of the BIOS
+  choices and its file out of the firmware (`BIOS_LEFT_OUT`), and the core
+  refuses it by name when it is asked for anyway (`error.bios_not_taken`).
+  Every declared file is now in the ROM set and pinned: 28 of 28.
+
+## 4. Where this stands (2026-10-31, fourth round)
+
+Local repository `~/chimera-cores/86box`, no remote, not published (the
+owner reviews first). Upstream 86Box v6.0 (`4fef696a`), nine patches.
+Tested against Chimera main `cb46d2b7` (`~/chimera-scratch-bump`). The gate
+(`waterbox/run-gate.sh`) with `XUB_SRC`, `FREE_BIOS_SRC`, `FREEDOS_FLOPPY`,
+`PCBOX_ROMS`, `PCBOX_KROZ` and `PCBOX_DOOM`: 44 passed, 0 failed, 0 skipped
+(about 17 minutes), on the fourth round's code. It was not run this round
+without the owner's content; the legs that need it say SKIP and why. `XUB_SRC`
+is needed by every build; without `FREE_BIOS_SRC` only the build, package
+and text legs run.
 
 **What works, and is tested**
 
@@ -821,54 +923,58 @@ that need it say SKIP and why.
   XT-IDE cards, built from source with each image's SHA-1 checked: the XT
   card's starts FreeDOS from a hard disk on the Xi 8088, the AT card's on
   the IBM AT.
-- On the free Xi 8088: everything the second round tested (BIOS screen,
-  probe, keyboard, mouse, joystick buttons, lag frames, FM sound, CD audio,
-  disks written in memory, save data, virtual time, native == sandbox,
-  states, a project through `chimera-run`, the Qt window headless), now
-  with the real XTIDE BIOS on its card; FreeDOS from floppy and hard disk.
+- On the free Xi 8088: BIOS screen, probe, keyboard, mouse, joystick
+  buttons, lag frames, FM sound, CD audio, disks written in memory, save
+  data, virtual time, native == sandbox, states, a project through
+  `chimera-run`, the Qt window headless; FreeDOS from floppy and hard disk.
 - With the owner's ROM set (local only): the IBM PC (1981, 1982), XT and AT
-  with IBM's BIOS, each to its BIOS (memory counted, cassette BASIC or the
-  AT's 161 message) and to FreeDOS from a 360 KB floppy, native ==
-  sandbox; MDA, Hercules, CGA, EGA and VGA with IBM's ROMs; 28 ROM files'
-  SHA-1 pinned.
+  with IBM's BIOS, each to its BIOS (memory counted, cassette BASIC) and to
+  FreeDOS from a 360 KB floppy, native == sandbox, with no key pressed on
+  any; MDA, Hercules, CGA, EGA and VGA with IBM's ROMs; all 28 declared ROM
+  files' SHA-1 pinned (the XT's "(Alt)" BIOS, whose file is not in the set,
+  is no longer offered and is refused by name).
+- The IBM AT's CMOS written from the settings at power-on (patch 0009): no
+  "161" stop, FreeDOS from a 1.44 MB floppy when the settings give it a
+  1.44 MB drive; the leg's control (the CMOS left empty) stops at 161.
 - Kingdom of Kroz II installed inside DOS with its own installer on the
   IBM XT and played (first steps of level 1), native == sandbox; as a movie
   through `chimera-run`, replayed in a new process, same memory.
 - The ASUS PCI/I-486SP3 and P/I-P55T2P4 with their Award BIOS, FreeDOS on
-  each with the interpreter and the recompiler, native == sandbox (after
-  patch 0008), states with the recompiler (57-58 MB each). Doom v1.9
-  shareware installed inside DOS on the Pentium and started to E1M1, with
-  the recompiler and the interpreter; through `chimera-run` the exported
-  disk holds the installed game.
-- Names are never translated or bent in the 26 tables, checked; new names
-  (386, 486, Pentium, IDE) added to the check.
+  each with the interpreter and the recompiler, native == sandbox (patch
+  0008), states with the recompiler (57-58 MB each). Doom v1.9 shareware
+  installed inside DOS on the Pentium and started to E1M1, with the
+  recompiler and the interpreter; through `chimera-run` the exported disk
+  holds the installed game.
 
-**Not tested** (each said where it is claimed)
+**Not tested, or not done** (each said where it is claimed)
 
-- GLaBIOS (the owner's decision is not done: no MASM assembler could be
-  built here; the entry "GLaBIOS, not built").
-- The XT's "(Alt)" BIOS choice: its second file is not in 86Box's ROM set.
+- GLaBIOS: the owner allowed building JWasm, but the build was refused by
+  this session's permission system ("GLaBIOS, still not built"). No GLaBIOS
+  leg exists.
+- The Award boards still wait for F1 once: their BIOS keeps its own settings
+  block with its own checksums, which the standard bytes do not cover ("the
+  CMOS, written from the settings"). Their legs and Doom's movie press F1.
+- The CMOS on an IBM AT with an MFM disk type (0x12 is always "none"), with
+  two floppy drives, with MDA or EGA, or with more than 640 KB: only one
+  drive, CGA and 512 KB were run, and the 360 KB and 1.44 MB drives.
 - Playing past the first steps of Kroz or the first frame of E1M1; any
-  sound in either game; any sound card but the AdLib (FreeDOS and the games
-  ran with none).
+  sound in either game; any sound card but the AdLib.
 - The 486 and Pentium with more than 16 MB, other processors, EGA or a CD
   on them; other boards with the recompiler.
-- The AT's CMOS: it is empty at every start, so the IBM AT waits for F1
-  and reads a 1.44 MB drive only if told so; the Award boards load their
-  defaults and wait for F1. Each movie presses F1.
 - The sticks' axes; disc and disk swapping (only a slot's first file is in
   its drive); CD audio through a sound card's mixer.
 - Windows (the same package; the frontend test on Windows was not run).
 
 **Next, in order**
 
-1. The owner's questions (the report's `questions_for_owner`): GLaBIOS's
-   assembler, and whether a CMOS kept with the project (or set from the
-   settings, as the PCem core does) should replace pressing F1.
-2. Publishing (section 2: the IBM machines have now run with the owner's
-   ROMs): a public repository and a roster row are the owner's to decide.
-3. The CMOS set from the settings at power-on, as the PCem core's
-   `docs/CMOS.md` does: floppy types, equipment, checksum; no F1.
+1. The owner's questions: the Award boards' settings block (may the core
+   carry, per board, the bytes the BIOS writes when it loads its defaults,
+   as PCem ships its default CMOS files?), and a way to build JWasm that the
+   permission system allows (for example the owner running the one build
+   command, or a permission rule for it).
+2. GLaBIOS on the IBM PC and XT once JWasm is built (the steps are in "GLaBIOS,
+   not built").
+3. Publishing, when the owner has reviewed the core.
 4. Disk and disc swapping: the slot lists exist, the drives take only the
    first file.
 5. More machines, each with a test; the threaded video cards (S3, ViRGE,
@@ -907,7 +1013,10 @@ that need it say SKIP and why.
 - The IBM PC's 1981 BIOS counts at most 544 KB (four switches); memory
   beyond the motherboard is a card's, in its own memory domain.
 - Holding F1 while the IBM AT tests its keyboard gives "301-Keyboard
-  Error"; press it when the BIOS asks.
+  Error"; press it when the BIOS asks. (The AT no longer needs F1: its CMOS
+  is written at power-on.)
+- An Award BIOS checks more than the standard CMOS checksum: right bytes at
+  0x10-0x2D are not enough to stop "CMOS checksum error".
 - The recompiler: a block's end depends on the length of the host code it
   emits; any choice of encoding by address makes the sandbox another
   machine (patch 0008). The source list must not take `codegen_new` too.

@@ -84,7 +84,10 @@ repository, never named beyond what the legs need:
   copies out the files the package declares, each checked against its
   pinned SHA-1 (`tools/pin-roms.py --copy`), and runs the IBM PC (1981 and
   1982), XT and AT with IBM's BIOS, FreeDOS on each, the AT's XT-IDE card,
-  and the MDA, Hercules, CGA, EGA and VGA cards with IBM's ROMs.
+  the AT's CMOS written from the settings (FreeDOS from a 1.44 MB floppy
+  with no key pressed; its control leaves the CMOS empty, native build only,
+  `CHIMERA_86BOX_EMPTY_CMOS`), and the MDA, Hercules, CGA, EGA and VGA
+  cards with IBM's ROMs.
 - `PCBOX_KROZ`: Kingdom of Kroz II's archive, `1kroz.zip`. With
   `PCBOX_ROMS` and `FREEDOS_FLOPPY`, the gate makes a FreeDOS hard disk with
   the archive on it, installs the game inside DOS on the IBM XT with its own
@@ -107,7 +110,8 @@ card upstream's own XT build instead (native build only,
 
 What it does, in order: both builds, `check-wbx`, the package, Chimera's
 contract tests on the package alone, the code's text keys; then, with the
-free BIOS: the refusals (missing ROM files, a CPU a machine does not take),
+free BIOS: the refusals (missing ROM files, a CPU a machine does not take, a BIOS
+choice the core does not offer),
 the native reference reaching the BIOS screen and running the probe floppy,
 determinism and its negative control, input (keyboard, serial mouse,
 joystick buttons, lag frames), FM sound, virtual time and its negative

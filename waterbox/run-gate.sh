@@ -176,17 +176,22 @@ word_at() { python3 -c "import struct,sys; d=open(sys.argv[1],'rb').read(); prin
 # names, never switched for another or run without them. The Xi 8088 with
 # only its 64 KB file is the case that once ran with no BIOS and said
 # nothing (86Box's "available" is satisfied by either of its two files).
+# The XT's "(Alt)" BIOS, whose second file is not in the ROM set of 86Box
+# v6.0, is not offered, and is refused when it is asked for anyway.
 refusal() { rm -rf "$work/refuse"; "$rn" "$work/refuse" "$@" --frames 1 2>&1 | sed -n 's/^Init: //p' | tr '\037' '|'; }
 r_pc=$(refusal --roms "$roms" --set machine=ibmpc)
 mkdir -p "$work/roms64"; cp "$work/free-bios/machines_xi8088_bios-xi8088.bin" "$work/free-bios/video_mda_mda.rom" "$work/roms64/"
 r_64=$(refusal --roms "$work/roms64" --set machine=xi8088)
 r_cpu=$(refusal --roms "$roms" --set machine=ibmat --set cpu=8088/4772728)
+r_alt=$(refusal --roms "$roms" --set machine=ibmxt --set bios=ibm5160_1501512_6359116)
 if [ "$r_pc" = "error.roms_missing|[8088] IBM PC (1981)|machines_ibmpc_BIOS_IBM5150_19OCT81_5700671_U33.BIN" ] \
    && [ "$r_64" = "error.roms_missing|[8088] Xi8088|machines_xi8088_bios-xi8088-128k.bin" ] \
-   && [ "$r_cpu" = "error.cpu_not_taken|8088/4772728|286/6000000, 286/8000000" ]; then
-	report PASS "refused, by name: missing ROMs, a CPU" "IBM PC without its BIOS; Xi 8088 with only the 64 KB file; an 8088 in an AT"
+   && [ "$r_cpu" = "error.cpu_not_taken|8088/4772728|286/6000000, 286/8000000" ] \
+   && [ "${r_alt%%|ibm5160_1501512_5000027, *}" = "error.bios_not_taken|ibm5160_1501512_6359116" ] \
+   && ! grep -q 6359116 "$cfg"; then
+	report PASS "refused, by name: missing ROMs, a CPU, a BIOS" "IBM PC without its BIOS; Xi 8088 with only the 64 KB file; an 8088 in an AT; the XT's (Alt) BIOS, not offered"
 else
-	report FAIL "refused, by name: missing ROMs, a CPU" "[$r_pc] [$r_64] [$r_cpu]"
+	report FAIL "refused, by name: missing ROMs, a CPU, a BIOS" "[$r_pc] [$r_64] [$r_cpu] [$r_alt]"
 fi
 
 # ------------------------------------------- 1. the native reference runs
@@ -503,6 +508,7 @@ if [ -z "$pr" ]; then
 	report SKIP "IBM machines: their BIOS runs" "needs PCBOX_ROMS (the ROM set of 86Box, tag v6.0)"
 	report SKIP "IBM machines: FreeDOS from a floppy" "needs PCBOX_ROMS and FREEDOS_FLOPPY"
 	report SKIP "IBM AT: FreeDOS from its XT-IDE card" "needs PCBOX_ROMS and FREEDOS_FLOPPY"
+	report SKIP "IBM AT: the CMOS is set from the settings" "needs PCBOX_ROMS and FREEDOS_FLOPPY"
 	report SKIP "IBM video cards draw with IBM's ROMs" "needs PCBOX_ROMS"
 elif ! python3 "$root/tools/pin-roms.py" --copy "$cfg" "$pr" "$work/ibm-roms" > "$work/ibm-roms.log" 2>&1; then
 	report FAIL "IBM machines: their BIOS runs" "$(tail -1 "$work/ibm-roms.log")"
@@ -510,10 +516,11 @@ else
 	ir="$work/ibm-roms"
 	# The BIOS's POST counts the memory and leaves it at 0040:0013 (the PC's
 	# 1981 BIOS reads four memory switches, which say at most 544 KB); the
-	# picture is lit. The PC and XT go into IBM's cassette BASIC with no
-	# disk; the AT, whose clock memory (CMOS) is empty, stops at "161-System
-	# Options Not Set" and waits for F1. And the BASIC file is asked for by
-	# name while cassette BASIC is on, and not when it is off.
+	# picture is lit. The PC, XT and AT go into IBM's cassette BASIC with no
+	# disk (the AT's clock memory, its CMOS, is written from the settings at
+	# power-on, so it no longer stops at "161-System Options Not Set"). And
+	# the BASIC file is asked for by name while cassette BASIC is on, and not
+	# when it is off.
 	ok=""; bad=""
 	for spec in ibmpc:544 ibmpc82:640 ibmxt:640 ibmat:512; do
 		m=${spec%:*}; kb=${spec#*:}
@@ -536,23 +543,19 @@ else
 	# FreeDOS on each, from a 360 KB floppy the gate makes out of FreeDOS
 	# 1.3's boot floppy (its kernel and shell, and an AUTOEXEC.BAT that sets
 	# FDBOOT to the shell's path): the IBM PC and XT cannot read the 1.44 MB
-	# floppy, and the AT's BIOS reads a 1.44 MB drive only when its CMOS says
-	# it has one. The AT is given F1 at frame 3000. The sandbox must give the
+	# floppy. No key is pressed on any of them. The sandbox must give the
 	# native run's stream on every machine.
 	if [ -z "$fd" ] || [ "$(sha1sum "$fd" | cut -c1-40)" != "$fd_sha1" ]; then
 		report SKIP "IBM machines: FreeDOS from a floppy" "needs FREEDOS_FLOPPY (FreeDOS 1.3 FD13-FloppyEdition 144m/x86BOOT.img)"
+		report SKIP "IBM AT: FreeDOS from its XT-IDE card" "needs FREEDOS_FLOPPY"
+		report SKIP "IBM AT: the CMOS is set from the settings" "needs FREEDOS_FLOPPY"
 	else
-		f1=$(python3 "$root/tests/keys.py" "$here/chimera-input.c" /dev/stdin <<'KEYS'
-3000 key F1 5
-KEYS
-)
 		python3 "$root/tests/dos-disk/make-dos-disk.py" --freedos "$fd" --out "$work/fd360.img" --floppy 360 \
 			--autoexec '@echo off\nset FDBOOT=%COMSPEC%\necho FreeDOS started from a 360 KB floppy.\n' > "$work/fd360.log" 2>&1
 		ok=""; bad=""
 		for spec in ibmpc:544 ibmpc82:640 ibmxt:640 ibmat:512; do
-			m=${spec%:*}; kb=${spec#*:}; extra=""
-			[ "$m" = ibmat ] && extra="$f1"
-			run="--roms $ir --set machine=$m --set video=cga --set memoryKB=$kb --set floppyA=525_2dd --file floppy_a=$work/fd360.img --frames 12000 $extra"
+			m=${spec%:*}; kb=${spec#*:}
+			run="--roms $ir --set machine=$m --set video=cga --set memoryKB=$kb --set floppyA=525_2dd --file floppy_a=$work/fd360.img --frames 12000"
 			native_run $run --dump-ram "$work/fd-$m.ram" --digests "$work/fd-$m-native.dig" > /dev/null
 			"$rw" "$wbx" "$cfg" $run --digests "$work/fd-$m-wbx.dig" > /dev/null 2>&1
 			marker=$(grep -a -c 'FDBOOT=A:\\COMMAND.COM' "$work/fd-$m.ram" 2>/dev/null)
@@ -571,7 +574,7 @@ KEYS
 		# and no file of that name does not.
 		if [ -f "$work/hdd-dos.img" ]; then
 			atd="--set machine=ibmat --set video=cga --set floppyA=525_2dd --set hardDiskController=xtide_at_1ch"
-			atd="$atd --file hdd=$work/hdd-dos.img --frames 8000 $f1"
+			atd="$atd --file hdd=$work/hdd-dos.img --frames 8000"
 			native_run --roms "$ir" $atd --dump-ram "$work/athd.ram" --digests "$work/athd-native.dig" > /dev/null
 			CHIMERA_86BOX_NO_BUILTIN_ROMS=1 native_run --roms "$ir" $atd --dump-ram "$work/athd-control.ram" > /dev/null
 			"$rw" "$wbx" "$cfg" --roms "$ir" $atd --digests "$work/athd-wbx.dig" > /dev/null 2>&1
@@ -583,6 +586,39 @@ KEYS
 			fi
 		else
 			report SKIP "IBM AT: FreeDOS from its XT-IDE card" "the hard disk of 6c was not made"
+		fi
+
+		# The CMOS is written from the settings at power-on (patch 0009,
+		# chimera_cmos_power_on): an IBM AT told it has a 1.44 MB drive A
+		# starts FreeDOS from a 1.44 MB floppy with no key pressed, and its
+		# CMOS holds the drive (0x10 = 40h), one drive and CGA (0x14 = 21h),
+		# 512 KB of base memory and no extended (0x15-0x18), and their
+		# checksum (0x2E-0x2F). Control, the native build only: with the CMOS
+		# left empty (CHIMERA_86BOX_EMPTY_CMOS) the same run stops at "161"
+		# and FreeDOS does not start. The sandbox gives the native stream.
+		python3 "$root/tests/dos-disk/make-dos-disk.py" --freedos "$fd" --out "$work/at1440.img" --floppy 1440 \
+			--autoexec '@echo off\nset FDBOOT=%COMSPEC%\necho FreeDOS started from a 1.44 MB floppy.\n' > "$work/at1440.log" 2>&1
+		atc="--roms $ir --set machine=ibmat --set video=cga --set memoryKB=512 --set floppyA=35_2hd --file floppy_a=$work/at1440.img --frames 6000"
+		native_run $atc --dump-ram "$work/atc.ram" --dump-cmos "$work/atc.cmos" --digests "$work/atc-native.dig" > /dev/null
+		CHIMERA_86BOX_EMPTY_CMOS=1 native_run $atc --dump-ram "$work/atc-empty.ram" --dump-cmos "$work/atc-empty.cmos" > /dev/null
+		"$rw" "$wbx" "$cfg" $atc --digests "$work/atc-wbx.dig" > /dev/null 2>&1
+		cm=$(python3 - "$work/atc.cmos" <<'PY'
+import sys
+c = open(sys.argv[1], 'rb').read()
+want = {0x10: 0x40, 0x12: 0, 0x14: 0x21, 0x15: 0x00, 0x16: 0x02, 0x17: 0, 0x18: 0}
+bad = ['%02X=%02X' % (k, c[k]) for k, v in want.items() if len(c) < 0x30 or c[k] != v]
+s = sum(c[0x10:0x2e]) if len(c) >= 0x30 else -1
+if len(c) >= 0x30 and (c[0x2e] << 8 | c[0x2f]) != s:
+    bad.append('checksum %02X%02X, not %04X' % (c[0x2e], c[0x2f], s))
+print(' '.join(bad) if bad else 'ok')
+PY
+)
+		em=$(python3 -c "import sys; c=open(sys.argv[1],'rb').read(); print('empty' if len(c) >= 0x30 and set(c[0x10:0x2e]) == {0xff} else 'written')" "$work/atc-empty.cmos" 2>/dev/null)
+		b=$(grep -a -c 'FDBOOT=A:\\COMMAND.COM' "$work/atc.ram" 2>/dev/null); c=$(grep -a -c 'FDBOOT=A:\\COMMAND.COM' "$work/atc-empty.ram" 2>/dev/null)
+		if [ "$cm" = ok ] && [ "${b:-0}" -ge 1 ] && [ "$em" = empty ] && [ "${c:-1}" = 0 ] && cmp -s "$work/atc-native.dig" "$work/atc-wbx.dig"; then
+			report PASS "IBM AT: the CMOS is set from the settings" "FreeDOS from a 1.44 MB floppy by frame 6000, no key pressed; CMOS drive, equipment, memory and checksum as the settings say; left empty: no FreeDOS; sandbox == native"
+		else
+			report FAIL "IBM AT: the CMOS is set from the settings" "CMOS: $cm; marker ${b:-0}; empty control: ${em:-?}, marker ${c:-?}; see build/gate/atc*"
 		fi
 	fi
 
@@ -701,8 +737,11 @@ fi
 # BIOS from the ROM set (PCBOX_ROMS), 16 MB, IBM VGA. 86Box's recompiler
 # runs a 386-class processor and up; the setting "recompiler" chooses it or
 # the interpreter, two machines. Each board starts FreeDOS from a 1.44 MB
-# floppy made here (its CMOS is empty, so the BIOS loads its defaults and
-# waits for F1, given at frame 1500), with each, natively and in the sandbox.
+# floppy made here, with each, natively and in the sandbox. The core writes
+# the standard CMOS bytes, but the Award BIOS also keeps a block of its own
+# settings with checksums of its own, which the core does not know; so it
+# still says "CMOS checksum error", loads its defaults and waits for F1,
+# given at frame 1500.
 if [ -z "$pr" ] || [ -z "$fd" ] || [ ! -d "${ir:-/nonexistent}" ]; then
 	report SKIP "486 and Pentium: FreeDOS, both ways" "needs PCBOX_ROMS and FREEDOS_FLOPPY"
 	report SKIP "486 and Pentium: states, recompiler on" "needs PCBOX_ROMS and FREEDOS_FLOPPY"

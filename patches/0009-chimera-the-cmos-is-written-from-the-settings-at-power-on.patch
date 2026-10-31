@@ -1,0 +1,19 @@
+--- a/src/nvr.c
++++ b/src/nvr.c
+@@ -255,6 +255,16 @@
+     } else
+         saved_nvr->is_new = 1;
+ 
++#ifdef CHIMERA_CORE
++    /* A Chimera core keeps no CMOS file: at power-on the core writes the
++     * standard bytes (floppy drives, equipment, memory sizes, checksum) from
++     * the project's settings, so the BIOS does not stop to ask for setup. */
++    if (saved_nvr->is_new) {
++        extern void chimera_cmos_power_on(uint8_t *regs, int size);
++        chimera_cmos_power_on(saved_nvr->regs, saved_nvr->size);
++    }
++#endif
++
+     /* Get the local RTC running! */
+     if (saved_nvr->start != NULL)
+         saved_nvr->start(saved_nvr);

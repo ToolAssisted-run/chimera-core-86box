@@ -194,6 +194,12 @@ MACHINES = ['xi8088', 'ibmpc', 'ibmpc82', 'ibmxt', 'ibmat',
             # BIOS), the recompiler's machines: both boards have their IDE ports
             '486sp3', 'p55t2p4']
 
+# BIOS choices 86Box offers that the core does not: the IBM XT's "(Alt)"
+# BIOS reads a second chip's file (BIOS_5160_08NOV82_U19_6359116.BIN) that
+# the ROM set of 86Box, v6.0, does not hold (the owner, 2026-10-31).
+# waterbox/cinterface.c refuses the same ids.
+BIOS_LEFT_OUT = {'ibm5160_1501512_6359116'}
+
 # Choices the core offers out of what 86Box lets each machine have.
 VIDEO = ['cga', 'mda', 'hercules', 'ega', 'vga']
 SOUND = ['none', 'adlib', 'cms', 'tndy', 'ssi2001', 'sb', 'sb2.0', 'sbprov1', 'sbprov2', 'sb16']
@@ -276,7 +282,7 @@ def main():
     seen = set()
     for m in tables:
         for b in m['bios']:
-            if b['id'].startswith('diag_'):
+            if b['id'].startswith('diag_') or b['id'] in BIOS_LEFT_OUT:
                 continue  # diagnostic ROMs: not a BIOS a program runs on
             v = '%s - %s' % (b['id'], b['name'])
             if v not in seen:
@@ -354,7 +360,7 @@ def main():
         names_m = m['name']
         if m['bios']:
             for b in m['bios']:
-                if b['id'].startswith('diag_'):
+                if b['id'].startswith('diag_') or b['id'] in BIOS_LEFT_OUT:
                     continue
                 bv = '%s - %s' % (b['id'], b['name'])
                 choice = [bv] + ([bios_values[0]] if b['id'] == m['biosDefault'] else [])
