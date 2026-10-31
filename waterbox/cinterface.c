@@ -433,6 +433,7 @@ int64_t plat_machine_clock_start(void)
 	return g_clockStart;
 }
 
+ECL_EXPORT const uint8_t *GetSaveDataScratch(void);
 ECL_EXPORT int Init(void)
 {
 	/* the machine's folder is where 86Box starts (plat_getcwd); the
@@ -446,6 +447,8 @@ ECL_EXPORT int Init(void)
 		return 0;
 	}
 	g_clockStart = wbx_setting_long("clockStart", 946684800);
+	/* invisible memory is taken during Init and never later */
+	(void)GetSaveDataScratch();
 
 	if (!compose_cfg())
 		return 0;
@@ -578,3 +581,40 @@ ECL_EXPORT int GetMemoryDomainWritable(int i) { return i == 0; }
 /* The controls: chimera-input.c. */
 ECL_EXPORT void SetButton(int32_t index, int32_t state) { chimera_set_button(index, state); }
 ECL_EXPORT void SetAxis(int32_t index, int32_t value) { chimera_set_axis(index, value); }
+
+/* -------------------------------------------- save data (docs/save-data.md)
+ *
+ * What a PC keeps is its disks: one file for each disk the machine opened
+ * for writing, the whole image as it stands (the file and what the machine
+ * wrote over it, chimera-overlay.c), under the name of the project's file it
+ * came from. Handed back into the same slot, the machine carries on from it.
+ *
+ * It goes out through a window, not a pointer: an image of gigabytes is a
+ * read-only file the sandbox streams plus a scatter of 4 KiB blocks, so
+ * GetSaveDataFileBuffer answers null, which tells the engine to use
+ * ReadSaveDataFile and GetSaveDataScratch (as the PCem core does). The
+ * window is invisible memory: a view the host reads between frames, not
+ * machine state. */
+#define SAVEDATA_WINDOW (256 * 1024)
+static uint8_t *g_saveWindow;
+
+ECL_EXPORT int32_t GetSaveDataFileCount(void) { return (int32_t)chimera_overlay_count(); }
+ECL_EXPORT const char *GetSaveDataFileName(int32_t index) { return chimera_overlay_name((int)index); }
+ECL_EXPORT int64_t GetSaveDataFileSize(int32_t index) { return chimera_overlay_size((int)index); }
+ECL_EXPORT const uint8_t *GetSaveDataFileBuffer(int32_t index) { (void)index; return NULL; }
+
+ECL_EXPORT const uint8_t *GetSaveDataScratch(void)
+{
+	if (!g_saveWindow)
+		g_saveWindow = (uint8_t *)alloc_invisible(SAVEDATA_WINDOW);
+	return g_saveWindow;
+}
+
+ECL_EXPORT int64_t ReadSaveDataFile(int32_t index, int64_t offset, int64_t len)
+{
+	if (!GetSaveDataScratch() || len <= 0)
+		return 0;
+	if (len > SAVEDATA_WINDOW)
+		len = SAVEDATA_WINDOW;
+	return chimera_overlay_read((int)index, offset, g_saveWindow, len);
+}

@@ -11,7 +11,10 @@ is a frontend for tool-assisted speedruns; this repository builds one file,
   XT and the IBM AT, with CGA, MDA, Hercules, EGA or VGA, an AdLib, Game
   Blaster, Tandy, SSI-2001 or Sound Blaster, two floppy drives, a mouse and
   joysticks.
-- Floppy disks, read only. Hard disks and CD-ROMs are not there yet.
+- Two floppy drives and a hard disk (on an XT-IDE card). What the machine
+  writes stays in its memory and its states, and Emulator > Export Save
+  Data gives the disks back as files; your own files are never changed.
+  CD-ROMs are not there yet.
 - Every machine needs its ROM files from 86Box's ROM set
   (https://github.com/86Box/roms, tag `v6.0`), which you supply. Chimera's
   Firmware window asks for exactly the files the chosen machine reads.

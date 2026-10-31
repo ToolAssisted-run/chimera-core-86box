@@ -372,3 +372,18 @@ rather than all 500.
 - **Not tested**: a hard disk through the XTIDE Universal BIOS (needs a
   build configured for 86Box's card: 86Box's ROM set has one), any
   operating system installed on or booted from a hard disk, the AT card.
+
+### 2026-10-31: save data
+
+- Emulator > Export Save Data (the engine's `ce_session_savedata_*`,
+  `chimera-run --export-savedata`) gives every disk the machine opened for
+  writing as a file: the project's file with what the machine wrote over
+  it, under the file's own name, read out through a 256 KB window in
+  memory no state carries (the PCem core's way). Handed back into the same
+  slot, the machine carries on from it.
+- Gate, 27 passed, 0 failed, 1 skipped: through a project, both images
+  come out the size of the project's files with exactly one sector changed,
+  sector 2, holding "WR" and "HD". Broken on purpose (two bytes of the
+  first window zeroed) and seen to fail. Not tested: an exported image
+  given back into a new project (the probe writes the sector again at
+  start, so it could not tell).

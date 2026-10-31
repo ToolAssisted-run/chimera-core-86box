@@ -369,7 +369,8 @@ else
 		--settings '{"machine": "xi8088 - [8088] Xi8088", "video": "cga - IBM CGA", "memoryKB": 640, "sound": "adlib - AdLib", "hardDiskController": "xtide - PC/XT XTIDE"}' \
 		--firmware "$fwb=$roms/$fwb" --firmware "$fwf=$roms/$fwf" --firmware "$fwh=$roms/$fwh" > "$pj/make.log" 2>&1 \
 	   && "$crun" --project "$pj/p.chimeraProject" "$pkg" --firmware "$fwb=$roms/$fwb" --firmware "$fwf=$roms/$fwf" \
-		--firmware "$fwh=$roms/$fwh" --frames 1500 --dump "System RAM=$pj/engine.ram" > "$pj/run.log" 2>&1; then
+		--firmware "$fwh=$roms/$fwh" --frames 1500 --dump "System RAM=$pj/engine.ram" \
+		--export-savedata "$pj/export" > "$pj/run.log" 2>&1; then
 		"$rw" "$wbx" "$cfg" --roms "$roms" --set machine=xi8088 --set video=cga --set memoryKB=640 --set sound=adlib \
 			--set hardDiskController=xtide --file "floppy_a=$pj/probe.img" --file "hdd=$pj/hdd10.img" \
 			--frames 1500 --key 1200:5:29 --dump-ram "$pj/wbx.ram" > /dev/null 2>&1
@@ -378,6 +379,25 @@ else
 			report PASS "a project runs through the engine" "chimera-run --project: floppy and hard disk slots, 1500 frames, the memory is the sandbox runner's, A read, 'HD' read back"
 		else
 			report FAIL "a project runs through the engine" "the memory differs from the sandbox runner's (see build/gate/project)"
+		fi
+		# Emulator > Export Save Data: each disk as it stands - the project's
+		# file with the machine's writes over it, and nothing else changed
+		exported=$(python3 - "$pj" <<'PY'
+import sys
+d = sys.argv[1]
+ok = 0
+for name, word in (("probe.img", b"WR"), ("hdd10.img", b"HD")):
+    a = open(d + "/" + name, "rb").read()
+    b = open(d + "/export/" + name, "rb").read()
+    changed = [i for i in range(0, len(a), 512) if a[i:i + 512] != b[i:i + 512]]
+    ok += len(a) == len(b) and changed == [512] and b[512:514] == word
+print(ok)
+PY
+)
+		if [ "$exported" = 2 ]; then
+			report PASS "save data: the disks export as they stand" "chimera-run --export-savedata: both images, the project's file with only the written sector changed"
+		else
+			report FAIL "save data: the disks export as they stand" "see build/gate/project/export"
 		fi
 	else
 		report FAIL "a project runs through the engine" "$(tail -1 "$pj/make.log" "$pj/run.log" | tr '\n' ' ')"
