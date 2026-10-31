@@ -501,57 +501,71 @@ a mouse, by name). Seen to fail with the last bent text still in place
   card's CD input and mixer volume (the run has no sound card); disc
   swapping (only the slot's first file is in the drive, as for floppies).
 
-## 4. Where this stands (2026-10-31)
+## 4. Where this stands (2026-10-31, second round)
 
-Local repository `~/chimera-cores/86box`, no remote. Upstream 86Box v6.0
-(`4fef696a`), six patches. The gate (`waterbox/run-gate.sh`): 27 passed,
-0 failed, 1 skipped without `FREEDOS_FLOPPY`; with it, 28 passed, 0 failed,
-0 skipped (3 min 30 s, run last on 2026-10-31 at commit e75e25e).
+Local repository `~/chimera-cores/86box`, no remote (publishing waits for
+the IBM machines to run with the owner's ROMs, section 2). Upstream 86Box
+v6.0 (`4fef696a`), seven patches. Tested against Chimera main `cb46d2b7`
+(`~/chimera-scratch-bump`), both builds from clean. The gate
+(`waterbox/run-gate.sh`) with `FREE_BIOS_SRC`, `FREEDOS_FLOPPY` and
+`XUB_SRC`: 33 passed, 0 failed, 0 skipped (4 min 20 s, run last at the
+commit "a CD-ROM drive, with its audio made in place"). Without
+`FREEDOS_FLOPPY` and `XUB_SRC` the three FreeDOS legs skip; without
+`FREE_BIOS_SRC` only the build, package and text legs run.
 
 **What works, and is tested**
 
 - Both builds (native reference, sandboxed guest), `check-wbx` clean, the
   package (deterministic zip, 26 language tables, Chimera's contract tests
-  22/22), from a fresh clone too.
+  22/22, `check-core-texts.py` 58 keys, the name check on all 26 tables).
 - On the free Xi 8088 (8088 at 4.77 MHz, CGA, AdLib, serial mouse, two
-  joysticks, a floppy and a hard disk on an XT-IDE card): the BIOS screen,
-  the gate's probe floppy, keyboard, mouse (relative and position), joystick
-  buttons, lag frames, FM sound mixed to 48000 Hz, floppy and hard disk
-  writes kept in memory, save data export, virtual time, native == sandbox
-  over 1500 frames, states (every frame, a stale one noticed, carried to
-  another process), a project through `chimera-run`, and the same project
-  in Chimera's Qt window, headless. FreeDOS 1.3's boot floppy boots to its
-  installer and takes a key, the sandbox matching the native build for
-  31000 frames.
-- Speed: 60 s of machine time in 7.8 s natively and 7.8 s in the sandbox
-  (an 8088 at 4.77 MHz, about 7.7 times real time); a state is about 4 MB.
+  joysticks, a floppy, a hard disk on an XT-IDE card, an ATAPI CD-ROM
+  drive): the BIOS screen, the probe floppy, keyboard, mouse (relative and
+  position), joystick buttons, lag frames, FM sound, CD audio, floppy and
+  hard disk writes kept in memory, save data export, virtual time, native
+  == sandbox, states (every frame, a stale one noticed, carried to another
+  process), a project through `chimera-run`, the same project in Chimera's
+  Qt window (headless).
+- FreeDOS 1.3's boot floppy to its installer (31000 frames, sandbox ==
+  native). FreeDOS from a hard disk made by the gate, through the XTIDE
+  Universal BIOS built from source for 86Box's card; what FreeDOS writes to
+  C: comes back through Export Save Data.
+- A CD made by the gate (ISO 9660 track, audio track): read over ATAPI, its
+  audio heard in full, sandbox == native and states while it plays.
+- Names are never translated or bent in the 26 tables (the owner's rule),
+  checked by `tools/check-names.py` and Chimera's `check-proper-nouns.py`.
 
 **Not tested** (each said where it is claimed)
 
 - The IBM PC, PC (1982), XT and AT: declared, their ROM files named, the
   refusals tested; never run, for want of their ROMs. No SHA-1 is pinned.
-- EGA, VGA, MDA, Hercules; every sound card but the AdLib; the Game
-  Blaster's, Tandy's and SID's sound; the sticks' axes.
-- A hard disk through the XTIDE Universal BIOS (the free build here is not
-  configured for 86Box's card; 86Box's ROM set has one that is), any
-  operating system on a hard disk, the AT card; an exported image given
-  back into a project.
+- The recompiler: 86Box offers it only for a 386-class processor and up
+  (`CPU_SUPPORTS_DYNAREC`, from the RapidCAD on); every machine with a free
+  BIOS here is an 8088 (the Xi 8088, and GLaBIOS on the IBM PC and XT), so
+  nothing free can exercise it. It waits for the owner's 486 and Pentium
+  ROMs. `cpu_use_dynarec` stays 0.
+- EGA, VGA, MDA, Hercules; every sound card but the AdLib; the sticks'
+  axes; the AT XT-IDE card; a CD read by DOS; CD audio through a sound
+  card's mixer; disc and disk swapping (only a slot's first file is in its
+  drive, floppies included, although the floppy slots take a list).
 - Windows (the same package; the frontend test on Windows was not run).
 
 **Next, in order**
 
 1. With the owner's ROM set (`needs_from_user`): run the four IBM machines
    to their BIOS and to FreeDOS, pin each ROM file's SHA-1 in
-   `tools/gen-config.py`, and boot a disk through the XTIDE BIOS from 86Box's
-   set. Add a game each to the gate that runs where the ROMs are.
-2. The recompiler (`-Ddynarec=true` builds `src/codegen`; a setting, part
-   of the machine) and a 486 and a Pentium board: the same route, the
-   interpreter against the recompiler compared as two machines.
-3. CD-ROMs: make the CD audio thread run in place (patch), a slot, an IDE
-   or proprietary interface.
-4. More machines, each with a test; the threaded video cards (S3, ViRGE,
+   `tools/gen-config.py`; then the decision to publish (section 2).
+2. A 486 and a Pentium board with the owner's ROMs, and with them the
+   recompiler (`-Ddynarec=true`, a setting that is part of the movie),
+   compared with the interpreter as two machines.
+3. Disk and disc swapping: the slot lists exist, the drives take only the
+   first file.
+4. GLaBIOS (GPL) as a free BIOS for the IBM PC and XT machines, as the Xi
+   8088's free BIOS is: those machines could then be tested without the
+   owner's ROMs (only the character ROM stand-in is needed).
+5. More machines, each with a test; the threaded video cards (S3, ViRGE,
    Voodoo, Matrox, Mach64) only after their command queues run in place.
-5. Windows: the frontend test's scenario on the Windows build.
+6. Windows: the frontend test's scenario on the Windows build.
 
 **Traps hit** (so the next person does not)
 
@@ -568,10 +582,14 @@ Local repository `~/chimera-cores/86box`, no remote. Upstream 86Box v6.0
 - The probe must be 8088 code (no 32-bit moves, no `rol ax, 4`); a 360 KB
   floppy track has 9 sectors (a loader reading 8 from sector 3 failed and
   retried for ever).
-- The free XTIDE Universal BIOS image needs padding to 8 KB and its
-  checksum fixed before a BIOS will run it, and even then its default build
-  does not find a drive on 86Box's XT-IDE card.
+- Upstream's XT build of the XTIDE Universal BIOS defaults to an XT-CF card
+  (MODULE_8BIT_IDE_ADVANCED) and does not find the drive on 86Box's XT-IDE
+  card; build it without that module. Its version string carries the build
+  date: `-D__DATE__` fixes it.
 - 86Box keeps a floppy's track in its own memory and writes sectors back to
   the file: a test of whether written blocks are in a state has to use the
   hard disk, which reads its file every time.
+- CD audio comes in 100 ms blocks; a stream's delay in the mixer must be
+  longer than its block, or it lands in slots already played.
+- An absent ATAPI slave reads status 00h, not FFh.
 - The Qt window needs the Qt it was built with on `LD_LIBRARY_PATH`.
