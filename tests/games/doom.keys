@@ -5,9 +5,10 @@
 # VGA, no sound card, the recompiler on, and a 30 MB hard disk on the
 # board's own IDE port that the gate makes: FreeDOS, and the archive in
 # C:\DMINST.
-# The BIOS's CMOS is empty: "CMOS checksum error - Defaults loaded, Press F1
-# to continue". The defaults find the hard disk; FreeDOS's prompt by 2600.
-1500 key F1 5
+# No key for the BIOS: the core writes the CMOS the board's BIOS writes when
+# it loads its defaults (waterbox/award-cmos.h), so it does not stop at "CMOS
+# checksum error"; its hard disk type is "detect", and it finds the disk.
+# FreeDOS's prompt by 2600.
 2600 type cd dminst\n
 2700 type install\n
 # DEICE: drive C; the folder \DOOMS, as offered; create it, Y. It joins

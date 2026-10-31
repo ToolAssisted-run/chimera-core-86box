@@ -100,7 +100,31 @@ repository, never named beyond what the legs need:
 
 With `PCBOX_ROMS` the gate also runs the 486 and Pentium boards, both
 ways (interpreter and recompiler), natively and in the sandbox, and their
-states.
+states. No key is pressed on them: the core writes the CMOS each board's
+Award BIOS writes when it loads its defaults (below). The gate records it
+again from the boards' BIOS files and compares it with the header, checks
+the CMOS of every run holds it, and runs each board once with it left out
+(native build only, `CHIMERA_86BOX_NO_AWARD_CMOS`), when FreeDOS must not
+start.
+
+## The Award boards' default CMOS
+
+An Award BIOS keeps its own settings in its CMOS past the standard bytes,
+with checksums of its own; with them missing it stops at "CMOS checksum
+error" and waits for F1. `waterbox/award-cmos.h` holds, for each Award
+board, what its BIOS writes when it loads its defaults, and the core
+writes that at power-on. It is generated: after adding an Award board (a
+row in the tool's `BOARDS`) or changing how a board is set up, record it
+again from the owner's ROM set and commit the result:
+
+```sh
+python3 tools/pin-roms.py --copy waterbox/waterbox.config <ROM set of 86Box, v6.0> build/roms
+python3 tools/record-award-cmos.py --runner build/meson-native/run-native --roms build/roms --write waterbox/award-cmos.h
+```
+
+`--check` records again and says whether the header still holds the same
+bytes; `--print --set name=value` prints each block recorded with a
+setting changed, which is how to find out what the block depends on.
 
 `XUB_SRC` is the XTIDE Universal BIOS's source, as for the builds. With
 `FREEDOS_FLOPPY` the gate also makes a FreeDOS hard disk and starts FreeDOS

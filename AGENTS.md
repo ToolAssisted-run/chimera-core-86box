@@ -37,6 +37,9 @@ is the design log and ends with where the work stands.
   `tests/games/` - the input of the game tests.
 - `tools/pin-roms.py` - the SHA-1 of each declared ROM file, from 86Box's
   ROM set, into `tools/rom-sha1.json` (which `gen-config.py` reads).
+- `tools/record-award-cmos.py` - records each Award board's default CMOS
+  from its own BIOS into `waterbox/award-cmos.h` (GENERATED; do not edit it
+  by hand). `waterbox/tests/award-block.py` compares a run's CMOS with it.
 
 ## Commands, in order
 

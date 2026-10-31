@@ -620,18 +620,29 @@ ECL_EXPORT int Init(void)
  * power-on and at a hard reset): the standard bytes every AT BIOS reads are
  * written from the project's settings, the way the PCem core does
  * (chimera-core-pcem, docs/CMOS.md). The rest stays as 86Box leaves it.
- * That is enough for the IBM AT. It is not for the two Award boards: their
- * BIOS also keeps a block of its own settings past these bytes, with its
- * own checksums (on the 486 board, 0x34-0x38 summed into 0x3A and a block
- * up to 0x55 summed into 0x56), so they still load their defaults and wait
- * for F1 (docs/PLAN.md).
+ * That is enough for the IBM AT. An Award BIOS also keeps a block of its
+ * own settings past these bytes (0x33-0x7F), with its own checksums (on the
+ * 486 board, 0x34-0x38 summed into 0x3A and a block up to 0x55 summed into
+ * 0x56); without it the BIOS says "CMOS checksum error", loads its defaults
+ * and waits for F1. So for each Award board the core writes the CMOS that
+ * board's own BIOS writes when it loads its defaults, recorded by
+ * tools/record-award-cmos.py into award-cmos.h (the owner, 2026-10-31;
+ * docs/PLAN.md): the block, and the standard bytes 0x10-0x2D as the BIOS
+ * left them, before the bytes below that the settings decide (0x10, 0x14,
+ * 0x15-0x18) are written over them. That keeps the BIOS's own defaults for
+ * what the settings do not say, among them its hard disk types ("detect"
+ * on the P/I-P55T2P4: with "none" there it does not find a disk on its IDE
+ * port). None of the recorded bytes depends on the settings: recorded with
+ * other memory sizes, video cards, drives and dates they are the same, but
+ * for the bytes the settings decide; 0x3D and 0x3F, which the BIOS writes
+ * at every start, change with the processor.
  *
  *   0x0E        diagnostic status: no errors
  *   0x0F        shutdown status: a normal power-on
  *   0x10        floppy drive types, A in the high half, B in the low
  *   0x12, 0x19, 0x1A   fixed disk types: none (a disk is on an XT-IDE card,
- *               whose own BIOS finds it, or on an IDE port the BIOS
- *               detects; the AT's table of fourteen types is not used)
+ *               whose own BIOS finds it; the AT's table of fourteen types
+ *               is not used), or an Award board's recorded defaults
  *   0x14        equipment: drives, display, coprocessor, floppy present
  *   0x15-0x18   base and extended memory in KB
  *   0x2E-0x2F   the checksum of 0x10-0x2D, high byte first
@@ -639,8 +650,11 @@ ECL_EXPORT int Init(void)
  *
  * The XT-class machines have no CMOS, and other kinds of NVRAM are not
  * touched (86Box's nvrmask below 63). The native build's
- * CHIMERA_86BOX_EMPTY_CMOS leaves it empty: the test scripts' negative
- * control (the sandbox has no environment). */
+ * CHIMERA_86BOX_EMPTY_CMOS leaves it empty, and CHIMERA_86BOX_NO_AWARD_CMOS
+ * leaves out the Award block only: the test scripts' negative controls (the
+ * sandbox has no environment). */
+#include "award-cmos.h"
+
 static uint8_t *g_cmos;
 static int g_cmosSize;
 
@@ -670,6 +684,7 @@ void chimera_cmos_power_on(uint8_t *regs, int size)
 	int a, b, n, video = 0, sum = 0;
 	uint32_t base, ext;
 	const char *card;
+	const struct award_cmos *award = NULL;
 
 	if (size < 64 || machines[machine].nvrmask < 63)
 		return;
@@ -677,6 +692,10 @@ void chimera_cmos_power_on(uint8_t *regs, int size)
 	g_cmosSize = size;
 	if (getenv("CHIMERA_86BOX_EMPTY_CMOS"))
 		return;
+	if (size > AWARD_CMOS_LAST && !getenv("CHIMERA_86BOX_NO_AWARD_CMOS"))
+		for (size_t i = 0; i < sizeof award_cmos / sizeof award_cmos[0]; i++)
+			if (!strcmp(award_cmos[i].machine, machines[machine].internal_name))
+				award = &award_cmos[i];
 
 	a = cmos_floppy_type(0);
 	b = cmos_floppy_type(1);
@@ -697,7 +716,7 @@ void chimera_cmos_power_on(uint8_t *regs, int size)
 	regs[0x0e] = 0x00;
 	regs[0x0f] = 0x00;
 	for (int i = 0x10; i <= 0x2d; i++)
-		regs[i] = 0x00;
+		regs[i] = award ? award->std[i - AWARD_STD_FIRST] : 0x00;
 	regs[0x10] = (uint8_t)((a << 4) | b);
 	regs[0x14] = (uint8_t)((n ? (n - 1) << 6 : 0) | (video << 4) | (fpu_type != FPU_NONE ? 0x02 : 0) | (n ? 0x01 : 0));
 	regs[0x15] = (uint8_t)(base & 0xff);
@@ -710,6 +729,8 @@ void chimera_cmos_power_on(uint8_t *regs, int size)
 	regs[0x2f] = (uint8_t)(sum & 0xff);
 	regs[0x30] = (uint8_t)(ext & 0xff);
 	regs[0x31] = (uint8_t)(ext >> 8);
+	if (award)
+		memcpy(regs + AWARD_CMOS_FIRST, award->block, sizeof award->block);
 }
 
 /* for the tests: the CMOS as it is now (null on a machine without one) */

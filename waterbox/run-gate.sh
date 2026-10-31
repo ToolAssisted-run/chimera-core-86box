@@ -737,42 +737,57 @@ fi
 # BIOS from the ROM set (PCBOX_ROMS), 16 MB, IBM VGA. 86Box's recompiler
 # runs a 386-class processor and up; the setting "recompiler" chooses it or
 # the interpreter, two machines. Each board starts FreeDOS from a 1.44 MB
-# floppy made here, with each, natively and in the sandbox. The core writes
-# the standard CMOS bytes, but the Award BIOS also keeps a block of its own
-# settings with checksums of its own, which the core does not know; so it
-# still says "CMOS checksum error", loads its defaults and waits for F1,
-# given at frame 1500.
+# floppy made here, with each, natively and in the sandbox. No key is
+# pressed: the core writes the CMOS each board's own BIOS writes when it
+# loads its defaults (its settings block past the standard bytes, with the
+# block's own checksums, and its defaults for the standard bytes the
+# settings do not decide), recorded by tools/record-award-cmos.py into
+# waterbox/award-cmos.h, then the standard bytes from the settings; so the
+# BIOS does not stop at "CMOS checksum error" to wait for F1. The CMOS after
+# each run must hold the recorded block, and with the block left out
+# (CHIMERA_86BOX_NO_AWARD_CMOS, the native build only) FreeDOS must not
+# start: the leg fails if the core stops writing it.
 if [ -z "$pr" ] || [ -z "$fd" ] || [ ! -d "${ir:-/nonexistent}" ]; then
+	report SKIP "Award boards: the CMOS block is recorded again" "needs PCBOX_ROMS and FREEDOS_FLOPPY"
 	report SKIP "486 and Pentium: FreeDOS, both ways" "needs PCBOX_ROMS and FREEDOS_FLOPPY"
 	report SKIP "486 and Pentium: states, recompiler on" "needs PCBOX_ROMS and FREEDOS_FLOPPY"
 else
 	pd="$work/pc32"; mkdir -p "$pd"
+	# The tool that made waterbox/award-cmos.h, run again on the boards' own
+	# BIOS files: it must record the same bytes.
+	if python3 "$root/tools/record-award-cmos.py" --runner "$rn" --roms "$ir" --check "$here/award-cmos.h" > "$pd/record.log" 2>&1; then
+		report PASS "Award boards: the CMOS block is recorded again" "$(tail -1 "$pd/record.log")"
+	else
+		report FAIL "Award boards: the CMOS block is recorded again" "$(tail -1 "$pd/record.log")"
+	fi
 	python3 "$root/tests/dos-disk/make-dos-disk.py" --freedos "$fd" --out "$pd/fd1440.img" --floppy 1440 \
 		--autoexec '@echo off\nset FDBOOT=%COMSPEC%\necho FreeDOS started from a 1.44 MB floppy.\n' > "$pd/disk.log" 2>&1
-	f1=$(python3 "$root/tests/keys.py" "$here/chimera-input.c" /dev/stdin <<'KEYS'
-1500 key F1 5
-KEYS
-)
 	ok=""; bad=""
 	for spec in 486sp3:i486dx2/66666666 p55t2p4:pentium_p54c/133333333; do
 		m=${spec%%:*}; cpu=${spec#*:}
 		for r in false true; do
 			brun="--roms $ir --set machine=$m --set cpu=$cpu --set video=vga --set memoryKB=16384 --set recompiler=$r"
-			brun="$brun --set floppyA=35_2hd --file floppy_a=$pd/fd1440.img --frames 3000 $f1"
+			brun="$brun --set floppyA=35_2hd --file floppy_a=$pd/fd1440.img --frames 3000"
 			t0=$(date +%s%N)
-			native_run $brun --dump-ram "$pd/$m-$r.ram" --digests "$pd/$m-$r-native.dig" > /dev/null
+			native_run $brun --dump-ram "$pd/$m-$r.ram" --dump-cmos "$pd/$m-$r.cmos" --digests "$pd/$m-$r-native.dig" > /dev/null
 			secs=$(( ($(date +%s%N) - t0) / 1000000000 ))
 			"$rw" "$wbx" "$cfg" $brun --digests "$pd/$m-$r-wbx.dig" > /dev/null 2> "$pd/$m-$r-wbx.err"
 			marker=$(grep -a -c 'FDBOOT=A:\\COMMAND.COM' "$pd/$m-$r.ram" 2>/dev/null)
-			if [ "${marker:-0}" -ge 1 ] && [ "$(wc -l < "$pd/$m-$r-native.dig")" -eq 3000 ] \
+			blk=$(python3 "$here/tests/award-block.py" "$here/award-cmos.h" "$pd/$m-$r.cmos" $m 2>&1)
+			if [ "${marker:-0}" -ge 1 ] && [ "$blk" = ok ] && [ "$(wc -l < "$pd/$m-$r-native.dig")" -eq 3000 ] \
 			   && cmp -s "$pd/$m-$r-native.dig" "$pd/$m-$r-wbx.dig"; then ok="$ok $m/$([ $r = true ] && echo recompiler || echo interpreter):${secs}s"
-			else bad="$bad $m/$r(marker ${marker:-0})"; fi
+			else bad="$bad $m/$r(marker ${marker:-0}, CMOS block: $blk)"; fi
 		done
 		# the two are two machines: their streams differ
 		cmp -s "$pd/$m-false-native.dig" "$pd/$m-true-native.dig" && bad="$bad $m(interpreter and recompiler gave one stream: is the setting read?)"
+		# control: the block left out, the BIOS waits for F1 and FreeDOS does not start
+		CHIMERA_86BOX_NO_AWARD_CMOS=1 native_run --roms "$ir" --set machine=$m --set cpu=$cpu --set video=vga --set memoryKB=16384 \
+			--set floppyA=35_2hd --file "floppy_a=$pd/fd1440.img" --frames 3000 --dump-ram "$pd/$m-noblock.ram" > /dev/null
+		c=$(grep -a -c 'FDBOOT=A:\\COMMAND.COM' "$pd/$m-noblock.ram" 2>/dev/null)
+		[ "${c:-1}" = 0 ] || bad="$bad $m(FreeDOS started without the Award block: ${c:-?})"
 	done
 	if [ -z "$bad" ]; then
-		report PASS "486 and Pentium: FreeDOS, both ways" "FDBOOT=A:\\COMMAND.COM by frame 3000, sandbox == native, each:$ok (native, host time); interpreter and recompiler streams differ"
+		report PASS "486 and Pentium: FreeDOS, both ways" "no key pressed: FDBOOT=A:\\COMMAND.COM by frame 3000, the recorded CMOS block in place, sandbox == native, each:$ok (native, host time); without the block: no FreeDOS; interpreter and recompiler streams differ"
 	else
 		report FAIL "486 and Pentium: FreeDOS, both ways" "failed:$bad; see build/gate/pc32"
 	fi
@@ -784,7 +799,7 @@ KEYS
 	for spec in 486sp3:i486dx2/66666666 p55t2p4:pentium_p54c/133333333; do
 		m=${spec%%:*}; cpu=${spec#*:}
 		brun="--roms $ir --set machine=$m --set cpu=$cpu --set video=vga --set memoryKB=16384 --set recompiler=true"
-		brun="$brun --set floppyA=35_2hd --file floppy_a=$pd/fd1440.img --frames 3000 $f1"
+		brun="$brun --set floppyA=35_2hd --file floppy_a=$pd/fd1440.img --frames 3000"
 		"$rw" "$wbx" "$cfg" $brun > "$pd/$m-straight.txt" 2>&1
 		"$rw" "$wbx" "$cfg" $brun --rerecord-from 2500 > "$pd/$m-rerecord.txt" 2>&1
 		HARNESS_BREAK_STALE_STATE=1 "$rw" "$wbx" "$cfg" $brun --rerecord-from 2500 > "$pd/$m-stale.txt" 2>&1
@@ -814,7 +829,9 @@ fi
 # and a 30 MB hard disk made here on the board's IDE port: FreeDOS and the
 # archive in C:\DMINST. The movie (tests/games/doom.keys) installs it with
 # DEICE inside DOS, answers SETUP, and starts a new game: E1M1, whose map
-# (Tab) names the level in red at its foot. The same input with the
+# (Tab) names the level in red at its foot. No key is pressed for the BIOS:
+# the core writes the board's recorded CMOS (section 10), whose hard disk
+# types are the BIOS's own "detect". The same input with the
 # interpreter reaches the same place; and as a movie in a project,
 # chimera-run gives back the disk with the game the installer wrote.
 dm="${PCBOX_DOOM:-}"

@@ -217,6 +217,19 @@ The owner answered the third round's questions:
   its second chip's file is not in the ROM set of 86Box, v6.0. Done.
 - **Publishing still waits**: the owner reviews the core first.
 
+### The Award boards' default CMOS (user-decided, 2026-10-31)
+
+The owner answered the fourth round's question: the core carries each Award
+board's default CMOS settings, recorded from that board's own BIOS (the
+block past the standard bytes, with its own checksums), with a tool in the
+repository that records it again, so the ASUS PCI/I-486SP3 and P/I-P55T2P4
+start without F1. The gate's legs stop pressing F1 on those boards, and a
+leg fails if the block is left out. Done: the log entry "the Award boards'
+CMOS, recorded from their BIOS" below. One step beyond the words of the
+decision, said there: the BIOS's defaults for the standard bytes the
+settings do not decide (its hard disk types among them) are carried too,
+because without them the Pentium board finds no hard disk.
+
 ## 3. Log
 
 ### 2026-10-31: the native reference, virtual time, the guest, states
@@ -900,6 +913,64 @@ Not done:
   choices and its file out of the firmware (`BIOS_LEFT_OUT`), and the core
   refuses it by name when it is asked for anyway (`error.bios_not_taken`).
   Every declared file is now in the ROM set and pinned: 28 of 28.
+
+### 2026-10-31 (fifth round): the Award boards' CMOS, recorded from their BIOS
+
+- **The tool.** `tools/record-award-cmos.py` runs each Award board in the
+  native reference with the CMOS left empty (`CHIMERA_86BOX_EMPTY_CMOS`),
+  presses F1 at the BIOS's "CMOS checksum error - Defaults loaded" (frame
+  1500), runs to frame 2500 with no disk, and takes what the BIOS wrote:
+  its settings block, 0x33-0x7F, and the standard bytes 0x10-0x2D. It
+  checks each board's BIOS file against the SHA-1 the package pins and
+  writes the block, with that SHA-1, into `waterbox/award-cmos.h`
+  (generated, committed). `--check` records again and compares; `--print
+  --set name=value` prints a block recorded with a setting changed.
+- **What the block depends on.** Recorded with 8, 16 and 64 MB, CGA instead
+  of VGA, a 1.2 MB drive A, a 1.44 MB drive B, another start date, a hard
+  disk controller and a Sound Blaster 16, the recorder interpreting or
+  recompiling: the same bytes, but for the standard bytes the settings
+  decide anyway (0x10 is the BIOS's default 1.44 MB drive A whatever the
+  drive; 0x14 follows the video card; 0x18 the memory). With other
+  processors only 0x3D and 0x3F change (a 486SX at 25 MHz: 88h and 38h for
+  8Bh and 78h), and the BIOS writes those two at every start, F1 or not.
+- **What the core writes** (patch 0009's `chimera_cmos_power_on`, in
+  `waterbox/cinterface.c`): for a recorded board, 0x10-0x2D start from the
+  BIOS's bytes, then the bytes the settings decide are written over them
+  (0x10 drives, 0x14 equipment, 0x15-0x18 memory), then the checksum at
+  0x2E-0x2F, 0x30-0x31, and the block at 0x33-0x7F. Other machines are as
+  before. `CHIMERA_86BOX_NO_AWARD_CMOS` (native build) leaves the Award part
+  out, for the gate's control.
+- **Why the standard bytes too.** With the block alone, both boards started
+  FreeDOS from a floppy with no key, but Doom's movie on the P/I-P55T2P4
+  ended at "DISK BOOT FAILURE": "Pri. Master Disk: None". The core wrote
+  "no fixed disk" at 0x19 and 0x1A, and that BIOS's default there is 2Fh,
+  which it detects the drive from. Taking the BIOS's own defaults for every
+  standard byte the settings do not decide fixes it, and keeps the
+  board's other defaults (its keyboard rate at 0x11, 0x13).
+- **The 486 board does not find a hard disk on its IDE port** with its
+  defaults: "Hard Disk Drive C: None", then "DISK BOOT FAILURE" (Award 4.50
+  does not detect a drive at start; its setup program has to be run inside
+  the machine). It did not after F1 either. Not changed; said under "not
+  tested, or not done".
+- **Measured.** No key pressed: FreeDOS from a 1.44 MB floppy by frame 3000
+  on the 486 board (486DX2 66 and 486SX 25) and the Pentium board (Pentium
+  133 and Pentium MMX 200); with the block left out, on each, no FreeDOS.
+  Doom's movie without its F1 reaches E1M1's map (784 red pixels in its
+  title, as before).
+- **Broken on purpose:** with the block's write taken out of the core
+  (native build), neither board starts FreeDOS and the CMOS check says
+  "differs at 0x34: FF, not 9F" (486) and "at 0x3B: FF, not 0F" (Pentium);
+  `--check` against a header with one byte changed exits 1.
+- **The gate.** A new leg, "Award boards: the CMOS block is recorded
+  again"; "486 and Pentium: FreeDOS, both ways" presses no key, checks every
+  run's CMOS against the header and runs the control; the states leg and
+  Doom's movie press no key. Gate with all the owner's content, against
+  Chimera main `cb46d2b7`: 45 passed, 0 failed, 0 skipped (the contract
+  tests 22/22, the text check 60 keys, the name check on 26 tables, the
+  window test 3/3 among them).
+- **Licence.** The block is about 100 bytes of the boards' default
+  settings as their BIOS writes them, not BIOS code; the owner decided the
+  core carries it.
 
 ## 4. Where this stands (2026-10-31, fourth round)
 

@@ -22,8 +22,9 @@ is a frontend for tool-assisted speedruns; this repository builds one file,
 - A CD-ROM drive (an ISO, or a cue with data and audio tracks), the second
   drive on the hard disk controller.
 - An AT's setup memory (its CMOS) is written from the settings when it is
-  switched on, so the IBM AT starts without asking for F1; the two Award
-  boards still ask for it once (docs/PLAN.md).
+  switched on, so the IBM AT and the two Award boards start without asking
+  for F1. For the Award boards the core carries the default settings their
+  own BIOS writes, recorded by a tool in this repository (docs/BUILDING.md).
 - Every machine needs its ROM files from 86Box's ROM set
   (https://github.com/86Box/roms, tag `v6.0`), which you supply. Chimera's
   Firmware window asks for exactly the files the chosen machine reads.
