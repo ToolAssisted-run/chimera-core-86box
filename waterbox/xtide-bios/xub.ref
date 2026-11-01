@@ -3,8 +3,10 @@
 # repository. Fetch that revision with:
 #   url='https://www.xtideuniversalbios.org/svn/xtideuniversalbios/!svn/bc/638/trunk'
 #   for d in XTIDE_Universal_BIOS Assembly_Library; do
-#     wget -r -np -nH --cut-dirs=5 -R 'index.html*' -e robots=off "$url/$d/"; done
-# in an empty folder. build.sh checks the tree against the hash below
+#     wget -r -np -nH --cut-dirs=6 -R 'index.html*' -e robots=off "$url/$d/"; done
+# in an empty folder. The server refuses Assembly_Library/Inc/Menu.inc (403),
+# which the build does not use, so wget ends with exit status 8; the tree is
+# still the one pinned. build.sh checks the tree against the hash below
 # (sha256 of `sha256sum` over the sorted files of XTIDE_Universal_BIOS/Inc,
 # XTIDE_Universal_BIOS/Src, Assembly_Library/Inc and Assembly_Library/Src).
 revision 638

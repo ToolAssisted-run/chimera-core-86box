@@ -88,14 +88,20 @@ jobs:
       - name: Fetch the XTIDE Universal BIOS the core carries
         # GPL-2.0-or-later, revision 638, from the project's Subversion
         # repository over HTTP, as waterbox/xtide-bios/xub.ref says; the
-        # build checks the tree's hash and each image's SHA-1.
+        # build checks the tree's hash and each image's SHA-1. The server
+        # refuses one file the build does not use (Assembly_Library/Inc/
+        # Menu.inc, 403 Forbidden), so wget ends with 8 ("server issued an
+        # error response"): 8 is taken, anything else fails the step.
         run: |
           mkdir xub-src
           cd xub-src
           url='https://www.xtideuniversalbios.org/svn/xtideuniversalbios/!svn/bc/638/trunk'
           for d in XTIDE_Universal_BIOS Assembly_Library; do
-            wget -q -r -np -nH --cut-dirs=5 -R 'index.html*' -e robots=off "$url/$d/"
+            rc=0
+            wget -q -r -np -nH --cut-dirs=6 -R 'index.html*' -e robots=off "$url/$d/" || rc=$?
+            [ "$rc" -eq 0 ] || [ "$rc" -eq 8 ] || { echo "wget failed ($rc) on $d"; exit 1; }
           done
+          ls
 
       - name: Fetch the source of the free BIOS the gate boots
         # Sergey Kiselev's 8088 BIOS (GPL-3.0), at the commit
