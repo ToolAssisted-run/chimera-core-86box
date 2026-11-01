@@ -102,7 +102,13 @@ elif env -u DISPLAY "$tp" "$pkgdir" > "$work/contract.log" 2>&1; then
 else
 	report FAIL "Chimera's contract tests" "$(grep -m1 '^FAIL' "$work/contract.log")"
 fi
-if python3 "$chimera_root/tools/check-core-texts.py" "$root" > "$work/texts.log" 2>&1; then
+# The text check reads every source under the folder it is given, and CI
+# checks Chimera out inside this repository (chimera-checkout/), so it is
+# given a copy of this repository's own files (the ones git tracks, upstream
+# left out).
+rm -rf "${work:?}/own-files" && mkdir -p "$work/own-files"
+(cd "$root" && git ls-files -z | grep -z -v '^extern/' | xargs -0 cp --parents -t "$work/own-files")
+if python3 "$chimera_root/tools/check-core-texts.py" "$work/own-files" > "$work/texts.log" 2>&1; then
 	report PASS "the code's texts are keys of the English table" "$(tail -1 "$work/texts.log")"
 else
 	report FAIL "the code's texts are keys of the English table" "$(tail -1 "$work/texts.log")"
