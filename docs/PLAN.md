@@ -167,8 +167,9 @@ Found and fixed by hand: 23 texts in 7 tables. Finnish (8: "86Boxin",
 ROM set" is now "the ROM set of 86Box"). The other 19 tables already wrote
 every name whole.
 
-The check is `tools/check-names.py`, a leg of the gate beside Chimera's own
-`tools/check-proper-nouns.py` (which knows only Chimera's names). It reads
+The check is `tools/check-names.py`, a test of the gate beside Chimera's
+own check of Chimera's names (its `tools/check-proper-nouns.py` then, part of
+its contract tests since Chimera 8ee74abf). It reads
 all 26 tables, English too, and fails when a name the English text holds is
 missing from a translation, when a letter of any script but Chinese,
 Japanese and Korean is glued to a name or to a placeholder (`%1` stands for

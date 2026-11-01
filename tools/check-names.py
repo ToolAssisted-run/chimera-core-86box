@@ -15,7 +15,7 @@ checks every table in waterbox/languages, English too:
   "86Box's", "IBM'in", "IBM:n", "IBM-a", "86Box-hoz" (a hyphen and a word of
   four letters or more is a compound, "XT-kone", and is allowed).
 
-Chimera's own tools/check-proper-nouns.py checks Chimera's names (Chimera,
+Chimera's contract tests (test-packages) check Chimera's names (Chimera,
 Windows, Lua...); this one knows the core's.
 
   tools/check-names.py [<languages folder>]

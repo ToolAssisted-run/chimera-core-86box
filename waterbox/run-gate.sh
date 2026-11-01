@@ -114,13 +114,13 @@ else
 	report FAIL "the code's texts are keys of the English table" "$(tail -1 "$work/texts.log")"
 fi
 # Proper nouns are never translated or bent (the owner, 2026-10-31): the
-# core's names (86Box, IBM, the 8088...) by tools/check-names.py, Chimera's
-# own (Chimera, Windows...) by Chimera's checker, over all 26 tables.
-if python3 "$root/tools/check-names.py" "$here/languages" > "$work/names.log" 2>&1 \
-   && python3 "$chimera_root/tools/check-proper-nouns.py" "$here" >> "$work/names.log" 2>&1; then
+# core's names (86Box, IBM, the 8088...) by tools/check-names.py over all 26
+# tables. Chimera's own (Chimera, Windows...) are checked by Chimera's
+# contract tests above.
+if python3 "$root/tools/check-names.py" "$here/languages" > "$work/names.log" 2>&1; then
 	report PASS "names are written as they are, in every table" "$(ls "$here/languages" | wc -l) tables"
 else
-	report FAIL "names are written as they are, in every table" "$(grep -m1 -v "bent or missing\\|proper nouns changed" "$work/names.log" | cut -c1-120)"
+	report FAIL "names are written as they are, in every table" "$(grep -m1 -v "bent or missing" "$work/names.log" | cut -c1-120)"
 fi
 
 rn="$native/run-native"
