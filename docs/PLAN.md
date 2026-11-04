@@ -19,7 +19,7 @@ Read from 86Box's source at the commit pinned below, not from its website.
 - Upstream: `https://github.com/86Box/86Box`, pinned at tag `v6.0`, commit
   `4fef696a4eead1d55a28d6ac0e5bd2864e5454da` (2026-05-30), the latest
   release. Master is the 7.0 development line; a release is pinned so the
-  ROM set that matches it is also a release (`86Box/roms` tag `v6.0`).
+  ROM set that matches it is also a release (version 6.0).
 - Licence at that commit: `COPYING` is the GPL version 2 text and
   `README.md` says "version 2 or later". Every file this core compiles was
   searched for GPL version 3, AGPL and "non-commercial" terms: none (the only
@@ -97,10 +97,10 @@ recompiler comes when a Pentium-class machine does.
 ### What the user brings
 
 Machine and video BIOS images, which are mostly copyrighted. 86Box keeps
-them in a separate repository, `https://github.com/86Box/roms` (tag
-`v6.0` matches the pinned emulator). The package declares each file by its
-path in that set; the user points Chimera at the files. Nothing of it is
-in this repository.
+them apart from the emulator, as its ROM set (version 6.0 matches the
+pinned emulator); this repository does not link to it. The package
+declares each file by its path in that set; the user points Chimera at the
+files. Nothing of it is in this repository.
 
 ### What CI can run
 

@@ -25,9 +25,9 @@ is a frontend for tool-assisted speedruns; this repository builds one file,
   switched on, so the IBM AT and the two Award boards start without asking
   for F1. For the Award boards the core carries the default settings their
   own BIOS writes, recorded by a tool in this repository (docs/BUILDING.md).
-- Every machine needs its ROM files from 86Box's ROM set
-  (https://github.com/86Box/roms, tag `v6.0`), which you supply. Chimera's
-  Firmware window asks for exactly the files the chosen machine reads.
+- Every machine needs its ROM files from 86Box's ROM set, version 6.0,
+  which you supply. Chimera's Firmware window asks for exactly the files the
+  chosen machine reads.
 
 ## Building
 

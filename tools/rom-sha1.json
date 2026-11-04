@@ -1,6 +1,5 @@
 {
   "_comment": "SHA-1 of each declared ROM file in the ROM set of 86Box, tag v6.0 (written by tools/pin-roms.py; read by tools/gen-config.py)",
-  "romSet": "https://github.com/86Box/roms/tree/v6.0",
   "sha1": {
     "roms/machines/486sp3/awsi2737.bin": "6c68c23cc5e8ae66261e9fe931f2ce07efe767b6",
     "roms/machines/glabios/GLABIOS_0.4.0_8P.ROM": "fd023bbf445ed64e42ec0cf4ff10e907ccff4017",

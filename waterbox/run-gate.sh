@@ -504,7 +504,7 @@ else
 fi
 
 # ------------------------------------------- 8. IBM's machines, with IBM's ROMs
-# The ROM set of 86Box (https://github.com/86Box/roms, tag v6.0), which the
+# The ROM set of 86Box, version 6.0, which the
 # owner supplies for local tests and which is never on a public runner:
 #   PCBOX_ROMS   the folder of that set (it holds machines/, video/, ...)
 # The gate copies the files the package declares out of it, each checked

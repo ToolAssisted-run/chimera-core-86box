@@ -53,13 +53,10 @@
 #define EMU_SITE       "86box.net"
 #define EMU_SITE_W     LSTR(EMU_SITE)
 #ifdef RELEASE_BUILD
-# define EMU_ROMS_URL  "https://github.com/86Box/roms/releases/v6.0"
 # define EMU_DOCS_URL  "https://86box.readthedocs.io/en/v6.0/"
 #else
-# define EMU_ROMS_URL  "https://github.com/86Box/roms/releases/latest"
 # define EMU_DOCS_URL  "https://86box.readthedocs.io"
 #endif
-#define EMU_ROMS_URL_W LSTR(EMU_ROMS_URL)
 #define EMU_DOCS_URL_W LSTR(EMU_DOCS_URL)
 
 #endif /*EMU_VERSION_H*/

@@ -3,10 +3,10 @@
 pin-roms.py --copy <waterbox.config> <86Box ROM set> <out folder>
 
 Writes the SHA-1 of every ROM file the package declares, read from the ROM
-set of 86Box the core is built for (https://github.com/86Box/roms, tag
-v6.0), into the table tools/gen-config.py pins them from. A file the set
-does not hold is listed as missing: it is declared by its name only, and
-the frontend takes any file of that name.
+set of 86Box the core is built for (version 6.0), into the table
+tools/gen-config.py pins them from. A file the set does not hold is listed
+as missing: it is declared by its name only, and the frontend takes any
+file of that name.
 
 Only the hashes are written: no ROM is copied, and nothing of a file's
 contents is in the table.
@@ -61,7 +61,6 @@ def main():
             missing.append(path)
     out = {"_comment": "SHA-1 of each declared ROM file in the ROM set of 86Box, tag v6.0 "
                        "(written by tools/pin-roms.py; read by tools/gen-config.py)",
-           "romSet": "https://github.com/86Box/roms/tree/v6.0",
            "sha1": dict(sorted(pins.items())),
            "notInTheSet": sorted(missing)}
     with open(sys.argv[3], "w") as fh:

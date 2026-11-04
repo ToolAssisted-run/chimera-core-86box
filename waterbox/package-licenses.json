@@ -2,7 +2,7 @@
   "package": "86box",
   "effectiveTerms": "GPL-3.0-or-later",
   "commercialUse": "allowed under the GPL",
-  "note": "86Box is GPL-2.0-or-later. Its Teledisk (.td0) reader decompresses old images with Michael Dipperstein's LZW routines, which are LGPL-3.0-or-later, so the program as built is under the GPL version 3 or later, as 86Box's own builds are. The other parts carry permissive or LGPL-2.1-or-later terms that the GPL allows. One ROM is in this package: the XTIDE Universal BIOS (GPL-2.0-or-later), built from source, for the XT-IDE hard disk cards. Every other ROM, BIOS or firmware the user supplies, from the ROM set of 86Box (https://github.com/86Box/roms). No game is in this package.",
+  "note": "86Box is GPL-2.0-or-later. Its Teledisk (.td0) reader decompresses old images with Michael Dipperstein's LZW routines, which are LGPL-3.0-or-later, so the program as built is under the GPL version 3 or later, as 86Box's own builds are. The other parts carry permissive or LGPL-2.1-or-later terms that the GPL allows. One ROM is in this package: the XTIDE Universal BIOS (GPL-2.0-or-later), built from source, for the XT-IDE hard disk cards. Every other ROM, BIOS or firmware the user supplies, from the ROM set of 86Box. No game is in this package.",
   "components": [
     {
       "name": "chimera-core-86box (integration)",
