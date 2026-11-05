@@ -20,12 +20,6 @@ on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
-    inputs:
-      kind:
-        description: 'dev (rolling) or nightly (dated). Blank means dev.'
-        required: false
-        default: ''
-        type: string
   schedule:
     - cron: '0 4 * * *'
 
@@ -142,7 +136,7 @@ jobs:
   publish:
     name: publish
     needs: [ gate ]
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
     uses: ToolAssisted-run/chimera/.github/workflows/publish-core.yml@main
@@ -150,4 +144,3 @@ jobs:
       core-id: 86box
       artifact: 86box-${{ github.sha }}
       package: 86box.chimeraCore
-      kind: ${{ github.event.inputs.kind }}
