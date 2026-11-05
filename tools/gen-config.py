@@ -420,6 +420,7 @@ def main():
         'systemNames': {'PC': 'IBM PC compatible'},
         'author': 'the 86Box developers (after PCem by Sarah Walker); chimera port',
         'url': 'https://github.com/ToolAssisted-run/chimera-core-86box',
+        'runsOn': ['windows-x86_64', 'linux-x86_64', 'macos-x86_64'],
         'romFile': 'rom',
         'deterministic': True,
         'memoryLayoutMiB': [64, 4, 16, 64, 1024],
