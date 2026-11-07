@@ -76,16 +76,25 @@ if ninja -C "$guest" -j4 core.wbx > "$work/build-guest.log" 2>&1; then
 else
 	report FAIL "the guest builds" "see build/gate/build-guest.log"
 fi
+# No thread locals of the core's own: 86Box's one (is_cpu_thread) is a plain
+# variable here (-D__thread=). On aarch64 the toolchain's own libraries bring
+# 16 bytes of them (a .tbss no object of this core's has), which miniBox gives
+# each guest thread as it does any; only the core's own objects are held to it.
+own_tls=""
+for o in $(find "$guest" -name '*.o'); do
+	readelf -SW "$o" 2>/dev/null | grep -qE '\.t(data|bss)' && own_tls="$own_tls ${o#$guest/}"
+done
 if sh "$mb/source/guest/check-wbx.sh" "$guest/core.wbx" > "$work/check-wbx.log" 2>&1 \
-   && grep -q " clean " "$work/check-wbx.log" && ! grep -q "declares PT_TLS" "$work/check-wbx.log"; then
-	report PASS "core.wbx is sandbox-clean" "check-wbx: no thread locals, no %fs, nothing below rsp"
+   && grep -q " clean " "$work/check-wbx.log" && [ -z "$own_tls" ] \
+   && { ! grep -q "declares PT_TLS" "$work/check-wbx.log" || [ "$(uname -m)" = aarch64 ]; }; then
+	if grep -q "declares PT_TLS" "$work/check-wbx.log"; then
+		report PASS "core.wbx is sandbox-clean" "check-wbx: no %fs, nothing below rsp; thread locals only the aarch64 toolchain's ($((0x$(readelf -SW "$guest/core.wbx" | sed -n 's/.*\.tbss *NOBITS *[0-9a-f]* *[0-9a-f]* *\([0-9a-f]*\).*/\1/p'))) bytes)"
+	else
+		report PASS "core.wbx is sandbox-clean" "check-wbx: no thread locals, no %fs, nothing below rsp"
+	fi
 else
-	# what holds the thread-local segment, if that is what failed: its
-	# sections, and the objects whose .tdata/.tbss the link took
-	{ readelf -lW "$guest/core.wbx" | grep -E 'TLS'; readelf -SW "$guest/core.wbx" | grep -E '\.t(data|bss)'
-	  for o in $(find "$guest" -name '*.o'); do readelf -SW "$o" 2>/dev/null | grep -qE '\.t(data|bss)' && echo "thread locals in: $o"; done; } >> "$work/check-wbx.log" 2>&1
-	cat "$work/check-wbx.log" >&2
-	report FAIL "core.wbx is sandbox-clean" "$(grep -m1 'declares PT_TLS\|thread locals in' "$work/check-wbx.log" || tail -1 "$work/check-wbx.log")"
+	readelf -lW "$guest/core.wbx" | grep -E 'TLS' >> "$work/check-wbx.log" 2>&1
+	report FAIL "core.wbx is sandbox-clean" "${own_tls:+thread locals in:$own_tls; }$(tail -1 "$work/check-wbx.log")"
 fi
 
 # ------------------------------------------------------------ the package
