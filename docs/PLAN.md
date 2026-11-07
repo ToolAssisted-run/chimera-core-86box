@@ -239,9 +239,9 @@ machine code, so the aarch64 build leaves it out (meson.build) and the
 aarch64 package does not offer the "recompiler" setting at all
 (waterbox/build-package.sh removes it from that package's
 waterbox.config): there every machine runs on the interpreter. The x86_64
-package is unchanged and keeps the setting. A project that asks for the
-recompiler opens on aarch64 without it, so a movie recorded with the
-recompiler on is not expected to play the same there.
+package is unchanged and keeps the setting. A movie recorded with the
+recompiler on is not expected to play the same on aarch64; what Chimera
+does with a project that names the setting there was not tried.
 
 ## 3. Log
 
