@@ -80,7 +80,12 @@ if sh "$mb/source/guest/check-wbx.sh" "$guest/core.wbx" > "$work/check-wbx.log" 
    && grep -q " clean " "$work/check-wbx.log" && ! grep -q "declares PT_TLS" "$work/check-wbx.log"; then
 	report PASS "core.wbx is sandbox-clean" "check-wbx: no thread locals, no %fs, nothing below rsp"
 else
-	report FAIL "core.wbx is sandbox-clean" "$(tail -1 "$work/check-wbx.log")"
+	# what holds the thread-local segment, if that is what failed: its
+	# sections, and the objects whose .tdata/.tbss the link took
+	{ readelf -lW "$guest/core.wbx" | grep -E 'TLS'; readelf -SW "$guest/core.wbx" | grep -E '\.t(data|bss)'
+	  for o in $(find "$guest" -name '*.o'); do readelf -SW "$o" 2>/dev/null | grep -qE '\.t(data|bss)' && echo "thread locals in: $o"; done; } >> "$work/check-wbx.log" 2>&1
+	cat "$work/check-wbx.log" >&2
+	report FAIL "core.wbx is sandbox-clean" "$(grep -m1 'declares PT_TLS\|thread locals in' "$work/check-wbx.log" || tail -1 "$work/check-wbx.log")"
 fi
 
 # ------------------------------------------------------------ the package
