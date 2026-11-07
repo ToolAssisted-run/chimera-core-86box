@@ -28,8 +28,13 @@ if mb == ''
   error('pass -Dminibox_dir=<miniBox checkout>')
 endif
 
+# The recompiler is x86-64 code (src/codegen, codegen_x86-64.c): an aarch64
+# build is the interpreter only, and its package does not offer the setting
+# (waterbox/build-package.sh). Owner's decision, 2026-11-07.
+dynarec = get_option('dynarec') and host_machine.cpu_family() == 'x86_64'
+
 src_args = [up]
-if get_option('dynarec')
+if dynarec
   src_args += '--dynarec'
 endif
 upstream_sources = []
@@ -48,9 +53,12 @@ common = [
   '-D__thread=',
   '-fno-strict-aliasing',
   # one answer from a floating-point expression on every machine
-  '-ffp-contract=off', '-msse2', '-mfpmath=sse',
+  '-ffp-contract=off',
 ]
-if get_option('dynarec')
+if host_machine.cpu_family() == 'x86_64'
+  common += ['-msse2', '-mfpmath=sse']
+endif
+if dynarec
   common += '-DUSE_DYNAREC'
 endif
 add_project_arguments(common, language: ['c', 'cpp'])
@@ -58,7 +66,7 @@ add_project_arguments(common, language: ['c', 'cpp'])
 # (cinterface.c): one sequence in both builds, kept in machine memory
 add_project_arguments(['-Drand=chimera_rand', '-Dsrand=chimera_srand'], language: 'c')
 inc = [include_directories('waterbox/compat', up / 'include', up / 'cpu')]
-if get_option('dynarec')
+if dynarec
   inc += include_directories(up / 'codegen')
 endif
 

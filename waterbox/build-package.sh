@@ -67,6 +67,10 @@ else
 	sh "$here/setup-guest.sh" -m "$mb"
 fi
 ninja -C "$root/build/meson-guest" -j "${JOBS:-4}" core.wbx
+# An aarch64 guest reads its thread pointer from the machine's slot, not from
+# TPIDR_EL0 (miniBox's MACHINE-SPEC, "aarch64"); the host refuses one that
+# was not rewritten so.
+[ "$(uname -m)" = x86_64 ] || python3 "$mb/source/guest/wbx-tp-rewrite.py" "$root/build/meson-guest/core.wbx"
 sh "$mb/source/guest/check-wbx.sh" "$root/build/meson-guest/core.wbx"
 
 staging="$root/build/package-staging"
@@ -74,6 +78,21 @@ rm -rf "$staging"
 mkdir -p "$staging"
 cp "$root/build/meson-guest/core.wbx" "$staging/core.wbx"
 cp "$here/waterbox.config" "$here/default_keybinds.json" "$here/file_slots.json" "$staging/"
+# The recompiler is x86-64 code, so an aarch64 core is built without it
+# (meson.build) and its package does not offer the setting: a project asks
+# for the interpreter there (owner's decision, 2026-11-07).
+if [ "$(uname -m)" != x86_64 ]; then
+	python3 - "$staging/waterbox.config" <<'PYNOREC'
+import json, sys
+path = sys.argv[1]
+with open(path) as f:
+    cfg = json.load(f)
+cfg["settings"] = [s for s in cfg["settings"] if s.get("name") != "recompiler"]
+with open(path, "w") as f:
+    json.dump(cfg, f, indent=2, ensure_ascii=False)
+    f.write("\n")
+PYNOREC
+fi
 # the texts a person reads, a table per language (chimera docs/translations.md)
 cp -r "$here/languages" "$staging/languages"
 # the terms travel with the binary (waterbox/package-licenses.json)
@@ -109,11 +128,11 @@ musl_version="$(cat "$mb/extern/musl/VERSION" 2>/dev/null || echo unknown)"
 guest_kit="$(git -C "$mb" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
 upstream_pin="$(git -C "$root/extern/86box" describe --tags --always 2>/dev/null || echo unknown)"
 python3 - "$staging/build.json" "$core_version" "$gccver" "$musl_version" "$guest_kit" "$upstream_pin" <<'PYPROV'
-import json, sys
+import json, platform, sys
 path, version, gcc, musl, kit, pin = sys.argv[1:7]
 json.dump({
     "version": version,
-    "toolchain": {"compiler": "gcc " + gcc, "target": "x86_64-linux-musl", "musl": musl},
+    "toolchain": {"compiler": "gcc " + gcc, "target": platform.machine() + "-linux-musl", "musl": musl},
     "guestKit": {"name": "miniBox", "commit": kit},
     "upstream": {"name": "86Box", "pin": pin},
 }, open(path, "w"), indent=2, sort_keys=True)
