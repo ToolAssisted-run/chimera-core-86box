@@ -1,3 +1,3 @@
 option('minibox_dir', type: 'string', value: '', description: 'miniBox checkout (guest kit + host)')
-option('dynarec', type: 'boolean', value: true, description: 'compile the x86-64 recompiler (src/codegen); the package is built with it')
+option('dynarec', type: 'boolean', value: true, description: 'compile the x86-64 recompiler (src/codegen); the x86-64 package is built with it, an aarch64 build never is')
 option('xub_src', type: 'string', value: '', description: 'XTIDE Universal BIOS source, revision 638 (waterbox/xtide-bios/xub.ref): the ROM the core carries for its XT-IDE cards')
